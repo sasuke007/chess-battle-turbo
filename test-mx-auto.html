@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-900">
+  <!-- Test 1: mx-auto with display block (default for section) -->
+  <div class="h-screen w-full bg-red-900 mb-4">
+    <section class="h-[80%] w-[98%] mx-auto bg-green-500">
+      <p class="text-white">Test 1: Block element with mx-auto (should work)</p>
+    </section>
+  </div>
+  
+  <!-- Test 2: mx-auto with display flex -->
+  <div class="h-screen w-full bg-red-900 mb-4">
+    <section class="h-[80%] w-[98%] mx-auto flex items-center justify-center bg-blue-500">
+      <p class="text-white">Test 2: Flex container with mx-auto (should also work)</p>
+    </section>
+  </div>
+  
+  <!-- Test 3: mx-auto with relative positioning -->
+  <div class="h-screen w-full bg-red-900">
+    <section class="relative h-[80%] w-[98%] mx-auto flex items-center justify-center bg-purple-500">
+      <p class="text-white">Test 3: Relative + flex + mx-auto (should work)</p>
+    </section>
+  </div>
+</body>
+</html>
