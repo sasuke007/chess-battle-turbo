@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "../../lib/utils";
-import Image from "next/image";
 import { Chess, Color, PieceSymbol, Square } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import ChessBoard from "../components/ChessBoard";
