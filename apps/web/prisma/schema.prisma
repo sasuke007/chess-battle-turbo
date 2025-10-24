@@ -8,10 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// ENUMS
-// ============================================
-
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL

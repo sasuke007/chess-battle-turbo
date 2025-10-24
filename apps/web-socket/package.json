@@ -10,7 +10,8 @@
   "private": true,
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^24.8.1"
+    "@types/node": "^24.8.1",
+    "tsx": "^4.20.6"
   },
   "dependencies": {
     "@types/express": "^5.0.3",
