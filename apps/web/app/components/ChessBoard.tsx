@@ -1,7 +1,14 @@
 import React from "react";
 import { cn } from "../../lib/utils";
+import { Chess, Color, PieceSymbol, Square } from "chess.js";
+import Image from "next/image";
 
 type ChessProps = {
+  board: ({
+    square: Square;
+    type: PieceSymbol;
+    color: Color;
+  } | null)[][];
   squareSize?: string;
   whiteSquareColor?: string;
   blackSquareColor?: string;
@@ -9,13 +16,17 @@ type ChessProps = {
   boardBorderColor?: string;
 };
 
+//TODO: Give white some shade of white , give black some shade of black.
+
 const ChessBoard = ({
-  squareSize = "md:size-20 sm:size-10",
+  board = new Chess().board(),
+  squareSize = "size-12 md:size-16 lg:size-20",
   whiteSquareColor = "bg-white",
   blackSquareColor = "bg-black",
   squareBorderColor = "border-neutral-800",
   boardBorderColor = "border-neutral-800",
 }: ChessProps) => {
+  console.log(board);
   return (
     <div
       className={cn(
@@ -23,31 +34,32 @@ const ChessBoard = ({
         "w-fit h-fit" // This makes the div only take up the necessary width and height
       )}
     >
-      {Array.from({ length: 8 }).map((_, rowIndex: number) => (
+      {board.map((row, rowIndex) => (
         <div key={rowIndex} className={cn("flex")}>
-          {["a", "b", "c", "d", "e", "f", "g", "h"].map(
-            (rank, columnIndex: number) => (
-              <div
-                key={rank}
-                className={cn(
-                  // Yes, Tailwind CSS will work with this syntax because the dynamic values are constructed from valid Tailwind class names passed as props.
-                  `${squareSize} flex justify-center items-center border-2 ${squareBorderColor}`,
-                  // Yes, Tailwind CSS will work with this syntax because the values for `whiteSquareColor` and `blackSquareColor` are defaulting to valid Tailwind class names
-                  (rowIndex + columnIndex) % 2 === 0
-                    ? whiteSquareColor
-                    : blackSquareColor
-                )}
-              >
-                {rank}
-                {8 - rowIndex}
-                
-              </div>
-            )
-          )}
+          {row.map((square, columnIndex) => (
+            <div
+              key={columnIndex}
+              className={cn(
+                `${squareSize} flex justify-center items-center border-2 ${squareBorderColor}`,
+                (rowIndex + columnIndex) % 2 === 0
+                  ? whiteSquareColor
+                  : blackSquareColor
+              )}
+            >
+              {square !== null ? (
+                <Image
+                  src={`/chess-icons/${square.color}${square.type}.png`}
+                  alt={square.type}
+                  width={100}
+                  height={100}
+                  className="w-full h-full"
+                />
+              ) : null}
+            </div>
+          ))}
         </div>
       ))}
     </div>
-    //TODO: Put a to h and 1 to 8 on boxes
   );
 };
 
