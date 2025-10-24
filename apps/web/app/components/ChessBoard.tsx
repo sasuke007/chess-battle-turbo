@@ -4,7 +4,7 @@ import { Chess, Color, PieceSymbol, Square } from "chess.js";
 import Image from "next/image";
 
 type ChessProps = {
-  board: ({
+  board?: ({
     square: Square;
     type: PieceSymbol;
     color: Color;
