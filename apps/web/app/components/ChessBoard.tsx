@@ -14,6 +14,10 @@ type ChessProps = {
   blackSquareColor?: string;
   squareBorderColor?: string;
   boardBorderColor?: string;
+  selectedSquare?: Square | null;
+  legalMoves?: Square[];
+  onSquareClick?: (square: Square) => void;
+  isInteractive?: boolean;
 };
 
 //TODO: Give white some shade of white , give black some shade of black.
@@ -25,8 +29,26 @@ const ChessBoard = ({
   blackSquareColor = "bg-black",
   squareBorderColor = "border-neutral-800",
   boardBorderColor = "border-neutral-800",
+  selectedSquare = null,
+  legalMoves = [],
+  onSquareClick,
+  isInteractive = true,
 }: ChessProps) => {
-  console.log(board);
+  // Convert row and column index to chess square notation (e.g., e2, e4)
+  const getSquareNotation = (rowIndex: number, columnIndex: number): Square => {
+    const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
+    return `${files[columnIndex]}${ranks[rowIndex]}` as Square;
+  };
+
+  const isSquareSelected = (rowIndex: number, columnIndex: number): boolean => {
+    return selectedSquare === getSquareNotation(rowIndex, columnIndex);
+  };
+
+  const isSquareLegalMove = (rowIndex: number, columnIndex: number): boolean => {
+    return legalMoves.includes(getSquareNotation(rowIndex, columnIndex));
+  };
+
   return (
     <div
       className={cn(
@@ -36,27 +58,36 @@ const ChessBoard = ({
     >
       {board.map((row, rowIndex) => (
         <div key={rowIndex} className={cn("flex")}>
-          {row.map((square, columnIndex) => (
-            <div
-              key={columnIndex}
-              className={cn(
-                `${squareSize} flex justify-center items-center border-2 ${squareBorderColor}`,
-                (rowIndex + columnIndex) % 2 === 0
-                  ? whiteSquareColor
-                  : blackSquareColor
-              )}
-            >
-              {square !== null ? (
-                <Image
-                  src={`/chess-icons/${square.color}${square.type}.png`}
-                  alt={square.type}
-                  width={100}
-                  height={100}
-                  className="w-full h-full"
-                />
-              ) : null}
-            </div>
-          ))}
+          {row.map((square, columnIndex) => {
+            const squareNotation = getSquareNotation(rowIndex, columnIndex);
+            const isSelected = isSquareSelected(rowIndex, columnIndex);
+            const isLegalMove = isSquareLegalMove(rowIndex, columnIndex);
+
+            return (
+              <div
+                key={columnIndex}
+                onClick={() => onSquareClick?.(squareNotation)}
+                className={cn(
+                  `${squareSize} flex justify-center items-center border-2 ${squareBorderColor} relative`,
+                  (rowIndex + columnIndex) % 2 === 0
+                    ? whiteSquareColor
+                    : blackSquareColor,
+                  isSelected && "ring-4 ring-yellow-400 ring-inset",
+                  isLegalMove && "after:absolute after:w-4 after:h-4 after:bg-green-500 after:rounded-full after:opacity-60"
+                )}
+              >
+                {square !== null ? (
+                  <Image
+                    src={`/chess-icons/${square.color}${square.type}.png`}
+                    alt={square.type}
+                    width={100}
+                    height={100}
+                    className="w-full h-full"
+                  />
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>

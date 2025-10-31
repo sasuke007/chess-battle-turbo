@@ -1,6 +1,5 @@
 import React from "react";
 import { cn } from "../../lib/utils";
-import { Button } from "../../../../packages/ui/src/button";
 import Image from "next/image";
 import Link from "next/link";
 import {

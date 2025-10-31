@@ -53,7 +53,8 @@ export const HowToPlay = () => {
             </span>
           </h2>
           <p className="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto">
-            Challenge your friends in competitive chess battles and win real money
+            Challenge your friends in competitive chess battles and win real
+            money
           </p>
         </motion.div>
 
@@ -62,17 +63,19 @@ export const HowToPlay = () => {
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              initial={{ opacity: 0, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                delay: index * 0.1,
+                ease: "easeOut",
+              }}
               className={cn(
                 "group relative overflow-hidden rounded-2xl",
                 "bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent",
                 "backdrop-blur-xl border border-white/10",
                 "shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]",
                 "hover:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)]",
-                "transition-all duration-300 ease-in-out",
                 "hover:scale-[1.02] hover:border-white/20",
                 "p-8"
               )}

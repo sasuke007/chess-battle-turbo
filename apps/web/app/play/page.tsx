@@ -5,13 +5,17 @@ import { cn } from "../../lib/utils";
 import { Chess, Color, PieceSymbol, Square } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import ChessBoard from "../components/ChessBoard";
-import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
+import TimeControlSelector, {
+  TimeControlValue,
+} from "../components/TimeControlSelector";
 import BettingAmountSelector from "../components/BettingAmountSelector";
 import { Button } from "@/components/ui/button";
+import { IoCopyOutline } from "react-icons/io5";
 
 const chess: Chess = new Chess();
 
 export default function Play() {
+  const linkGeneratedRef = useRef<HTMLDivElement>(null);
   const [board, setBoard] = useState<
     ({
       square: Square;
@@ -26,7 +30,7 @@ export default function Play() {
     mode: "Blitz",
     control: "5 | 5",
     time: 300,
-    increment: 0,
+    increment: 5,
   });
   const [bettingAmount, setBettingAmount] = useState(100);
 
@@ -52,6 +56,11 @@ export default function Play() {
       console.log("Disconnected from WebSocket server");
     });
 
+    socketRef.current.on("gameCreated", () => {
+      console.log("Game created:");
+      
+    });
+
     return () => {
       socketRef.current?.disconnect();
     };
@@ -59,13 +68,23 @@ export default function Play() {
 
   console.log(board);
 
+  const handleCopyLink = async () => {
+    if (linkGeneratedRef.current?.textContent) {
+      await navigator.clipboard.writeText(linkGeneratedRef.current.textContent);
+    }
+  };
+
   const handleCreateGame = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    console.log("Creating game with:", bettingAmount);
+    console.log("Time control:", timeControl);
     // Here you have access to all the form values
     const gameData = {
-      timeControl,
-      bettingAmount,
+      //TODO: Get logged in user and also make sure that the user that
+      userReferenceId: "cmh0x9hzo0000gp1myxos778k",
+      stakeAmount: bettingAmount,
+      initialTimeSeconds: timeControl.time,
+      incrementSeconds: timeControl.increment,
     };
 
     console.log("Creating game with:", gameData);
@@ -82,8 +101,9 @@ export default function Play() {
 
       const data = await response.json();
       console.log("Game created:", data);
-      
-      // Handle success (e.g., redirect to game, show success message, etc.)
+      if (linkGeneratedRef.current) {
+        linkGeneratedRef.current.innerHTML = `http://localhost:3000/join/${data.game.inviteCode}`;
+      }
     } catch (error) {
       console.error("Error creating game:", error);
       // Handle error (e.g., show error message)
@@ -96,18 +116,20 @@ export default function Play() {
         <ChessBoard squareSize="size-10 sm:size-12 md:size-16 lg:size-20" />
       </div>
       <div
-        className={cn("flex flex-col justify-center items-center basis-1/2 p-8")}
+        className={cn(
+          "flex flex-col justify-center items-center basis-1/2 p-8"
+        )}
       >
-        <form onSubmit={handleCreateGame} className="flex flex-col gap-4 w-full max-w-md">
-          <TimeControlSelector 
-            value={timeControl}
-            onChange={setTimeControl}
-          />
-          <BettingAmountSelector 
+        <form
+          onSubmit={handleCreateGame}
+          className="flex flex-col gap-4 w-full max-w-md"
+        >
+          <TimeControlSelector value={timeControl} onChange={setTimeControl} />
+          <BettingAmountSelector
             amount={bettingAmount}
             onChange={setBettingAmount}
           />
-          <Button 
+          <Button
             type="submit"
             size="lg"
             className="w-full bg-white text-black hover:bg-gray-200 font-semibold text-lg py-6"
@@ -115,6 +137,13 @@ export default function Play() {
             Play
           </Button>
         </form>
+        <div className="flex ">
+          <div ref={linkGeneratedRef}>
+          </div>
+          <div onClick={handleCopyLink} className="cursor-pointer">
+            <IoCopyOutline />
+          </div>
+        </div>
       </div>
     </div>
   );
