@@ -24,6 +24,8 @@ export default function Play() {
     } | null)[][]
   >(chess.board());
   const socketRef = useRef<Socket | null>(null);
+  const [gameReferenceId, setGameReferenceId] = useState<string | null>(null);
+  const [waitingForOpponent, setWaitingForOpponent] = useState(false);
 
   // Lifted state for form components
   const [timeControl, setTimeControl] = useState<TimeControlValue>({
@@ -46,6 +48,7 @@ export default function Play() {
   };
 
   useEffect(() => {
+    // Initialize WebSocket connection
     socketRef.current = io("ws://localhost:3002");
 
     socketRef.current.on("connect", () => {
@@ -56,9 +59,23 @@ export default function Play() {
       console.log("Disconnected from WebSocket server");
     });
 
-    socketRef.current.on("gameCreated", () => {
-      console.log("Game created:");
-      
+    socketRef.current.on("waiting_for_opponent", (payload: any) => {
+      console.log("Waiting for opponent:", payload);
+      setWaitingForOpponent(true);
+    });
+
+    socketRef.current.on("game_started", (payload: any) => {
+      console.log("Game started:", payload);
+      setWaitingForOpponent(false);
+      // Redirect to game page
+      if (payload.gameReferenceId) {
+        window.location.href = `/game/${payload.gameReferenceId}`;
+      }
+    });
+
+    socketRef.current.on("error", (payload: any) => {
+      console.error("WebSocket error:", payload);
+      alert(payload.message || "An error occurred");
     });
 
     return () => {
@@ -78,7 +95,7 @@ export default function Play() {
     e.preventDefault();
     console.log("Creating game with:", bettingAmount);
     console.log("Time control:", timeControl);
-    // Here you have access to all the form values
+    
     const gameData = {
       //TODO: Get logged in user and also make sure that the user that
       userReferenceId: "cmh0x9hzo0000gp1myxos778k",
@@ -90,7 +107,7 @@ export default function Play() {
     console.log("Creating game with:", gameData);
 
     try {
-      // TODO: Call your API here
+      // Call API to create game in database
       const response = await fetch("/api/chess/create-game", {
         method: "POST",
         headers: {
@@ -101,12 +118,32 @@ export default function Play() {
 
       const data = await response.json();
       console.log("Game created:", data);
+      
+      if (!data.success) {
+        throw new Error(data.error || "Failed to create game");
+      }
+
+      const gameRef = data.data.game.referenceId;
+      setGameReferenceId(gameRef);
+
+      // Generate and display join link
       if (linkGeneratedRef.current) {
-        linkGeneratedRef.current.innerHTML = `http://localhost:3000/join/${data.game.inviteCode}`;
+        linkGeneratedRef.current.innerHTML = `http://localhost:3000/join/${gameRef}`;
+      }
+
+      // Join the game via WebSocket
+      if (socketRef.current?.connected) {
+        socketRef.current.emit("join_game", {
+          gameReferenceId: gameRef,
+          userReferenceId: gameData.userReferenceId,
+        });
+      } else {
+        console.error("WebSocket not connected");
+        alert("WebSocket connection failed. Please refresh and try again.");
       }
     } catch (error) {
       console.error("Error creating game:", error);
-      // Handle error (e.g., show error message)
+      alert(error instanceof Error ? error.message : "Failed to create game");
     }
   };
 
@@ -137,13 +174,33 @@ export default function Play() {
             Play
           </Button>
         </form>
-        <div className="flex ">
-          <div ref={linkGeneratedRef}>
+        {gameReferenceId && (
+          <div className="mt-6 w-full max-w-md">
+            <div className="bg-neutral-800 rounded-lg p-6">
+              <h3 className="text-white text-lg font-semibold mb-3">
+                {waitingForOpponent ? "Waiting for opponent..." : "Share this link:"}
+              </h3>
+              <div className="flex items-center gap-2 bg-neutral-700 rounded p-3">
+                <div
+                  ref={linkGeneratedRef}
+                  className="text-white text-sm flex-1 overflow-x-auto"
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className="text-white hover:text-gray-300 cursor-pointer p-2"
+                  title="Copy link"
+                >
+                  <IoCopyOutline size={20} />
+                </button>
+              </div>
+              {waitingForOpponent && (
+                <div className="mt-4 text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent" />
+                </div>
+              )}
+            </div>
           </div>
-          <div onClick={handleCopyLink} className="cursor-pointer">
-            <IoCopyOutline />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

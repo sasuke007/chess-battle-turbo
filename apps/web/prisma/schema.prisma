@@ -135,7 +135,6 @@ model Game {
   
   // Game data
   gameData                Json?
-  inviteCode              String      @unique
   
   // Timestamps
   expiresAt               DateTime
@@ -153,7 +152,6 @@ model Game {
   @@index([creatorId])
   @@index([opponentId])
   @@index([winnerId])
-  @@index([inviteCode])
   @@index([status])
   @@index([expiresAt])
   @@index([referenceId])

@@ -5,7 +5,7 @@
   "main": "index.js",
   "module": "true",
   "scripts": {
-    "dev": "node index.ts"
+    "dev": "tsx watch index.ts"
   },
   "private": true,
   "devDependencies": {

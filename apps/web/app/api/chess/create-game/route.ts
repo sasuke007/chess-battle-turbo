@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Decimal } from "@prisma/client/runtime/library";
-import crypto from "crypto";
-import { z } from "zod";
-import { prisma } from "../../../../lib/prisma";
+import {NextRequest, NextResponse} from "next/server";
+import {Decimal} from "@prisma/client/runtime/library";
+import {z} from "zod";
+import {prisma} from "../../../../lib/prisma";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -67,26 +66,6 @@ function calculateGameAmounts(stakeAmount: number) {
   };
 }
 
-async function generateUniqueInviteCode(maxAttempts: number = 10): Promise<string> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const inviteCode = crypto
-      .randomBytes(4)
-      .toString("hex")
-      .toUpperCase()
-      .slice(0, 8);
-
-    const existingGame = await prisma.game.findUnique({
-      where: { inviteCode },
-    });
-
-    if (!existingGame) {
-      return inviteCode;
-    }
-  }
-
-  throw new ValidationError("Failed to generate unique invite code. Please try again.", 500);
-}
-
 function calculateExpirationTime(hoursFromNow: number = 1): Date {
   return new Date(Date.now() + hoursFromNow * 60 * 60 * 1000);
 }
@@ -97,7 +76,6 @@ async function createGameTransaction(
   walletBalance: Decimal,
   walletLockedAmount: Decimal,
   request: CreateGameRequest,
-  inviteCode: string
 ) {
   const amounts = calculateGameAmounts(request.stakeAmount);
   const expiresAt = calculateExpirationTime(1);
@@ -115,7 +93,6 @@ async function createGameTransaction(
         incrementSeconds: request.incrementSeconds,
         creatorTimeRemaining: request.initialTimeSeconds,
         opponentTimeRemaining: request.initialTimeSeconds,
-        inviteCode,
         expiresAt,
         status: "WAITING_FOR_OPPONENT",
       },
@@ -181,9 +158,6 @@ export async function POST(request: NextRequest) {
       amounts.stakeAmountDecimal
     );
 
-    // 5. Generate unique invite code
-    const inviteCode = await generateUniqueInviteCode();
-
     // 6. Execute transaction
     const result = await createGameTransaction(
       user.id,
@@ -191,7 +165,6 @@ export async function POST(request: NextRequest) {
       new Decimal(user.wallet!.balance),
       new Decimal(user.wallet!.lockedAmount),
       validatedData,
-      inviteCode
     );
 
     // 7. Return success response
@@ -202,7 +175,6 @@ export async function POST(request: NextRequest) {
         data: {
           game: {
             referenceId: result.game.referenceId,
-            inviteCode: result.game.inviteCode,
             stakeAmount: result.game.stakeAmount.toString(),
             totalPot: result.game.totalPot.toString(),
             platformFeeAmount: result.game.platformFeeAmount.toString(),

@@ -1,0 +1,181 @@
+import { Socket } from "socket.io";
+import { Color, Square } from "chess.js";
+
+// ============================================
+// GAME STATE TYPES
+// ============================================
+
+export interface PlayerInfo {
+  userReferenceId: string;
+  name: string;
+  code: string;
+  profilePictureUrl: string | null;
+}
+
+export interface GameData {
+  referenceId: string;
+  creatorId: string;
+  opponentId: string | null;
+  stakeAmount: string;
+  totalPot: string;
+  platformFeeAmount: string;
+  initialTimeSeconds: number;
+  incrementSeconds: number;
+  creatorTimeRemaining: number;
+  opponentTimeRemaining: number;
+  status: "WAITING_FOR_OPPONENT" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "EXPIRED";
+  gameData?: {
+    fen?: string;
+    moveHistory?: any[];
+  };
+  creator: PlayerInfo;
+  opponent?: PlayerInfo;
+}
+
+export interface PlayerConnection {
+  socket: Socket;
+  userReferenceId: string;
+  color: Color;
+  playerInfo: PlayerInfo;
+}
+
+export type GameResult = "CREATOR_WON" | "OPPONENT_WON" | "DRAW" | "CREATOR_TIMEOUT" | "OPPONENT_TIMEOUT";
+export type GameEndMethod = "checkmate" | "timeout" | "resignation" | "draw_agreement" | "stalemate" | "insufficient_material";
+
+// ============================================
+// CLIENT → SERVER EVENT PAYLOADS
+// ============================================
+
+export interface JoinGamePayload {
+  gameReferenceId: string;
+  userReferenceId: string;
+}
+
+export interface MakeMovePayload {
+  gameReferenceId: string;
+  from: Square;
+  to: Square;
+  promotion?: "q" | "r" | "b" | "n";
+}
+
+export interface ResignPayload {
+  gameReferenceId: string;
+}
+
+export interface OfferDrawPayload {
+  gameReferenceId: string;
+}
+
+export interface AcceptDrawPayload {
+  gameReferenceId: string;
+}
+
+export interface DeclineDrawPayload {
+  gameReferenceId: string;
+}
+
+// ============================================
+// SERVER → CLIENT EVENT PAYLOADS
+// ============================================
+
+export interface WaitingForOpponentPayload {
+  gameReferenceId: string;
+}
+
+export interface GameStartedPayload {
+  gameReferenceId: string;
+  yourColor: Color;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+  whitePlayer: PlayerInfo;
+  blackPlayer: PlayerInfo;
+}
+
+export interface MoveMadePayload {
+  from: Square;
+  to: Square;
+  san: string;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+  turn: Color;
+  promotion?: string;
+}
+
+export interface MoveErrorPayload {
+  message: string;
+}
+
+export interface ClockUpdatePayload {
+  whiteTime: number;
+  blackTime: number;
+}
+
+export interface GameOverPayload {
+  result: GameResult;
+  winner: Color | null;
+  method: GameEndMethod;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+}
+
+export interface ErrorPayload {
+  message: string;
+}
+
+// ============================================
+// API REQUEST/RESPONSE TYPES
+// ============================================
+
+export interface ApiGameResponse {
+  success: boolean;
+  data?: GameData;
+  error?: string;
+}
+
+export interface ApiMoveRequest {
+  gameReferenceId: string;
+  userReferenceId: string;
+  from: Square;
+  to: Square;
+  promotion?: string;
+  fen: string;
+  moveHistory: any[];
+  whiteTime: number;
+  blackTime: number;
+}
+
+export interface ApiGameOverRequest {
+  gameReferenceId: string;
+  result: GameResult;
+  winnerId?: string;
+  method: GameEndMethod;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+}
+
+export interface ApiGameStateRequest {
+  gameReferenceId: string;
+  whiteTime: number;
+  blackTime: number;
+  lastMoveAt: Date;
+}
+
+// ============================================
+// CLOCK MANAGER TYPES
+// ============================================
+
+export interface ClockState {
+  whiteTime: number; // milliseconds
+  blackTime: number; // milliseconds
+  activeColor: Color | null;
+  lastUpdateTime: number; // timestamp
+}
+
+export interface ClockConfig {
+  initialTime: number; // seconds
+  increment: number; // seconds
+}
