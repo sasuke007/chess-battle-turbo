@@ -211,7 +211,6 @@ export async function POST(request: NextRequest) {
         data: {
           game: {
             referenceId: result.game.referenceId,
-            inviteCode: result.game.inviteCode,
             status: result.game.status,
             stakeAmount: result.game.stakeAmount.toString(),
             totalPot: result.game.totalPot.toString(),
