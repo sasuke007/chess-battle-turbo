@@ -11,23 +11,20 @@ interface GameDetails {
   stakeAmount: string;
   totalPot: string;
   platformFeeAmount: string;
-  timeControl: {
-    initialTimeSeconds: number;
-    incrementSeconds: number;
-    format: string;
-  };
+  initialTimeSeconds: number;
+  incrementSeconds: number;
   creator: {
-    referenceId: string;
+    userReferenceId: string;
     name: string;
     profilePictureUrl: string | null;
     code: string;
   };
-  opponent: {
-    referenceId: string;
+  opponent?: {
+    userReferenceId: string;
     name: string;
     profilePictureUrl: string | null;
     code: string;
-  } | null;
+  };
 }
 
 export default function JoinPage({
@@ -156,7 +153,7 @@ export default function JoinPage({
                 />
               ) : (
                 <div className="w-16 h-16 rounded-full bg-neutral-600 flex items-center justify-center text-2xl font-bold text-white">
-                  {gameDetails.creator.name[0].toUpperCase()}
+                  {}
                 </div>
               )}
               <div>
@@ -191,7 +188,7 @@ export default function JoinPage({
               <div>
                 <p className="text-sm text-neutral-400">Time Control</p>
                 <p className="text-lg font-semibold text-white">
-                  {gameDetails.timeControl.format}
+                  {gameDetails.initialTimeSeconds / 60}+{gameDetails.incrementSeconds}
                 </p>
               </div>
               <div>
@@ -216,8 +213,7 @@ export default function JoinPage({
           <div className="flex gap-4">
             <Button
               onClick={() => router.push("/")}
-              variant="outline"
-              className="flex-1 border-neutral-600 text-white hover:bg-neutral-700"
+              className="flex-1 bg-neutral-700 border border-neutral-600 text-white font-semibold text-lg py-6 hover:bg-neutral-700"
               disabled={joining}
             >
               Cancel

@@ -175,6 +175,7 @@ export async function POST(request: NextRequest) {
     // 1. Parse and validate request body
     const body = await request.json();
     const validatedData = joinGameSchema.parse(body);
+    console.log("validatedData", validatedData);
 
     // 2. Fetch and validate game
     const game = await validateAndFetchGame(validatedData.gameReferenceId);

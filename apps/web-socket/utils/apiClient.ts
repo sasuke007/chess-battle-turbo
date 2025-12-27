@@ -24,7 +24,7 @@ export async function fetchGameByRef(
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const result: ApiGameResponse = await response.json();
+    const result = await response.json() as ApiGameResponse;
 
     if (!result.success || !result.data) {
       throw new Error(result.error || "Failed to fetch game");
@@ -51,11 +51,11 @@ export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json() as { error?: string };
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as { success: boolean; error?: string };
 
     if (!result.success) {
       throw new Error(result.error || "Failed to persist move");
@@ -82,11 +82,11 @@ export async function completeGame(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json() as { error?: string };
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as { success: boolean; error?: string };
 
     if (!result.success) {
       throw new Error(result.error || "Failed to complete game");
@@ -113,11 +113,11 @@ export async function updateGameState(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json() as { error?: string };
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as { success: boolean; error?: string };
 
     if (!result.success) {
       throw new Error(result.error || "Failed to update game state");

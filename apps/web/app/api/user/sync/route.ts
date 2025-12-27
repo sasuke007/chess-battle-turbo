@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { googleId: userId },
+      where: { email: email },
       include: {
         wallet: true,
         stats: true,
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
           name,
           profilePictureUrl,
           updatedAt: new Date(),
+          googleId: userId,
         },
         include: {
           wallet: true,

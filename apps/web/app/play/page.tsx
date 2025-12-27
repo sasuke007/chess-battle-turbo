@@ -11,10 +11,14 @@ import TimeControlSelector, {
 import BettingAmountSelector from "../components/BettingAmountSelector";
 import { Button } from "@/components/ui/button";
 import { IoCopyOutline } from "react-icons/io5";
+import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
+import { CompleteUserObject } from "@/lib/types";
 
 const chess: Chess = new Chess();
 
 export default function Play() {
+  const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
+  const userReferenceId = userObject?.user?.referenceId;
   const linkGeneratedRef = useRef<HTMLDivElement>(null);
   const [board, setBoard] = useState<
     ({
@@ -48,6 +52,10 @@ export default function Play() {
   };
 
   useEffect(() => {
+    if (!isLoaded || !userReferenceId) {
+      return;
+    }
+
     // Initialize WebSocket connection
     socketRef.current = io("ws://localhost:3002");
 
@@ -81,9 +89,9 @@ export default function Play() {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, []);
+  }, [isLoaded, userReferenceId]);
 
-  console.log(board);
+  // console.log(board);
 
   const handleCopyLink = async () => {
     if (linkGeneratedRef.current?.textContent) {
@@ -93,12 +101,18 @@ export default function Play() {
 
   const handleCreateGame = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    //TODO: Do we need  this check , i think this page wont load if user is not authenticated.
+    if (!userReferenceId) {
+      alert("User not authenticated. Please sign in.");
+      return;
+    }
+
     console.log("Creating game with:", bettingAmount);
     console.log("Time control:", timeControl);
-    
+
     const gameData = {
-      //TODO: Get logged in user and also make sure that the user that
-      userReferenceId: "cmh0x9hzo0000gp1myxos778k",
+      userReferenceId: userReferenceId,
       stakeAmount: bettingAmount,
       initialTimeSeconds: timeControl.time,
       incrementSeconds: timeControl.increment,
@@ -118,7 +132,7 @@ export default function Play() {
 
       const data = await response.json();
       console.log("Game created:", data);
-      
+
       if (!data.success) {
         throw new Error(data.error || "Failed to create game");
       }
@@ -139,13 +153,27 @@ export default function Play() {
         });
       } else {
         console.error("WebSocket not connected");
-        alert("WebSocket connection failed. Please refresh and try again.");
+        //alert("WebSocket connection failed. Please refresh and try again.");
       }
     } catch (error) {
       console.error("Error creating game:", error);
-      alert(error instanceof Error ? error.message : "Failed to create game");
+      //alert(error instanceof Error ? error.message : "Failed to create game");
     }
   };
+
+  //TODO: Make a cool loading page or shad cn spinner here.
+  // Show loading state while checking authentication
+  if (!isLoaded) {
+    return (
+      <div
+        className={cn(
+          "flex min-h-screen bg-neutral-900 items-center justify-center"
+        )}
+      >
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex min-h-screen bg-neutral-900")}>
@@ -178,7 +206,9 @@ export default function Play() {
           <div className="mt-6 w-full max-w-md">
             <div className="bg-neutral-800 rounded-lg p-6">
               <h3 className="text-white text-lg font-semibold mb-3">
-                {waitingForOpponent ? "Waiting for opponent..." : "Share this link:"}
+                {waitingForOpponent
+                  ? "Waiting for opponent..."
+                  : "Share this link:"}
               </h3>
               <div className="flex items-center gap-2 bg-neutral-700 rounded p-3">
                 <div
