@@ -97,15 +97,19 @@ export class GameSession {
     const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
     const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
 
-    console.log("gameData", this.gameData);
-    console.log("isCreator", isCreator);
-    console.log("isOpponent", isOpponent);
-    console.log("userReferenceId", userReferenceId);
-    console.log("gameData.creator.userReferenceId", this.gameData.creator.userReferenceId);
-    console.log("gameData.opponent?.userReferenceId", this.gameData.opponent?.userReferenceId);
+    console.log("=== ADD PLAYER DEBUG ===");
+    console.log("Attempting to add player:", userReferenceId);
+    console.log("Game reference ID:", this.gameData.referenceId);
+    console.log("Game status:", this.gameData.status);
+    console.log("Creator ID:", this.gameData.creator.userReferenceId);
+    console.log("Opponent ID:", this.gameData.opponent?.userReferenceId);
+    console.log("Is creator?", isCreator);
+    console.log("Is opponent?", isOpponent);
+    console.log("Full game data:", JSON.stringify(this.gameData, null, 2));
+    console.log("=======================");
 
     if (!isCreator && !isOpponent) {
-      throw new Error("User is not part of this game");
+      throw new Error(`User ${userReferenceId} is not part of game ${this.gameData.referenceId}. Creator: ${this.gameData.creator.userReferenceId}, Opponent: ${this.gameData.opponent?.userReferenceId || 'null'}`);
     }
 
     // Store creator or opponent

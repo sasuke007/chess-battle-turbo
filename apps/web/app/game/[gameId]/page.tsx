@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, use } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
+import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
@@ -10,6 +11,7 @@ import { CompleteUserObject } from "@/lib/types";
 type GamePageProps = {};
 
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
+  const router = useRouter();
   const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
   // Unwrap params Promise
@@ -116,6 +118,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     socketRef.current.on("connect", () => {
       console.log("Connected to WebSocket server:", socketRef.current?.id);
+      console.log("Attempting to join game with:", {
+        gameReferenceId: gameId,
+        userReferenceId,
+        userObjectAvailable: !!userObject,
+      });
 
       // Join/rejoin the game (server will handle reconnection logic)
       socketRef.current!.emit("join_game", {
@@ -198,6 +205,15 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     socketRef.current.on("error", (payload: any) => {
       console.error("WebSocket error:", payload);
+      
+      // Handle "not part of game" error
+      if (payload.message && payload.message.includes("not part of")) {
+        alert("You are not part of this game. Redirecting...");
+        // Try to join the game first
+        router.push(`/join/${gameId}`);
+        return;
+      }
+      
       alert(payload.message || "An error occurred");
     });
 
