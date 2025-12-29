@@ -1,13 +1,20 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, use } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import ChessBoard from "../../components/ChessBoard";
+import { useRequireAuth } from "@/lib/hooks";
+import { CompleteUserObject } from "@/lib/types";
 
 type GamePageProps = {};
 
-const GamePage = ({ params }: { params: { gameId: string } }) => {
+const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
+  const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
+  const userReferenceId = userObject?.user?.referenceId;
+  // Unwrap params Promise
+  const { gameId } = use(params);
+  
   const [game, setGame] = useState<Chess>(new Chess());
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
@@ -25,8 +32,6 @@ const GamePage = ({ params }: { params: { gameId: string } }) => {
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
 
-  const gameId = params.gameId;
-  const userReferenceId = "cmh0x9hzo0000gp1myxos778k"; // TODO: Get from auth
 
   // Get legal moves for a selected piece
   const getLegalMovesForSquare = useCallback(
@@ -87,19 +92,41 @@ const GamePage = ({ params }: { params: { gameId: string } }) => {
 
   // Setup WebSocket connection
   useEffect(() => {
-    if (!gameId) return;
+    // Wait for auth to load and ensure we have both gameId and userReferenceId
+    if (!isLoaded || !gameId || !userReferenceId) {
+      console.log("Waiting for auth or game data...", { isLoaded, gameId, userReferenceId });
+      return;
+    }
 
-    // Initialize WebSocket
-    socketRef.current = io("ws://localhost:3002");
+    // Don't create a new socket if one already exists and is connected
+    if (socketRef.current?.connected) {
+      console.log("Socket already connected, reusing existing connection");
+      return;
+    }
+
+    console.log("Initializing WebSocket connection with:", { gameId, userReferenceId });
+
+    // Initialize WebSocket with reconnection enabled (Socket.IO default)
+    socketRef.current = io("ws://localhost:3002", {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+    });
 
     socketRef.current.on("connect", () => {
       console.log("Connected to WebSocket server:", socketRef.current?.id);
 
-      // Join the game
+      // Join/rejoin the game (server will handle reconnection logic)
       socketRef.current!.emit("join_game", {
         gameReferenceId: gameId,
         userReferenceId,
       });
+    });
+
+    socketRef.current.on("reconnect", (attemptNumber: number) => {
+      console.log(`Reconnected to server after ${attemptNumber} attempts`);
+      // Socket.IO will automatically trigger 'connect' event, which will rejoin the game
     });
 
     socketRef.current.on("game_started", (payload: any) => {
@@ -177,11 +204,26 @@ const GamePage = ({ params }: { params: { gameId: string } }) => {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [gameId, myColor, userReferenceId]);
+  }, [isLoaded, gameId, myColor, userReferenceId]);
+
+  // Show loading state while auth is loading
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Loading...</h1>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-900 text-white p-8">
       <div className="max-w-7xl mx-auto">
+        {/**
+         * TODO: Add a good loader here.
+         */}
         {!gameStarted ? (
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-4">Waiting for game to start...</h1>

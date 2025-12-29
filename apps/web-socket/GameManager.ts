@@ -27,10 +27,11 @@ export class GameManager {
 
       // Get or create game session
       let gameSession = this.games.get(gameReferenceId);
+      let isReconnection = false;
 
       if (!gameSession) {
         // Fetch game data from API
-        const gameData = await fetchGameByRef(gameReferenceId);
+        const gameData : GameData = await fetchGameByRef(gameReferenceId);
 
         // Validate game status
         if (
@@ -48,25 +49,39 @@ export class GameManager {
         this.games.set(gameReferenceId, gameSession);
 
         console.log(`Created new game session for ${gameReferenceId}`);
+      } else {
+        // Check if this player is already in the game (reconnection)
+        isReconnection = gameSession.isPlayerInGame(userReferenceId);
+        console.log(`Is reconnection: ${isReconnection}`);
       }
 
-      // Add player to session
-      await gameSession.addPlayer(socket, userReferenceId);
-
-      // Track socket to game mapping
+      //TODO: do we need to validate game status again here, check what can go wrong if we don't.
+      const game: GameData = await fetchGameByRef(gameReferenceId);
+      await gameSession.setGameData(game);
+      
+      // Track socket to game mapping BEFORE adding player
       if (!this.socketToGames.has(socket.id)) {
         this.socketToGames.set(socket.id, new Set());
       }
       this.socketToGames.get(socket.id)!.add(gameReferenceId);
 
-      // If game is waiting for opponent, emit waiting status
-      const gameData = await fetchGameByRef(gameReferenceId);
-      if (
-        gameData.status === "WAITING_FOR_OPPONENT" &&
-        !gameSession.hasBothPlayers()
-      ) {
-        socket.emit("waiting_for_opponent", { gameReferenceId });
-        console.log(`Player waiting for opponent in game ${gameReferenceId}`);
+      // Handle reconnection vs new join
+      if (isReconnection) {
+        console.log(`Handling reconnection for ${userReferenceId}`);
+        gameSession.handleReconnect(socket, userReferenceId);
+      } else {
+        console.log(`Handling new player join for ${userReferenceId}`);
+        // Add player to session
+        await gameSession.addPlayer(socket, userReferenceId);
+
+        // If game is waiting for opponent, emit waiting status
+        if (
+          game.status === "WAITING_FOR_OPPONENT" &&
+          !gameSession.hasBothPlayers()
+        ) {
+          socket.emit("waiting_for_opponent", { gameReferenceId });
+          console.log(`Player waiting for opponent in game ${gameReferenceId}`);
+        }
       }
     } catch (error) {
       console.error("Error handling join game:", error);

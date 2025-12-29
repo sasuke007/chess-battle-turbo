@@ -13,13 +13,14 @@ import { Button } from "@/components/ui/button";
 import { IoCopyOutline } from "react-icons/io5";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
 import { CompleteUserObject } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 const chess: Chess = new Chess();
 
 export default function Play() {
   const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
-  const linkGeneratedRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const [board, setBoard] = useState<
     ({
       square: Square;
@@ -29,6 +30,7 @@ export default function Play() {
   >(chess.board());
   const socketRef = useRef<Socket | null>(null);
   const [gameReferenceId, setGameReferenceId] = useState<string | null>(null);
+  const [joinLink, setJoinLink] = useState<string | null>(null);
   const [waitingForOpponent, setWaitingForOpponent] = useState(false);
 
   // Lifted state for form components
@@ -56,8 +58,19 @@ export default function Play() {
       return;
     }
 
-    // Initialize WebSocket connection
-    socketRef.current = io("ws://localhost:3002");
+    // Don't create a new socket if one already exists and is connected
+    if (socketRef.current?.connected) {
+      console.log("Socket already connected, reusing existing connection");
+      return;
+    }
+
+    // Initialize WebSocket connection with reconnection enabled
+    socketRef.current = io("ws://localhost:3002", {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+    });
 
     socketRef.current.on("connect", () => {
       console.log("Connected to WebSocket server:", socketRef.current?.id);
@@ -94,8 +107,14 @@ export default function Play() {
   // console.log(board);
 
   const handleCopyLink = async () => {
-    if (linkGeneratedRef.current?.textContent) {
-      await navigator.clipboard.writeText(linkGeneratedRef.current.textContent);
+    if (joinLink) {
+      try {
+        await navigator.clipboard.writeText(joinLink);
+        alert("Link copied to clipboard!");
+      } catch (error) {
+        console.error("Failed to copy:", error);
+        alert("Failed to copy link");
+      }
     }
   };
 
@@ -141,16 +160,15 @@ export default function Play() {
       setGameReferenceId(gameRef);
 
       // Generate and display join link
-      if (linkGeneratedRef.current) {
-        linkGeneratedRef.current.innerHTML = `http://localhost:3000/join/${gameRef}`;
-      }
+      const link = `http://localhost:3000/join/${gameRef}`;
+      setJoinLink(link);
+      console.log("Join link generated:", link);
 
+      //TODO: Why are we sening a join_game event on this page, just redirect to the /join/[gameReferenceId] page and that page will send the join_game event.
+      // even the opponent is doing the same thing.
       // Join the game via WebSocket
       if (socketRef.current?.connected) {
-        socketRef.current.emit("join_game", {
-          gameReferenceId: gameRef,
-          userReferenceId: gameData.userReferenceId,
-        });
+        router.push(`/game/${gameRef}`);
       } else {
         console.error("WebSocket not connected");
         //alert("WebSocket connection failed. Please refresh and try again.");
@@ -211,13 +229,13 @@ export default function Play() {
                   : "Share this link:"}
               </h3>
               <div className="flex items-center gap-2 bg-neutral-700 rounded p-3">
-                <div
-                  ref={linkGeneratedRef}
-                  className="text-white text-sm flex-1 overflow-x-auto"
-                />
+                <div className="text-white text-sm flex-1 overflow-x-auto break-all">
+                  {joinLink}
+                </div>
                 <button
+                  type="button"
                   onClick={handleCopyLink}
-                  className="text-white hover:text-gray-300 cursor-pointer p-2"
+                  className="text-white hover:text-gray-300 cursor-pointer p-2 flex-shrink-0"
                   title="Copy link"
                 >
                   <IoCopyOutline size={20} />

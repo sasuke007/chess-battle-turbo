@@ -58,7 +58,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Execute transaction to complete game and update wallets
+    // 4. Get winner's database ID if provided (winnerId is referenceId from API)
+    let winnerDbId: bigint | null = null;
+    if (validatedData.winnerId) {
+      const winner = await prisma.user.findUnique({
+        where: { referenceId: validatedData.winnerId },
+        select: { id: true },
+      });
+      if (winner) {
+        winnerDbId = winner.id;
+      }
+    }
+
+    // 5. Execute transaction to complete game and update wallets
     const result = await prisma.$transaction(async (tx) => {
       // Update game status
       const updatedGame = await tx.game.update({
@@ -66,9 +78,7 @@ export async function POST(request: NextRequest) {
         data: {
           status: "COMPLETED",
           result: validatedData.result,
-          winnerId: validatedData.winnerId
-            ? BigInt(validatedData.winnerId)
-            : null,
+          winnerId: winnerDbId,
           completedAt: new Date(),
           creatorTimeRemaining: validatedData.whiteTime,
           opponentTimeRemaining: validatedData.blackTime,
@@ -215,7 +225,7 @@ export async function POST(request: NextRequest) {
       return { game: updatedGame };
     });
 
-    // 5. Return success
+    // 6. Return success
     return NextResponse.json(
       {
         success: true,

@@ -4,6 +4,8 @@ import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CompleteUserObject } from "@/lib/types";
+import { useRequireAuth } from "@/lib/hooks";
 
 interface GameDetails {
   referenceId: string;
@@ -32,6 +34,12 @@ export default function JoinPage({
 }: {
   params: Promise<{ gameReferenceId: string }>;
 }) {
+  const {
+    isLoaded,
+    userObject,
+  }: { isLoaded: boolean; userObject: CompleteUserObject | null } =
+    useRequireAuth();
+  const userReferenceId = userObject?.user?.referenceId;
   const router = useRouter();
   const [gameDetails, setGameDetails] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +52,9 @@ export default function JoinPage({
   useEffect(() => {
     async function fetchGameDetails() {
       try {
-        const response = await fetch(`/api/chess/game-by-ref/${gameReferenceId}`);
+        const response = await fetch(
+          `/api/chess/game-by-ref/${gameReferenceId}`
+        );
         const data = await response.json();
 
         if (!data.success) {
@@ -77,7 +87,7 @@ export default function JoinPage({
         },
         body: JSON.stringify({
           gameReferenceId: gameDetails.referenceId,
-          opponentReferenceId: "cmh0x9hzo0000gp1myxos778k", // TODO: Get from logged in user
+          opponentReferenceId: userReferenceId,
         }),
       });
 
@@ -115,9 +125,7 @@ export default function JoinPage({
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
         <div className="bg-neutral-800 rounded-lg p-8 max-w-md">
           <h1 className="text-2xl font-bold text-red-400 mb-4">Error</h1>
-          <p className="text-white mb-6">
-            {error || "Game not found"}
-          </p>
+          <p className="text-white mb-6">{error || "Game not found"}</p>
           <Button
             onClick={() => router.push("/play")}
             className="w-full bg-white text-black hover:bg-gray-200"
@@ -188,7 +196,8 @@ export default function JoinPage({
               <div>
                 <p className="text-sm text-neutral-400">Time Control</p>
                 <p className="text-lg font-semibold text-white">
-                  {gameDetails.initialTimeSeconds / 60}+{gameDetails.incrementSeconds}
+                  {gameDetails.initialTimeSeconds / 60}+
+                  {gameDetails.incrementSeconds}
                 </p>
               </div>
               <div>
@@ -231,14 +240,16 @@ export default function JoinPage({
               {joining
                 ? "Joining..."
                 : alreadyStarted
-                ? "Game Unavailable"
-                : "Accept Challenge"}
+                  ? "Game Unavailable"
+                  : "Accept Challenge"}
             </Button>
           </div>
 
           {/* Warning */}
           <div className="text-center text-sm text-neutral-400">
-            <p>By accepting this challenge, ${gameDetails.stakeAmount} will be</p>
+            <p>
+              By accepting this challenge, ${gameDetails.stakeAmount} will be
+            </p>
             <p>deducted from your wallet and locked until the game ends.</p>
           </div>
         </div>

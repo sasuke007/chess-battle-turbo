@@ -66,6 +66,27 @@ export class GameSession {
     console.log(`GameSession created for game ${gameData.referenceId}`);
   }
 
+  public async setGameData(gameData: GameData): Promise<void> {
+    this.gameData = gameData;
+  }
+
+  /**
+   * Check if player is already in the game
+   */
+  public isPlayerInGame(userReferenceId: string): boolean {
+    return (
+      this.creatorPlayer?.userReferenceId === userReferenceId ||
+      this.opponentPlayer?.userReferenceId === userReferenceId
+    );
+  }
+
+  /**
+   * Check if game has started
+   */
+  public isGameStarted(): boolean {
+    return this.gameStarted;
+  }
+
   /**
    * Add a player to the game session
    */
@@ -73,8 +94,15 @@ export class GameSession {
     socket: Socket,
     userReferenceId: string
   ): Promise<void> {
-    const isCreator = userReferenceId === this.gameData.creatorId;
-    const isOpponent = userReferenceId === this.gameData.opponentId;
+    const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
+    const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
+
+    console.log("gameData", this.gameData);
+    console.log("isCreator", isCreator);
+    console.log("isOpponent", isOpponent);
+    console.log("userReferenceId", userReferenceId);
+    console.log("gameData.creator.userReferenceId", this.gameData.creator.userReferenceId);
+    console.log("gameData.opponent?.userReferenceId", this.gameData.opponent?.userReferenceId);
 
     if (!isCreator && !isOpponent) {
       throw new Error("User is not part of this game");
@@ -331,29 +359,53 @@ export class GameSession {
    * Handle player reconnection
    */
   public handleReconnect(socket: Socket, userReferenceId: string): void {
-    // Clear disconnect timer
+    const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
+    const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
+
+    console.log(
+      `Player ${userReferenceId} reconnecting to game ${this.gameData.referenceId}`,
+      { isCreator, isOpponent, gameStarted: this.gameStarted }
+    );
+
+    // Clear disconnect timer if exists
     const timer = this.disconnectTimers.get(userReferenceId);
     if (timer) {
       clearTimeout(timer);
       this.disconnectTimers.delete(userReferenceId);
-      console.log(
-        `Player ${userReferenceId} reconnected to game ${this.gameData.referenceId}`
-      );
+      console.log(`Cleared disconnect timer for ${userReferenceId}`);
+    }
 
-      // Update socket reference
+    // Update socket references
+    if (isCreator && this.creatorPlayer) {
+      this.creatorPlayer.socket = socket;
       if (this.whitePlayer?.userReferenceId === userReferenceId) {
         this.whitePlayer.socket = socket;
-      } else if (this.blackPlayer?.userReferenceId === userReferenceId) {
+      }
+      if (this.blackPlayer?.userReferenceId === userReferenceId) {
         this.blackPlayer.socket = socket;
       }
+      socket.join(this.gameData.referenceId);
+    } else if (isOpponent && this.opponentPlayer) {
+      this.opponentPlayer.socket = socket;
+      if (this.whitePlayer?.userReferenceId === userReferenceId) {
+        this.whitePlayer.socket = socket;
+      }
+      if (this.blackPlayer?.userReferenceId === userReferenceId) {
+        this.blackPlayer.socket = socket;
+      }
+      socket.join(this.gameData.referenceId);
+    }
 
-      // Notify opponent of reconnection
+    // Notify opponent of reconnection if game has started
+    if (this.gameStarted) {
       const opponent =
         this.whitePlayer?.userReferenceId === userReferenceId
           ? this.blackPlayer
           : this.whitePlayer;
+      
       if (opponent) {
         opponent.socket.emit("opponent_reconnected", {});
+        console.log(`Notified opponent of reconnection`);
       }
 
       // Send current game state to reconnected player
@@ -366,6 +418,12 @@ export class GameSession {
         blackTime: this.clockManager.getTimeInSeconds("b"),
         whitePlayer: this.whitePlayer!.playerInfo,
         blackPlayer: this.blackPlayer!.playerInfo,
+      });
+      console.log(`Sent game state to reconnected player`);
+    } else {
+      // Game hasn't started yet, just send waiting status
+      socket.emit("waiting_for_opponent", { 
+        gameReferenceId: this.gameData.referenceId 
       });
     }
   }
