@@ -223,13 +223,20 @@ export async function POST(request: NextRequest) {
       );
 
       return { game: updatedGame };
+    }, {
+      maxWait: 10000, // Maximum time to wait to start transaction (10 seconds)
+      timeout: 15000, // Maximum time for transaction to complete (15 seconds)
     });
 
-    // 6. Return success
+    // 6. Return success (don't send full game object with BigInt fields)
     return NextResponse.json(
       {
         success: true,
-        data: result,
+        data: {
+          gameReferenceId: result.game.referenceId,
+          status: result.game.status,
+          result: result.game.result,
+        },
         message: "Game completed successfully",
       },
       { status: 200 }
