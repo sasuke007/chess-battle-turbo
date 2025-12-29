@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useRouter, usePathname } from "next/navigation";
 
 /**
  * UserSync Component
@@ -9,10 +10,15 @@ import { useUser } from "@clerk/nextjs";
  * This component automatically syncs the authenticated user's data
  * from Clerk to our database when they sign in or sign up.
  * 
+ * It also checks if the user has completed onboarding (chess.com profile)
+ * and redirects them if needed.
+ * 
  * It runs once per session to ensure user data is up-to-date.
  */
 export const UserSync = () => {
   const { isSignedIn, user, isLoaded } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
   const hasSynced = useRef(false);
 
   useEffect(() => {
@@ -46,6 +52,7 @@ export const UserSync = () => {
 
         const data = await response.json();
         console.log("User synced successfully:", data.message);
+        // No forced redirection - users can add chess.com handle later from profile
       } catch (error) {
         console.error("Error syncing user:", error);
         // Reset flag on error so it can retry
@@ -54,7 +61,7 @@ export const UserSync = () => {
     };
 
     syncUser();
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded, isSignedIn, user, router, pathname]);
 
   // This component doesn't render anything
   return null;

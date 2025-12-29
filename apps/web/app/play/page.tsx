@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { cn } from "../../lib/utils";
 import { Chess, Color, PieceSymbol, Square } from "chess.js";
-import { io, Socket } from "socket.io-client";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, {
   TimeControlValue,
 } from "../components/TimeControlSelector";
 import BettingAmountSelector from "../components/BettingAmountSelector";
 import { Button } from "@/components/ui/button";
-import { IoCopyOutline } from "react-icons/io5";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
 import { CompleteUserObject } from "@/lib/types";
 import { useRouter } from "next/navigation";
@@ -28,10 +26,6 @@ export default function Play() {
       color: Color;
     } | null)[][]
   >(chess.board());
-  const socketRef = useRef<Socket | null>(null);
-  const [gameReferenceId, setGameReferenceId] = useState<string | null>(null);
-  const [joinLink, setJoinLink] = useState<string | null>(null);
-  const [waitingForOpponent, setWaitingForOpponent] = useState(false);
 
   // Lifted state for form components
   const [timeControl, setTimeControl] = useState<TimeControlValue>({
@@ -46,82 +40,11 @@ export default function Play() {
     square: { square: Square; type: PieceSymbol; color: Color } | null
   ) => {
     console.log("move received:", square);
-    socketRef.current?.emit("move", {
-      from: square?.square,
-      to: square?.square,
-      promotion: square?.type,
-    });
-  };
-
-  useEffect(() => {
-    if (!isLoaded || !userReferenceId) {
-      return;
-    }
-
-    // Don't create a new socket if one already exists and is connected
-    if (socketRef.current?.connected) {
-      console.log("Socket already connected, reusing existing connection");
-      return;
-    }
-
-    // Initialize WebSocket connection with reconnection enabled
-    socketRef.current = io("ws://localhost:3002", {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity,
-    });
-
-    socketRef.current.on("connect", () => {
-      console.log("Connected to WebSocket server:", socketRef.current?.id);
-    });
-
-    socketRef.current.on("disconnect", () => {
-      console.log("Disconnected from WebSocket server");
-    });
-
-    socketRef.current.on("waiting_for_opponent", (payload: any) => {
-      console.log("Waiting for opponent:", payload);
-      setWaitingForOpponent(true);
-    });
-
-    socketRef.current.on("game_started", (payload: any) => {
-      console.log("Game started:", payload);
-      setWaitingForOpponent(false);
-      // Redirect to game page
-      if (payload.gameReferenceId) {
-        window.location.href = `/game/${payload.gameReferenceId}`;
-      }
-    });
-
-    socketRef.current.on("error", (payload: any) => {
-      console.error("WebSocket error:", payload);
-      alert(payload.message || "An error occurred");
-    });
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
-  }, [isLoaded, userReferenceId]);
-
-  // console.log(board);
-
-  const handleCopyLink = async () => {
-    if (joinLink) {
-      try {
-        await navigator.clipboard.writeText(joinLink);
-        alert("Link copied to clipboard!");
-      } catch (error) {
-        console.error("Failed to copy:", error);
-        alert("Failed to copy link");
-      }
-    }
   };
 
   const handleCreateGame = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    //TODO: Do we need  this check , i think this page wont load if user is not authenticated.
     if (!userReferenceId) {
       alert("User not authenticated. Please sign in.");
       return;
@@ -136,8 +59,6 @@ export default function Play() {
       initialTimeSeconds: timeControl.time,
       incrementSeconds: timeControl.increment,
     };
-
-    console.log("Creating game with:", gameData);
 
     try {
       // Call API to create game in database
@@ -157,25 +78,13 @@ export default function Play() {
       }
 
       const gameRef = data.data.game.referenceId;
-      setGameReferenceId(gameRef);
+      console.log("Redirecting to game:", gameRef);
 
-      // Generate and display join link
-      const link = `http://localhost:3000/join/${gameRef}`;
-      setJoinLink(link);
-      console.log("Join link generated:", link);
-
-      //TODO: Why are we sening a join_game event on this page, just redirect to the /join/[gameReferenceId] page and that page will send the join_game event.
-      // even the opponent is doing the same thing.
-      // Join the game via WebSocket
-      if (socketRef.current?.connected) {
-        router.push(`/game/${gameRef}`);
-      } else {
-        console.error("WebSocket not connected");
-        //alert("WebSocket connection failed. Please refresh and try again.");
-      }
+      // Redirect to game page - WebSocket connection will be established there
+      router.push(`/game/${gameRef}`);
     } catch (error) {
       console.error("Error creating game:", error);
-      //alert(error instanceof Error ? error.message : "Failed to create game");
+      alert(error instanceof Error ? error.message : "Failed to create game");
     }
   };
 
@@ -220,35 +129,6 @@ export default function Play() {
             Play
           </Button>
         </form>
-        {gameReferenceId && (
-          <div className="mt-6 w-full max-w-md">
-            <div className="bg-neutral-800 rounded-lg p-6">
-              <h3 className="text-white text-lg font-semibold mb-3">
-                {waitingForOpponent
-                  ? "Waiting for opponent..."
-                  : "Share this link:"}
-              </h3>
-              <div className="flex items-center gap-2 bg-neutral-700 rounded p-3">
-                <div className="text-white text-sm flex-1 overflow-x-auto break-all">
-                  {joinLink}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="text-white hover:text-gray-300 cursor-pointer p-2 flex-shrink-0"
-                  title="Copy link"
-                >
-                  <IoCopyOutline size={20} />
-                </button>
-              </div>
-              {waitingForOpponent && (
-                <div className="mt-4 text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent" />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

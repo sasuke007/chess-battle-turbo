@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       include: {
         wallet: true,
         stats: true,
+        chessComProfile: true,
       },
     });
 
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
         include: {
           wallet: true,
           stats: true,
+          chessComProfile: true,
         },
       });
     } else {
@@ -95,7 +97,7 @@ export async function POST(req: NextRequest) {
       }
 
       user = await prisma.$transaction(async (tx) => {
-        // Create user
+        // Create user (marked as onboarded immediately)
         const newUser = await tx.user.create({
           data: {
             googleId: userId,
@@ -104,6 +106,7 @@ export async function POST(req: NextRequest) {
             code: userCode,
             profilePictureUrl,
             isActive: true,
+            onboarded: true,
           },
         });
 
@@ -139,6 +142,7 @@ export async function POST(req: NextRequest) {
           include: {
             wallet: true,
             stats: true,
+            chessComProfile: true,
           },
         });
       });
@@ -172,6 +176,12 @@ export async function POST(req: NextRequest) {
         longestWinStreak: user.stats.longestWinStreak,
         averageGameDuration: user.stats.averageGameDuration,
         lastPlayedAt: user.stats.lastPlayedAt?.toISOString() || null,
+      } : null,
+      chessComProfile: user?.chessComProfile ? {
+        referenceId: user.chessComProfile.referenceId,
+        chessComHandle: user.chessComProfile.chessComHandle,
+        rapidRating: user.chessComProfile.rapidRating,
+        blitzRating: user.chessComProfile.blitzRating,
       } : null,
     };
 

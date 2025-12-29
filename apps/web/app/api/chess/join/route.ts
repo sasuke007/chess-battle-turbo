@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { z } from "zod";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 const joinGameSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
