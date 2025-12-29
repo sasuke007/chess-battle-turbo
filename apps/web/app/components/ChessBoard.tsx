@@ -18,6 +18,7 @@ type ChessProps = {
   legalMoves?: Square[];
   onSquareClick?: (square: Square) => void;
   isInteractive?: boolean;
+  playerColor?: Color | null;
 };
 
 //TODO: Give white some shade of white , give black some shade of black.
@@ -33,11 +34,24 @@ const ChessBoard = ({
   legalMoves = [],
   onSquareClick,
   isInteractive = true,
+  playerColor = "w",
 }: ChessProps) => {
+  // Flip the board if player is black
+  const displayBoard = playerColor === "b" 
+    ? [...board].reverse().map(row => [...row].reverse())
+    : board;
+
   // Convert row and column index to chess square notation (e.g., e2, e4)
   const getSquareNotation = (rowIndex: number, columnIndex: number): Square => {
     const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
     const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
+    
+    // Adjust indices if board is flipped for black player
+    if (playerColor === "b") {
+      rowIndex = 7 - rowIndex;
+      columnIndex = 7 - columnIndex;
+    }
+    
     return `${files[columnIndex]}${ranks[rowIndex]}` as Square;
   };
 
@@ -56,7 +70,7 @@ const ChessBoard = ({
         "w-fit h-fit" // This makes the div only take up the necessary width and height
       )}
     >
-      {board.map((row, rowIndex) => (
+      {displayBoard.map((row, rowIndex) => (
         <div key={rowIndex} className={cn("flex")}>
           {row.map((square, columnIndex) => {
             const squareNotation = getSquareNotation(rowIndex, columnIndex);

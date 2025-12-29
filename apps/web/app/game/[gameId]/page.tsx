@@ -254,6 +254,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 selectedSquare={selectedSquare}
                 legalMoves={legalMoves}
                 onSquareClick={handleSquareClick}
+                playerColor={myColor}
               />
             </div>
 

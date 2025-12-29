@@ -86,7 +86,7 @@ export class GameSession {
   public isGameStarted(): boolean {
     return this.gameStarted;
   }
-
+  
   /**
    * Add a player to the game session
    */
@@ -156,10 +156,15 @@ export class GameSession {
 
     this.gameStarted = true;
 
-    // Assign colors - creator is always white for now
-    // (can be randomized later if needed)
-    this.whitePlayer = this.creatorPlayer;
-    this.blackPlayer = this.opponentPlayer;
+    // Randomly assign colors to players
+    const creatorGetsWhite = Math.random() < 0.5;
+    if (creatorGetsWhite) {
+      this.whitePlayer = this.creatorPlayer;
+      this.blackPlayer = this.opponentPlayer;
+    } else {
+      this.whitePlayer = this.opponentPlayer;
+      this.blackPlayer = this.creatorPlayer;
+    }
     this.whitePlayer.color = "w";
     this.blackPlayer.color = "b";
 

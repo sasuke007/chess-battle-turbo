@@ -22,9 +22,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = moveSchema.parse(body);
 
-    // 2. Find game
+    // 2. Find game with user relations to get reference IDs
     const game = await prisma.game.findUnique({
       where: { referenceId: validatedData.gameReferenceId },
+      include: {
+        creator: true,
+        opponent: true,
+      },
     });
 
     if (!game) {
@@ -42,9 +46,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Verify user is part of the game
-    const isCreator = game.creatorId.toString() === validatedData.userReferenceId;
-    const isOpponent = game.opponentId?.toString() === validatedData.userReferenceId;
+    // 4. Verify user is part of the game (compare reference IDs)
+    const isCreator = game.creator.referenceId === validatedData.userReferenceId;
+    const isOpponent = game.opponent?.referenceId === validatedData.userReferenceId;
 
     if (!isCreator && !isOpponent) {
       return NextResponse.json(
