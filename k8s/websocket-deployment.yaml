@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chess-battle-websocket
+  namespace: chess-battle
+  labels:
+    app: chess-battle-websocket
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chess-battle-websocket
+  template:
+    metadata:
+      labels:
+        app: chess-battle-websocket
+        component: backend
+    spec:
+      containers:
+      - name: websocket
+        image: your-registry/chess-battle-websocket:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3002
+          name: websocket
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3002"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: chess-battle-secrets
+              key: DATABASE_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chess-battle-websocket-service
+  namespace: chess-battle
+  labels:
+    app: chess-battle-websocket
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3002
+    protocol: TCP
+    name: websocket
+  selector:
+    app: chess-battle-websocket
+  # Enable session affinity for WebSocket connections
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+

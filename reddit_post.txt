@@ -1,0 +1,20 @@
+I’m building a way to play those "Pause the Video" moments from Agadmator with your friends 
+
+
+Hey everyone,
+
+I’ve always had this frustration: I’ll be watching an Agadmator video, I’ll pause it, find the “winning” move, and then... that’s it. In a real game, finding the move is only half the battle. You still have to actually convert the win, which is way harder than it looks (especially for us mere mortals).
+
+So, I’m building a chess app focused entirely on endgames and critical positions.
+
+The two main features so far:
+
+    Agadmator Mode: I’m feeding in all the "pause the video" moments from the channel so you can jump straight into the position and play it out against a friend online**.**
+
+    FIDE Scenarios: It pulls random endgame positions from actual pro games to see if you can hold the draw or find the mate under pressure.
+
+I’m aiming to launch the beta in about 15 days.(15th Jan)
+
+I’d love your feedback: What else would make this actually useful for your training?
+
+Cheers!!
