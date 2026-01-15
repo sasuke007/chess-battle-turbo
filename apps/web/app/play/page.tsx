@@ -89,6 +89,7 @@ export default function Play() {
         await navigator.clipboard.writeText(joinUrl);
         console.log("Join URL copied to clipboard:", joinUrl);
         // Optional: Show a success message to user
+        //TODO: Rather than showing this as an alert a good popup should open before being redirected.
         alert("Game link copied to clipboard! Share it with your friend.");
       } catch (clipboardError) {
         console.error("Failed to copy to clipboard:", clipboardError);

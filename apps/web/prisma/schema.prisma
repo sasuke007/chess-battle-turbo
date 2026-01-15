@@ -8,6 +8,217 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                BigInt           @id @default(autoincrement())
+  referenceId       String           @unique @default(cuid())
+  code              String           @unique
+  googleId          String           @unique
+  email             String           @unique
+  name              String
+  profilePictureUrl String?
+  dateOfBirth       DateTime?
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  onboarded         Boolean          @default(false)
+  chessComProfile   ChessComProfile?
+  gamesAsCreator    Game[]           @relation("CreatorGames")
+  gamesAsOpponent   Game[]           @relation("OpponentGames")
+  gamesWon          Game[]           @relation("WinnerGames")
+  transactions      Transaction[]
+  stats             UserStats?
+  wallet            Wallet?
+
+  @@index([googleId])
+  @@index([email])
+  @@index([code])
+  @@index([referenceId])
+  @@map("users")
+}
+
+model Wallet {
+  id           BigInt   @id @default(autoincrement())
+  referenceId  String   @unique @default(cuid())
+  userId       BigInt   @unique
+  balance      Decimal  @default(0) @db.Decimal(19, 2)
+  lockedAmount Decimal  @default(0) @db.Decimal(19, 2)
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([referenceId])
+  @@map("wallets")
+}
+
+model Transaction {
+  id           BigInt            @id @default(autoincrement())
+  referenceId  String            @unique @default(cuid())
+  userId       BigInt
+  gameId       BigInt?
+  type         TransactionType
+  amount       Decimal           @db.Decimal(19, 2)
+  balanceAfter Decimal           @db.Decimal(19, 2)
+  status       TransactionStatus @default(PENDING)
+  metadata     Json?
+  description  String
+  createdAt    DateTime          @default(now())
+  game         Game?             @relation(fields: [gameId], references: [id])
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([gameId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([referenceId])
+  @@map("transactions")
+}
+
+model Game {
+  id                    BigInt        @id @default(autoincrement())
+  referenceId           String        @unique @default(cuid())
+  creatorId             BigInt
+  opponentId            BigInt?
+  stakeAmount           Decimal       @db.Decimal(19, 2)
+  totalPot              Decimal       @db.Decimal(19, 2)
+  platformFeePercentage Decimal       @db.Decimal(5, 2)
+  platformFeeAmount     Decimal       @db.Decimal(19, 2)
+  status                GameStatus    @default(WAITING_FOR_OPPONENT)
+  result                GameResult?
+  winnerId              BigInt?
+  chessPositionId       BigInt?
+  startingFen           String
+  initialTimeSeconds    Int
+  incrementSeconds      Int
+  creatorTimeRemaining  Int
+  opponentTimeRemaining Int
+  lastMoveAt            DateTime?
+  gameData              Json?
+  expiresAt             DateTime
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  creator               User          @relation("CreatorGames", fields: [creatorId], references: [id], onDelete: Cascade)
+  opponent              User?         @relation("OpponentGames", fields: [opponentId], references: [id], onDelete: Cascade)
+  winner                User?         @relation("WinnerGames", fields: [winnerId], references: [id])
+  transactions          Transaction[]
+
+  @@index([creatorId])
+  @@index([opponentId])
+  @@index([winnerId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([referenceId])
+  @@index([chessPositionId])
+  @@map("games")
+}
+
+model UserStats {
+  id                    BigInt    @id @default(autoincrement())
+  referenceId           String    @unique @default(cuid())
+  userId                BigInt    @unique
+  totalGamesPlayed      Int       @default(0)
+  gamesWon              Int       @default(0)
+  gamesLost             Int       @default(0)
+  gamesDrawn            Int       @default(0)
+  totalMoneyWon         Decimal   @default(0) @db.Decimal(19, 2)
+  totalMoneyLost        Decimal   @default(0) @db.Decimal(19, 2)
+  totalPlatformFeesPaid Decimal   @default(0) @db.Decimal(19, 2)
+  netProfit             Decimal   @default(0) @db.Decimal(19, 2)
+  currentWinStreak      Int       @default(0)
+  longestWinStreak      Int       @default(0)
+  averageGameDuration   Int?
+  lastPlayedAt          DateTime?
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([referenceId])
+  @@map("user_stats")
+}
+
+model ChessComProfile {
+  id               BigInt   @id @default(autoincrement())
+  referenceId      String   @unique @default(cuid())
+  userId           BigInt   @unique
+  chessComHandle   String   @unique
+  rapidRating      Int?
+  rapidBestRating  Int?
+  rapidWins        Int?
+  rapidLosses      Int?
+  rapidDraws       Int?
+  blitzRating      Int?
+  blitzBestRating  Int?
+  blitzWins        Int?
+  blitzLosses      Int?
+  blitzDraws       Int?
+  bulletRating     Int?
+  bulletBestRating Int?
+  bulletWins       Int?
+  bulletLosses     Int?
+  bulletDraws      Int?
+  dailyRating      Int?
+  dailyBestRating  Int?
+  dailyWins        Int?
+  dailyLosses      Int?
+  dailyDraws       Int?
+  lastSyncedAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([chessComHandle])
+  @@index([referenceId])
+  @@map("chess_com_profiles")
+}
+
+model ChessPosition {
+  id          BigInt @id @default(autoincrement())
+  referenceId String @unique @default(cuid())
+
+  // ===== REQUIRED FIELDS (Minimum data needed) =====
+  fen        String
+  sideToMove String
+
+  // ===== OPTIONAL CORE DATA =====
+  pgn        String?
+  moveNumber Int?
+
+  // ===== PLAYER INFO (All nullable) =====
+  whitePlayerName     String?
+  blackPlayerName     String?
+  whitePlayerMetadata Json?
+  blackPlayerMetadata Json?
+
+  // ===== GAME METADATA (All nullable) =====
+  tournamentName String?
+  eventDate      DateTime?
+  gameMetadata   Json?
+
+  // ===== POSITION INFO (Optional but recommended) =====
+  positionType    String?
+  positionContext Json?
+
+  // ===== SOURCE (Track where it came from) =====
+  sourceType     String @default("manual")
+  sourceMetadata Json?
+
+  // ===== ENGAGEMENT & SYSTEM =====
+  timesPlayed     Int      @default(0)
+  popularityScore Float?
+  featured        Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([referenceId])
+  @@index([sourceType])
+  @@index([featured])
+  @@index([isActive])
+  @@map("chess_positions")
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -38,198 +249,4 @@ enum GameResult {
   DRAW
   CREATOR_TIMEOUT
   OPPONENT_TIMEOUT
-}
-
-// ============================================
-// MODELS
-// ============================================
-
-model User {
-  id                 BigInt   @id @default(autoincrement())
-  referenceId        String   @unique @default(cuid())
-  code               String   @unique
-  googleId           String   @unique
-  email              String   @unique
-  name               String
-  profilePictureUrl  String?
-  dateOfBirth        DateTime?
-  onboarded          Boolean  @default(false)
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Relations
-  wallet             Wallet?
-  transactions       Transaction[]
-  gamesAsCreator     Game[]        @relation("CreatorGames")
-  gamesAsOpponent    Game[]        @relation("OpponentGames")
-  gamesWon           Game[]        @relation("WinnerGames")
-  stats              UserStats?
-  chessComProfile    ChessComProfile?
-
-  @@index([googleId])
-  @@index([email])
-  @@index([code])
-  @@index([referenceId])
-  @@map("users")
-}
-
-model Wallet {
-  id            BigInt   @id @default(autoincrement())
-  referenceId   String   @unique @default(cuid())
-  userId        BigInt   @unique
-  balance       Decimal  @default(0) @db.Decimal(19, 2)
-  lockedAmount  Decimal  @default(0) @db.Decimal(19, 2)
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([referenceId])
-  @@map("wallets")
-}
-
-model Transaction {
-  id            BigInt            @id @default(autoincrement())
-  referenceId   String            @unique @default(cuid())
-  userId        BigInt
-  gameId        BigInt?
-  type          TransactionType
-  amount        Decimal           @db.Decimal(19, 2)
-  balanceAfter  Decimal           @db.Decimal(19, 2)
-  status        TransactionStatus @default(PENDING)
-  metadata      Json?
-  description   String
-  createdAt     DateTime          @default(now())
-
-  // Relations
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game          Game?             @relation(fields: [gameId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([gameId])
-  @@index([createdAt])
-  @@index([status])
-  @@index([referenceId])
-  @@map("transactions")
-}
-
-model Game {
-  id                      BigInt      @id @default(autoincrement())
-  referenceId             String      @unique @default(cuid())
-  creatorId               BigInt
-  opponentId              BigInt?
-  stakeAmount             Decimal     @db.Decimal(19, 2)
-  totalPot                Decimal     @db.Decimal(19, 2)
-  platformFeePercentage   Decimal     @db.Decimal(5, 2)
-  platformFeeAmount       Decimal     @db.Decimal(19, 2)
-  status                  GameStatus  @default(WAITING_FOR_OPPONENT)
-  result                  GameResult?
-  winnerId                BigInt?
-  
-  // Time control fields
-  initialTimeSeconds      Int
-  incrementSeconds        Int
-  creatorTimeRemaining    Int
-  opponentTimeRemaining   Int
-  lastMoveAt              DateTime?
-  
-  // Game data
-  gameData                Json?
-  
-  // Timestamps
-  expiresAt               DateTime
-  startedAt               DateTime?
-  completedAt             DateTime?
-  createdAt               DateTime    @default(now())
-  updatedAt               DateTime    @updatedAt
-
-  // Relations
-  creator                 User        @relation("CreatorGames", fields: [creatorId], references: [id], onDelete: Cascade)
-  opponent                User?       @relation("OpponentGames", fields: [opponentId], references: [id], onDelete: Cascade)
-  winner                  User?       @relation("WinnerGames", fields: [winnerId], references: [id], onDelete: SetNull)
-  transactions            Transaction[]
-
-  @@index([creatorId])
-  @@index([opponentId])
-  @@index([winnerId])
-  @@index([status])
-  @@index([expiresAt])
-  @@index([referenceId])
-  @@map("games")
-}
-
-model UserStats {
-  id                      BigInt    @id @default(autoincrement())
-  referenceId             String    @unique @default(cuid())
-  userId                  BigInt    @unique
-  totalGamesPlayed        Int       @default(0)
-  gamesWon                Int       @default(0)
-  gamesLost               Int       @default(0)
-  gamesDrawn              Int       @default(0)
-  totalMoneyWon           Decimal   @default(0) @db.Decimal(19, 2)
-  totalMoneyLost          Decimal   @default(0) @db.Decimal(19, 2)
-  totalPlatformFeesPaid   Decimal   @default(0) @db.Decimal(19, 2)
-  netProfit               Decimal   @default(0) @db.Decimal(19, 2)
-  currentWinStreak        Int       @default(0)
-  longestWinStreak        Int       @default(0)
-  averageGameDuration     Int?
-  lastPlayedAt            DateTime?
-  updatedAt               DateTime  @updatedAt
-
-  // Relations
-  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([referenceId])
-  @@map("user_stats")
-}
-
-model ChessComProfile {
-  id                      BigInt    @id @default(autoincrement())
-  referenceId             String    @unique @default(cuid())
-  userId                  BigInt    @unique
-  chessComHandle          String    @unique
-  
-  // Rapid stats
-  rapidRating             Int?
-  rapidBestRating         Int?
-  rapidWins               Int?
-  rapidLosses             Int?
-  rapidDraws              Int?
-  
-  // Blitz stats  
-  blitzRating             Int?
-  blitzBestRating         Int?
-  blitzWins               Int?
-  blitzLosses             Int?
-  blitzDraws              Int?
-  
-  // Bullet stats (optional)
-  bulletRating            Int?
-  bulletBestRating        Int?
-  bulletWins              Int?
-  bulletLosses            Int?
-  bulletDraws             Int?
-  
-  // Daily chess stats (optional)
-  dailyRating             Int?
-  dailyBestRating         Int?
-  dailyWins               Int?
-  dailyLosses             Int?
-  dailyDraws              Int?
-  
-  // Metadata
-  lastSyncedAt            DateTime  @default(now())
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-
-  // Relations
-  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([chessComHandle])
-  @@index([referenceId])
-  @@map("chess_com_profiles")
 }

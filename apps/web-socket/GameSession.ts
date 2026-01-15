@@ -36,13 +36,9 @@ export class GameSession {
   constructor(gameData: GameData) {
     this.gameData = gameData;
 
-    // Initialize chess instance
-    this.chess = new Chess();
+    // Initialize chess instance with the starting FEN from database
+    this.chess = new Chess(gameData.startingFen);
 
-    // If game has existing data, load it
-    if (gameData.gameData?.fen) {
-      this.chess.load(gameData.gameData.fen);
-    }
 
     // Initialize clock manager
     this.clockManager = new ClockManager(
@@ -63,7 +59,7 @@ export class GameSession {
       this.handleTimeout(color);
     });
 
-    console.log(`GameSession created for game ${gameData.referenceId}`);
+    console.log(`GameSession created for game ${gameData.referenceId} with starting FEN: ${gameData.startingFen}`);
   }
 
   public async setGameData(gameData: GameData): Promise<void> {

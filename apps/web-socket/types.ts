@@ -19,6 +19,8 @@ export interface GameData {
   stakeAmount: string;
   totalPot: string;
   platformFeeAmount: string;
+  chessPositionId: string | null;
+  startingFen: string;
   initialTimeSeconds: number;
   incrementSeconds: number;
   creatorTimeRemaining: number;

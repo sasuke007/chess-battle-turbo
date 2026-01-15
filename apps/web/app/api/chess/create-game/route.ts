@@ -1,7 +1,8 @@
 import {NextRequest, NextResponse} from "next/server";
 import {Decimal} from "@prisma/client/runtime/library";
 import {z} from "zod";
-import {prisma} from "../../../../lib/prisma";
+import {prisma} from "@/lib/prisma";
+import {getRandomChessPosition, incrementPositionPlayCount} from "@/lib/services/chess-position.service";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -76,11 +77,13 @@ async function createGameTransaction(
   walletBalance: Decimal,
   walletLockedAmount: Decimal,
   request: CreateGameRequest,
+  chessPositionId: bigint | null,
+  startingFen: string,
 ) {
   const amounts = calculateGameAmounts(request.stakeAmount);
   const expiresAt = calculateExpirationTime(1);
 
-  return await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     // Create game
     const game = await tx.game.create({
       data: {
@@ -89,6 +92,8 @@ async function createGameTransaction(
         totalPot: amounts.totalPot,
         platformFeePercentage: amounts.platformFeePercentage,
         platformFeeAmount: amounts.platformFeeAmount,
+        chessPositionId,
+        startingFen,
         initialTimeSeconds: request.initialTimeSeconds,
         incrementSeconds: request.incrementSeconds,
         creatorTimeRemaining: request.initialTimeSeconds,
@@ -118,13 +123,13 @@ async function createGameTransaction(
 
     // Update wallet - lock the stake amount
     const updatedWallet = await tx.wallet.update({
-      where: { userId },
+      where: {userId},
       data: {
         lockedAmount: newLockedAmount,
       },
     });
 
-    return { game, transaction, wallet: updatedWallet };
+    return {game, transaction, wallet: updatedWallet};
   });
 }
 
@@ -158,6 +163,15 @@ export async function POST(request: NextRequest) {
       amounts.stakeAmountDecimal
     );
 
+    // 5. Fetch random chess position
+    const chessPosition = await getRandomChessPosition();
+
+    // Default starting position FEN if no chess position found
+    const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+    const chessPositionId = chessPosition?.id ?? null;
+    const startingFen = chessPosition?.fen ?? DEFAULT_STARTING_FEN;
+
     // 6. Execute transaction
     const result = await createGameTransaction(
       user.id,
@@ -165,9 +179,16 @@ export async function POST(request: NextRequest) {
       new Decimal(user.wallet!.balance),
       new Decimal(user.wallet!.lockedAmount),
       validatedData,
+      chessPositionId,
+      startingFen,
     );
 
-    // 7. Return success response
+    // 7. Increment position play count if a position was used
+    if (chessPositionId) {
+      await incrementPositionPlayCount(chessPositionId);
+    }
+
+    // 8. Return success response
     return NextResponse.json(
       {
         success: true,
@@ -178,6 +199,8 @@ export async function POST(request: NextRequest) {
             stakeAmount: result.game.stakeAmount.toString(),
             totalPot: result.game.totalPot.toString(),
             platformFeeAmount: result.game.platformFeeAmount.toString(),
+            startingFen: result.game.startingFen,
+            chessPositionId: result.game.chessPositionId?.toString() ?? null,
             initialTimeSeconds: result.game.initialTimeSeconds,
             incrementSeconds: result.game.incrementSeconds,
             status: result.game.status,
