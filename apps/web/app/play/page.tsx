@@ -35,6 +35,7 @@ export default function Play() {
     increment: 5,
   });
   const [bettingAmount, setBettingAmount] = useState(100);
+  const [isCreatingGame, setIsCreatingGame] = useState(false);
 
   const handleMove = (
     square: { square: Square; type: PieceSymbol; color: Color } | null
@@ -49,6 +50,8 @@ export default function Play() {
       alert("User not authenticated. Please sign in.");
       return;
     }
+
+    setIsCreatingGame(true);
 
     console.log("Creating game with:", bettingAmount);
     console.log("Time control:", timeControl);
@@ -80,11 +83,25 @@ export default function Play() {
       const gameRef = data.data.game.referenceId;
       console.log("Redirecting to game:", gameRef);
 
+      // Copy join URL to clipboard
+      const joinUrl = `${window.location.origin}/join/${gameRef}`;
+      try {
+        await navigator.clipboard.writeText(joinUrl);
+        console.log("Join URL copied to clipboard:", joinUrl);
+        // Optional: Show a success message to user
+        alert("Game link copied to clipboard! Share it with your friend.");
+      } catch (clipboardError) {
+        console.error("Failed to copy to clipboard:", clipboardError);
+        // Fallback: Show the URL to user if clipboard fails
+        alert(`Share this link with your friend: ${joinUrl}`);
+      }
+
       // Redirect to game page - WebSocket connection will be established there
       router.push(`/game/${gameRef}`);
     } catch (error) {
       console.error("Error creating game:", error);
       alert(error instanceof Error ? error.message : "Failed to create game");
+      setIsCreatingGame(false);
     }
   };
 
@@ -124,9 +141,17 @@ export default function Play() {
           <Button
             type="submit"
             size="lg"
-            className="w-full bg-white text-black hover:bg-gray-200 font-semibold text-lg py-6"
+            disabled={isCreatingGame}
+            className="w-full bg-white text-black hover:bg-gray-200 font-semibold text-lg py-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Play
+            {isCreatingGame ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <span>Creating Game...</span>
+              </div>
+            ) : (
+              "Play"
+            )}
           </Button>
         </form>
       </div>
