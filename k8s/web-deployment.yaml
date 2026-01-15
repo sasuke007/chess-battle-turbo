@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: your-registry/chess-battle-web:latest
+        image: sasuke0007/chess-battle-web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -52,8 +52,8 @@ spec:
               key: NEXT_PUBLIC_WEBSOCKET_URL
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "100m"
           limits:
             memory: "512Mi"
             cpu: "500m"
@@ -82,8 +82,12 @@ metadata:
   namespace: chess-battle
   labels:
     app: chess-battle-web
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "chess-battle-lb"
+    service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
+    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "false"
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 80
     targetPort: 3000

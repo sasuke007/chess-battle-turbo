@@ -2,6 +2,7 @@ import Hero from "./components/Hero";
 import { HowToPlay } from "./components/HowToPlay";
 import { Navbar } from "./components/Navbar";
 import { Testimonials } from "./components/Testimonials";
+import { AgadmatorFeature } from "./components/AgadmatorFeature";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
           <Hero />
         </div>
         <HowToPlay/>
+        <AgadmatorFeature />
         <Testimonials />
       </div>
     </>

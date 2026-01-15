@@ -31,7 +31,6 @@ COPY --from=deps /app/packages ./packages
 
 # Copy source code
 COPY . .
-COPY apps/web ./apps/web
 
 # Set working directory to web app
 WORKDIR /app/apps/web
@@ -42,15 +41,20 @@ RUN npx prisma generate
 # Build arguments for environment variables
 ARG DATABASE_URL
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL
 ARG CLERK_SECRET_KEY
 ARG NEXT_PUBLIC_WEBSOCKET_URL
 
 # Set environment variables for build
 ENV DATABASE_URL=$DATABASE_URL
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
 ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
 ENV NEXT_PUBLIC_WEBSOCKET_URL=$NEXT_PUBLIC_WEBSOCKET_URL
 ENV NODE_ENV=production
+
+# Debug: Print environment variables (remove in production)
+RUN echo "Building with NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
 
 # Build the application
 RUN pnpm build

@@ -8,31 +8,31 @@ export const HowToPlay = () => {
   const steps = [
     {
       number: "01",
-      title: "Create a Game",
+      title: "Choose a Legendary Position",
       description:
-        "Set your bet amount and create a chess game. Get a unique shareable link instantly.",
-      icon: "🎮",
+        "Select from iconic chess positions from the greatest games in history. Kasparov, Carlsen, Morphy, and more.",
+      icon: "⚡",
     },
     {
       number: "02",
-      title: "Invite Your Friend",
+      title: "Share With Your Friend",
       description:
-        "Share the game link with your friend. They'll match your bet to join the battle.",
+        "Get a unique link to the position and challenge your friend to battle from that critical moment.",
       icon: "🔗",
     },
     {
       number: "03",
-      title: "Play Chess",
+      title: "Play the Position",
       description:
-        "Battle it out on the board. Use your strategy and skills to outplay your opponent.",
+        "Step into the shoes of chess legends. Navigate through the same critical decisions they faced.",
       icon: "♟️",
     },
     {
       number: "04",
-      title: "Winner Takes All",
+      title: "Master the Classics",
       description:
-        "Checkmate your opponent and claim the entire prize pool. Glory and rewards await!",
-      icon: "🏆",
+        "Learn from the best games ever played. Experience tactical brilliance and strategic mastery firsthand.",
+      icon: "👑",
     },
   ];
 
@@ -53,8 +53,7 @@ export const HowToPlay = () => {
             </span>
           </h2>
           <p className="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto">
-            Challenge your friends in competitive chess battles and win real
-            money
+            Relive legendary chess moments and challenge your friends from the most critical positions in chess history
           </p>
         </motion.div>
 
