@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider waitlistUrl="/waitlist">
+    <ClerkProvider>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} bg-neutral-900`}
