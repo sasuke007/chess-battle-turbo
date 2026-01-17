@@ -35,7 +35,11 @@ COPY . .
 # Set working directory to web app
 WORKDIR /app/apps/web
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Generate Prisma Client
+# Prisma will auto-detect the correct binary for Alpine Linux (linux-musl)
 RUN npx prisma generate
 
 # Build arguments for environment variables

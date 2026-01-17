@@ -7,10 +7,10 @@ metadata:
     # Ingress class for nginx controller
     kubernetes.io/ingress.class: "nginx"
 
-    # SSL/TLS Configuration
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # SSL/TLS Configuration (disabled for IP-based access)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
 
     # WebSocket Support
     nginx.ingress.kubernetes.io/websocket-services: "chess-battle-websocket-service"
@@ -40,37 +40,14 @@ metadata:
 
 spec:
   ingressClassName: nginx
-  tls:
-  - hosts:
-    - your-domain.com
-    - www.your-domain.com
-    secretName: chess-battle-tls
+  # TLS disabled for IP-based access (re-enable when you have a domain)
+  # tls:
+  # - hosts:
+  #   - your-domain.com
+  #   secretName: chess-battle-tls
   rules:
-  - host: your-domain.com
-    http:
-      paths:
-      # IMPORTANT: Order matters! More specific paths first
-
-      # 1. WebSocket path (most specific)
-      - path: /socket.io
-        pathType: Prefix
-        backend:
-          service:
-            name: chess-battle-websocket-service
-            port:
-              number: 80
-
-      # 2. Main web application (catch-all - must be last)
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: chess-battle-web-service
-            port:
-              number: 80
-
-  - host: www.your-domain.com
-    http:
+  # Default rule (no host specified - works with IP: http://152.42.146.137)
+  - http:
       paths:
       # IMPORTANT: Order matters! More specific paths first
 
