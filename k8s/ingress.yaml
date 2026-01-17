@@ -4,25 +4,42 @@ metadata:
   name: chess-battle-ingress
   namespace: chess-battle
   annotations:
-    # For Digital Ocean Load Balancer
+    # Ingress class for nginx controller
     kubernetes.io/ingress.class: "nginx"
+
+    # SSL/TLS Configuration
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    
-    # WebSocket specific annotations
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # WebSocket Support
     nginx.ingress.kubernetes.io/websocket-services: "chess-battle-websocket-service"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    
-    # Enable CORS if needed
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+
+    # Enable WebSocket upgrade headers
+    nginx.ingress.kubernetes.io/proxy-set-headers: "ingress-nginx/custom-headers"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+
+    # CORS Configuration
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    
-    # SSL Redirect
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+
+    # Rate limiting (optional - adjust as needed)
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - your-domain.com
@@ -32,7 +49,9 @@ spec:
   - host: your-domain.com
     http:
       paths:
-      # WebSocket path
+      # IMPORTANT: Order matters! More specific paths first
+
+      # 1. WebSocket path (most specific)
       - path: /socket.io
         pathType: Prefix
         backend:
@@ -40,7 +59,8 @@ spec:
             name: chess-battle-websocket-service
             port:
               number: 80
-      # Main web application (catch-all)
+
+      # 2. Main web application (catch-all - must be last)
       - path: /
         pathType: Prefix
         backend:
@@ -48,10 +68,13 @@ spec:
             name: chess-battle-web-service
             port:
               number: 80
+
   - host: www.your-domain.com
     http:
       paths:
-      # WebSocket path
+      # IMPORTANT: Order matters! More specific paths first
+
+      # 1. WebSocket path (most specific)
       - path: /socket.io
         pathType: Prefix
         backend:
@@ -59,7 +82,8 @@ spec:
             name: chess-battle-websocket-service
             port:
               number: 80
-      # Main web application (catch-all)
+
+      # 2. Main web application (catch-all - must be last)
       - path: /
         pathType: Prefix
         backend:

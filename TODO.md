@@ -15,3 +15,9 @@ Write a reddit post describing idea and attach a working waitlist.
 
 Also post a professional post in agadmators video's.
 
+Have to implement game room feature this will be very helpful.
+
+We can also implement a admin mode where you can create your own game rooms($30/month) this will help you to engage your audience and create a chess community.
+
+While I give you a couple of seconds.
+

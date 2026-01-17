@@ -29,7 +29,6 @@ COPY --from=deps /app/packages ./packages
 
 # Copy source code
 COPY apps/web-socket ./apps/web-socket
-COPY tsconfig.json ./
 
 # Set working directory to websocket app
 WORKDIR /app/apps/web-socket
@@ -47,10 +46,18 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
 
-# Copy node_modules and compiled code
-COPY --from=deps /app/apps/web-socket/node_modules ./node_modules
-COPY --from=builder /app/apps/web-socket/dist ./dist
-COPY --from=builder /app/apps/web-socket/package.json ./package.json
+# Copy root node_modules (for hoisted dependencies in monorepo)
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy app-specific node_modules
+COPY --from=deps /app/apps/web-socket/node_modules ./apps/web-socket/node_modules
+
+# Copy compiled code and package.json
+COPY --from=builder /app/apps/web-socket/dist ./apps/web-socket/dist
+COPY --from=builder /app/apps/web-socket/package.json ./apps/web-socket/package.json
+
+# Set working directory to websocket app
+WORKDIR /app/apps/web-socket
 
 # Switch to non-root user
 USER nodejs

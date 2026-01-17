@@ -7,9 +7,6 @@ import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
-
-type GamePageProps = {};
-
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
   const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
@@ -108,8 +105,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     console.log("Initializing WebSocket connection with:", { gameId, userReferenceId });
 
+    // Get WebSocket URL from environment variable or use default
+    const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:3002";
+
     // Initialize WebSocket with reconnection enabled (Socket.IO default)
-    socketRef.current = io("ws://localhost:3002", {
+    socketRef.current = io(WEBSOCKET_URL, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

@@ -82,12 +82,8 @@ metadata:
   namespace: chess-battle
   labels:
     app: chess-battle-web
-  annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "chess-battle-lb"
-    service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
-    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "false"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
   - port: 80
     targetPort: 3000
