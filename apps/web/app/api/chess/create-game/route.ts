@@ -156,12 +156,12 @@ export async function POST(request: NextRequest) {
     // 3. Calculate amounts
     const amounts = calculateGameAmounts(validatedData.stakeAmount);
 
-    // 4. Validate sufficient balance
-    validateSufficientBalance(
-      new Decimal(user.wallet!.balance),
-      new Decimal(user.wallet!.lockedAmount),
-      amounts.stakeAmountDecimal
-    );
+    // 4. Balance validation removed - this is now a legendary position chess site, not a betting site
+    // validateSufficientBalance(
+    //   new Decimal(user.wallet!.balance),
+    //   new Decimal(user.wallet!.lockedAmount),
+    //   amounts.stakeAmountDecimal
+    // );
 
     // 5. Fetch random chess position
     const chessPosition = await getRandomChessPosition();

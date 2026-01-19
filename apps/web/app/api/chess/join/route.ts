@@ -188,13 +188,13 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("You cannot join your own game", 400);
     }
 
-    // 5. Validate opponent has sufficient balance
-    const stakeAmount = new Decimal(game.stakeAmount);
-    validateSufficientBalance(
-      new Decimal(opponent.wallet!.balance),
-      new Decimal(opponent.wallet!.lockedAmount),
-      stakeAmount
-    );
+    // 5. Balance validation removed - this is now a legendary position chess site, not a betting site
+    // const stakeAmount = new Decimal(game.stakeAmount);
+    // validateSufficientBalance(
+    //   new Decimal(opponent.wallet!.balance),
+    //   new Decimal(opponent.wallet!.lockedAmount),
+    //   stakeAmount
+    // );
 
     // 6. Execute join game transaction
     const result = await joinGameTransaction(
