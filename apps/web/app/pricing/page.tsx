@@ -69,7 +69,7 @@ export default function PricingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-neutral-950 text-white relative overflow-x-clip">
+    <div className="min-h-screen bg-neutral-900 text-white relative overflow-x-clip">
       {/* 3D Earth Background */}
       <div className="absolute inset-0 z-0 pointer-events-none hidden md:block">
         <iframe 

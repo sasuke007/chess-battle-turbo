@@ -2,7 +2,7 @@ import { Mail, Star } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="w-full mt-20 border-t border-white/5 bg-neutral-950/50 backdrop-blur-md">
+    <footer className="w-full mt-20 border-t border-white/10 bg-neutral-800/30 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 py-16 lg:py-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
           {/* Brand Section */}
@@ -78,10 +78,10 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="mt-20 pt-10 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
+        <div className="mt-20 pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-[11px] font-medium uppercase tracking-widest text-neutral-500">
             <p>© 2026 Chess Battle Turbo</p>
-            <span className="hidden sm:block w-1 h-1 bg-neutral-800 rounded-full"></span>
+            <span className="hidden sm:block w-1 h-1 bg-neutral-600 rounded-full"></span>
             <p>All Rights Reserved</p>
           </div>
           <div className="flex items-center gap-8">
