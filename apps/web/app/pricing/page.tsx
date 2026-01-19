@@ -114,7 +114,7 @@ export default function PricingPage() {
       {/* Main Content */}
       <div className="relative z-10">
         <main>
-          <section className="py-20">
+          <section className="py-10">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
