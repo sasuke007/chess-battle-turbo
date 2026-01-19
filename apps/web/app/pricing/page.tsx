@@ -6,6 +6,7 @@ import {Footer} from '../components/Footer'
 import {Bot, Check, ChevronDown, Video} from 'lucide-react'
 import {AnimatePresence, motion} from 'motion/react'
 
+//TODO: look at the https://dreamcut.ai/pricing page and the fade in animation when you scroll down implement then using motion/react.
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(true)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -69,125 +70,128 @@ export default function PricingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-white relative overflow-x-clip">
-      {/* 3D Earth Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none hidden md:block">
-        <iframe 
-          src="https://my.spline.design/earthdarkcopy-1cbf68fa878218ca2186a5cd5a59e558/" 
-          frameBorder="0" 
-          width="100%" 
-          height="1000px" 
-          title="3D Earth Background"
-          style={{ backgroundColor: 'rgb(19, 19, 19)', opacity: 0.5 }}
-        />
-      </div>
+    <div className="min-h-screen bg-neutral-900 text-white">
+      <Navbar />
 
+      {/* Hero Section with Video Background */}
+      <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 min-w-full min-h-full w-auto h-auto opacity-[0.3] object-cover"
+        >
+          <source
+            src="/Kings_Gambit_Chess_Board_Animation.mp4"
+            type="video/mp4"
+          />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/30 via-neutral-900/50 to-neutral-900 pointer-events-none"></div>
+        
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
+          <motion.h1 
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-6"
+          >
+            <span className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-800  to-neutral-300">
+              Pricing
+            </span>
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-lg sm:text-xl md:text-2xl text-neutral-400 max-w-2xl"
+          >
+            All-in-one chess creation suite. Powered by AI.
+          </motion.p>
+        </div>
+      </section>
+
+      {/* Main Content */}
       <div className="relative z-10">
-        <Navbar />
+        <main>
+          <section className="py-20">
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-md text-neutral-400 mb-8 mx-auto"
+              >
+                Game Recorder, Position Editor, AI Assistant, Voice Coach, Analysis Generator - all in one powerful package.
+              </motion.p>
 
-        <main className="py-16">
-          {/* Large Title Section */}
-          <div className="max-w-4xl mx-auto h-[0px] sm:h-[40px] sticky top-16 z-20">
-            <motion.h1 
-              initial={{ opacity: 0, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, filter: 'blur(0px)' }}
-              transition={{ duration: 1 }}
-              className="text-[100px] h-[110px] sm:text-[160px] sm:h-[170px] relative text-left left-4 md:left-[26px]"
-            >
-              <span className="absolute inset-0 bg-clip-text text-transparent bg-gradient-to-b from-white/50 to-white/0">
-                Pricing
-              </span>
-            </motion.h1>
-          </div>
-
-          <div className="mt-16">
-            <section className="py-20">
-              <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <motion.h2 
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-3xl sm:text-4xl lg:text-5xl font-normal mb-12"
-                >
-                  All-in-one chess creation suite. Powered by AI.
-                </motion.h2>
-                <motion.p 
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 }}
-                  className="text-md text-neutral-400 mb-8 mx-auto"
-                >
-                  Game Recorder, Position Editor, AI Assistant, Voice Coach, Analysis Generator - all in one powerful package.
-                </motion.p>
-
-                {/* Billing Toggle */}
-                <div className="flex justify-center items-center mb-8">
-                  <span className={`mr-2 ${!isYearly ? 'text-white' : 'text-neutral-400'}`}>Monthly</span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={isYearly}
-                      onChange={() => setIsYearly(!isYearly)}
-                    />
-                    <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                  <span className={`ml-2 ${isYearly ? 'text-white' : 'text-neutral-400'}`}>
-                    Yearly <span className="text-xs ml-2 bg-neutral-800 rounded-lg px-2 py-1 text-white">Save 20%</span>
-                  </span>
-                </div>
+              {/* Billing Toggle */}
+              <div className="flex justify-center items-center mb-8">
+                <span className={`mr-2 ${!isYearly ? 'text-white' : 'text-neutral-400'}`}>Monthly</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={isYearly}
+                    onChange={() => setIsYearly(!isYearly)}
+                  />
+                  <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+                <span className={`ml-2 ${isYearly ? 'text-white' : 'text-neutral-400'}`}>
+                  Yearly <span className="text-xs ml-2 bg-neutral-800 rounded-lg px-2 py-1 text-white">Save 20%</span>
+                </span>
               </div>
+            </div>
 
-              {/* Pricing Cards */}
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {pricingPlans.map((plan, idx) => (
-                  <motion.div
-                    key={plan.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.1 }}
-                    className={`p-4 rounded-2xl flex flex-col max-w-sm md:max-w-none mx-auto w-full backdrop-blur-md transition-all duration-500 hover:scale-[1.02] group overflow-hidden border border-white/5 ${
-                      plan.popular ? 'bg-neutral-700/30' : 'bg-neutral-800/30'
-                    }`}
-                  >
-                    <div className="relative z-10 flex flex-col h-full">
-                      <h3 className="text-sm font-medium text-white mb-2">
-                        {plan.name}
-                      </h3>
-                      <hr className="border-0 h-[1px] bg-white/5 mb-4" />
-                      <div className="mb-4">
-                        <span className="text-lg text-neutral-300">${plan.price}</span>
-                        {plan.originalPrice && <span className="text-sm line-through opacity-50 ml-2">${plan.originalPrice}</span>}
-                        <br />
-                        <span className="text-xs text-neutral-500">{plan.description}</span>
-                      </div>
-                      <ul className="space-y-4 flex-grow mb-8">
-                        {plan.features.map((feature) => (
-                          <li key={feature} className="grid grid-cols-[28px_auto] items-start text-sm text-neutral-300">
-                            <Check className="w-4 h-4 mr-2 mt-1 opacity-30" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <button className={`w-full p-2.5 text-white rounded-xl transition-all duration-500 text-xs font-medium ${
-                        plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg' : 'bg-neutral-950 hover:bg-neutral-900 border border-white/5'
-                      }`}>
-                        {plan.cta}
-                      </button>
+            {/* Pricing Cards */}
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {pricingPlans.map((plan, idx) => (
+                <motion.div
+                  key={plan.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  className={`p-4 rounded-2xl flex flex-col max-w-sm md:max-w-none mx-auto w-full backdrop-blur-md transition-all duration-500 hover:scale-[1.02] group overflow-hidden border border-white/5 ${
+                    plan.popular ? 'bg-neutral-700/30' : 'bg-neutral-800/30'
+                  }`}
+                >
+                  <div className="relative z-10 flex flex-col h-full">
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      {plan.name}
+                    </h3>
+                    <hr className="border-0 h-[1px] bg-white/5 mb-4" />
+                    <div className="mb-4">
+                      <span className="text-lg text-neutral-300">${plan.price}</span>
+                      {plan.originalPrice && <span className="text-sm line-through opacity-50 ml-2">${plan.originalPrice}</span>}
+                      <br />
+                      <span className="text-xs text-neutral-500">{plan.description}</span>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                    <ul className="space-y-4 flex-grow mb-8">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="grid grid-cols-[28px_auto] items-start text-sm text-neutral-300">
+                          <Check className="w-4 h-4 mr-2 mt-1 opacity-30" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button className={`w-full p-2.5 text-white rounded-xl transition-all duration-500 text-xs font-medium ${
+                      plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg' : 'bg-neutral-950 hover:bg-neutral-900 border border-white/5'
+                    }`}>
+                      {plan.cta}
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-              <p className="text-sm text-neutral-500 text-center mt-8 mb-8 max-w-xl mx-auto p-4">
-                Join our community of chess creators and masters. Get priority access to new features and shape the future of chess training.
-              </p>
-            </section>
-          </div>
-        </main>
-
+            <p className="text-sm text-neutral-500 text-center mt-8 mb-8 max-w-xl mx-auto p-4">
+              Join our community of chess creators and masters. Get priority access to new features and shape the future of chess training.
+            </p>
+          </section>
+              </main>
+              
+        {/*TODO: Here we can do supported channels*/}
         {/* Creator Logos */}
         <div className="mt-20">
           <div className="w-full max-w-3xl mx-auto">
