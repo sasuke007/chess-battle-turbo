@@ -3,6 +3,7 @@ import { HowToPlay } from "./components/HowToPlay";
 import { Navbar } from "./components/Navbar";
 import { Testimonials } from "./components/Testimonials";
 import { AgadmatorFeature } from "./components/AgadmatorFeature";
+import { Footer } from "./components/Footer";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         <HowToPlay/>
         <AgadmatorFeature />
         <Testimonials />
+        <Footer />
       </div>
     </>
   );
