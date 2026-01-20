@@ -1,5 +1,6 @@
 "use client";
 
+{/* when user makes a move, move should be visible in ui first and then backend calls should go it feels like a smooth transition*/}
 import { useState, useCallback, useEffect, useRef, use } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";

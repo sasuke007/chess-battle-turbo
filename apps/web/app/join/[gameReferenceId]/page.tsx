@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { CompleteUserObject } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks";
 
+{/* this page will only be shown when user want to play with a friend, the information on this page looks correct */}
+
 interface GameDetails {
   referenceId: string;
   status: string;

@@ -6,9 +6,12 @@ import {getRandomChessPosition, incrementPositionPlayCount} from "@/lib/services
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
-  stakeAmount: z.number().positive("Stake amount must be greater than 0"),
+  stakeAmount: z.number().min(0, "Stake amount must be 0 or greater"),
   initialTimeSeconds: z.number().int().positive("Initial time must be greater than 0"),
   incrementSeconds: z.number().int().min(0, "Increment seconds must be 0 or greater"),
+  gameMode: z.enum(["quick", "friend", "ai"]),
+  playAsLegend: z.boolean(),
+  selectedLegend: z.string().nullable(),
 });
 
 type CreateGameRequest = z.infer<typeof createGameSchema>;
@@ -100,6 +103,11 @@ async function createGameTransaction(
         opponentTimeRemaining: request.initialTimeSeconds,
         expiresAt,
         status: "WAITING_FOR_OPPONENT",
+        gameData: {
+          gameMode: request.gameMode,
+          playAsLegend: request.playAsLegend,
+          selectedLegend: request.selectedLegend,
+        },
       },
     });
 
