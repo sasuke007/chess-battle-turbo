@@ -4,6 +4,11 @@ import {z} from "zod";
 import {prisma} from "@/lib/prisma";
 import {getRandomChessPosition, incrementPositionPlayCount} from "@/lib/services/chess-position.service";
 
+
+//TODO: first fetch the user game payload
+//TODO: then find a game which according to the filters user has selected.
+//TODO: then return a game with all the fields that are required to take decision further.
+
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
   stakeAmount: z.number().min(0, "Stake amount must be 0 or greater"),

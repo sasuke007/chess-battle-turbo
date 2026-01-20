@@ -191,6 +191,8 @@ model ChessPosition {
   blackPlayerName     String?
   whitePlayerMetadata Json?
   blackPlayerMetadata Json?
+  whitePlayerId       BigInt? // FK to Legend if white player is a legend
+  blackPlayerId       BigInt? // FK to Legend if black player is a legend
 
   // ===== GAME METADATA (All nullable) =====
   tournamentName String?
@@ -213,11 +215,60 @@ model ChessPosition {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Relations
+  whiteLegend Legend? @relation("WhiteLegendGames", fields: [whitePlayerId], references: [id], onDelete: SetNull)
+  blackLegend Legend? @relation("BlackLegendGames", fields: [blackPlayerId], references: [id], onDelete: SetNull)
+
   @@index([referenceId])
   @@index([sourceType])
   @@index([featured])
   @@index([isActive])
+  @@index([whitePlayerId])
+  @@index([blackPlayerId])
   @@map("chess_positions")
+}
+
+model Legend {
+  id          BigInt @id @default(autoincrement())
+  referenceId String @unique @default(cuid())
+
+  // ===== BASIC INFORMATION =====
+  name String // Full name (e.g., "Magnus Carlsen")
+  era  String // Chess era (e.g., "Modern Era", "Romantic Era")
+
+  // ===== VISUAL & DISPLAY =====
+  profilePhotoUrl String? // URL to profile image
+
+  // ===== CHESS STATS =====
+  peakRating  Int?    // Peak ELO rating
+  nationality String? // Country code (e.g., "NOR", "USA")
+
+  // ===== DESCRIPTIONS =====
+  shortDescription String  @db.VarChar(500) // 1-2 sentences for cards
+  playingStyle     String? // Description of their style
+
+  // ===== ADDITIONAL INFO =====
+  birthYear Int?
+  deathYear Int? // Null if still alive
+
+  // ===== METADATA AS JSON =====
+  achievements Json? // Array of major titles/achievements
+  famousGames  Json? // Array of notable games with FEN positions
+
+  // ===== ADMIN & ANALYTICS =====
+  isActive Boolean @default(true) // Show/hide from selection
+
+  // ===== TIMESTAMPS =====
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - Games where this legend played
+  gamesAsWhite ChessPosition[] @relation("WhiteLegendGames")
+  gamesAsBlack ChessPosition[] @relation("BlackLegendGames")
+
+  @@index([name])
+  @@index([isActive])
+  @@map("legends")
 }
 
 enum TransactionType {
