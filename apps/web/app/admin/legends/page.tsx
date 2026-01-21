@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/app/components/Navbar";
-import { Plus, Edit2, Save, X } from "lucide-react";
+import { Plus, Edit2, Save, X, Trash2 } from "lucide-react";
 
 interface Legend {
   id: string;
@@ -20,6 +20,7 @@ interface Legend {
   achievements: string[] | null;
   famousGames: { fen: string; description?: string }[] | null;
   isActive: boolean;
+  isVisible: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +37,7 @@ interface LegendFormData {
   deathYear: string;
   achievements: string;
   isActive: boolean;
+  isVisible: boolean;
 }
 
 const initialFormData: LegendFormData = {
@@ -50,6 +52,7 @@ const initialFormData: LegendFormData = {
   deathYear: "",
   achievements: "",
   isActive: true,
+  isVisible: false,
 };
 
 export default function LegendsAdmin() {
@@ -92,7 +95,8 @@ export default function LegendsAdmin() {
       birthYear: legend.birthYear?.toString() || "",
       deathYear: legend.deathYear?.toString() || "",
       achievements: legend.achievements?.join(", ") || "",
-      isActive: legend.isActive,
+      isActive: legend.isActive ?? true,
+      isVisible: legend.isVisible ?? false,
     });
     setShowForm(true);
   };
@@ -107,6 +111,37 @@ export default function LegendsAdmin() {
     setShowForm(false);
     setEditingId(null);
     setFormData(initialFormData);
+  };
+
+  const handleDelete = async (legendId: string, legendName: string) => {
+    if (!confirm(`Are you sure you want to delete ${legendName}? This will remove the legend and unlink any associated chess positions.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/legends/${legendId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Server error response:", text);
+        throw new Error(`Server error: ${response.status} - ${text}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Legend deleted successfully. ${data.data.deletedLegend.gamesAffected} chess positions were unlinked.`);
+        fetchLegends();
+      } else {
+        console.error("API Error:", data);
+        alert(data.error || "Failed to delete legend");
+      }
+    } catch (error) {
+      console.error("Error deleting legend:", error);
+      alert(`Failed to delete legend: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,6 +163,7 @@ export default function LegendsAdmin() {
           ? formData.achievements.split(",").map((a) => a.trim()).filter(Boolean)
           : null,
         isActive: formData.isActive,
+        isVisible: formData.isVisible,
       };
 
       console.log("Sending payload:", payload);
@@ -364,7 +400,21 @@ export default function LegendsAdmin() {
                       className="w-5 h-5 rounded border-white/20 bg-white/5"
                     />
                     <label htmlFor="isActive" className="text-sm font-medium text-neutral-300">
-                      Active (Show in selection)
+                      Active (Enable in system)
+                    </label>
+                  </div>
+
+                  {/* Is Visible */}
+                  <div className="flex items-center gap-3 mt-8">
+                    <input
+                      type="checkbox"
+                      id="isVisible"
+                      checked={formData.isVisible}
+                      onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
+                      className="w-5 h-5 rounded border-white/20 bg-white/5"
+                    />
+                    <label htmlFor="isVisible" className="text-sm font-medium text-neutral-300">
+                      Visible on UI (Show in legend selection)
                     </label>
                   </div>
                 </div>
@@ -482,12 +532,22 @@ export default function LegendsAdmin() {
                       <h3 className="text-lg font-semibold text-white">{legend.name}</h3>
                       <p className="text-sm text-neutral-400">{legend.era}</p>
                     </div>
-                    <button
-                      onClick={() => handleEdit(legend)}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4 text-neutral-400" />
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEdit(legend)}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        title="Edit legend"
+                      >
+                        <Edit2 className="w-4 h-4 text-neutral-400 hover:text-white" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(legend.id, legend.name)}
+                        className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
+                        title="Delete legend"
+                      >
+                        <Trash2 className="w-4 h-4 text-neutral-400 hover:text-red-400" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm text-neutral-300 mb-3 line-clamp-2">
                     {legend.shortDescription}
@@ -495,12 +555,20 @@ export default function LegendsAdmin() {
                   <div className="flex items-center gap-3 text-xs text-neutral-500">
                     {legend.peakRating && <span>Rating: {legend.peakRating}</span>}
                     {legend.nationality && <span>{legend.nationality}</span>}
-                    <span className={cn(
-                      "ml-auto px-2 py-1 rounded",
-                      legend.isActive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                    )}>
-                      {legend.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div className="ml-auto flex gap-2">
+                      <span className={cn(
+                        "px-2 py-1 rounded",
+                        legend.isActive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                      )}>
+                        {legend.isActive ? "Active" : "Inactive"}
+                      </span>
+                      <span className={cn(
+                        "px-2 py-1 rounded",
+                        legend.isVisible ? "bg-blue-500/20 text-blue-400" : "bg-gray-500/20 text-gray-400"
+                      )}>
+                        {legend.isVisible ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}

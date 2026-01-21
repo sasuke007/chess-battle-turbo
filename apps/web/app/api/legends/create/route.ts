@@ -19,9 +19,8 @@ const createLegendSchema = z.object({
     description: z.string().optional(),
   })).optional().nullable(),
   isActive: z.boolean().default(true),
+  isVisible: z.boolean().default(false),
 });
-
-type CreateLegendRequest = z.infer<typeof createLegendSchema>;
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,6 +56,7 @@ export async function POST(request: NextRequest) {
         achievements: validatedData.achievements ? validatedData.achievements : Prisma.JsonNull,
         famousGames: validatedData.famousGames ? validatedData.famousGames : Prisma.JsonNull,
         isActive: validatedData.isActive,
+        isVisible: validatedData.isVisible,
       },
     });
 

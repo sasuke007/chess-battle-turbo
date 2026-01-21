@@ -256,7 +256,8 @@ model Legend {
   famousGames  Json? // Array of notable games with FEN positions
 
   // ===== ADMIN & ANALYTICS =====
-  isActive Boolean @default(true) // Show/hide from selection
+  isActive  Boolean @default(true) // Record is active in system
+  isVisible Boolean @default(false) // Show/hide on UI
 
   // ===== TIMESTAMPS =====
   createdAt DateTime @default(now())

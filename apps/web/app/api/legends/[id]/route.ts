@@ -19,6 +19,7 @@ const updateLegendSchema = z.object({
     description: z.string().optional(),
   })).optional().nullable(),
   isActive: z.boolean().optional(),
+  isVisible: z.boolean().optional(),
 });
 
 type UpdateLegendRequest = z.infer<typeof updateLegendSchema>;
@@ -154,6 +155,67 @@ export async function GET(
     return NextResponse.json(
       {
         error: "Failed to fetch legend",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE legend by ID
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const legendId = BigInt(params.id);
+
+    // Check if legend exists
+    const existingLegend = await prisma.legend.findUnique({
+      where: { id: legendId },
+      include: {
+        _count: {
+          select: {
+            gamesAsWhite: true,
+            gamesAsBlack: true,
+          },
+        },
+      },
+    });
+
+    if (!existingLegend) {
+      return NextResponse.json(
+        { error: "Legend not found" },
+        { status: 404 }
+      );
+    }
+
+    const totalGames = existingLegend._count.gamesAsWhite + existingLegend._count.gamesAsBlack;
+
+    // Delete the legend (FK constraints will automatically set chess_positions references to NULL)
+    await prisma.legend.delete({
+      where: { id: legendId },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Legend deleted successfully",
+        data: {
+          deletedLegend: {
+            id: legendId.toString(),
+            name: existingLegend.name,
+            gamesAffected: totalGames,
+          },
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting legend:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to delete legend",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
