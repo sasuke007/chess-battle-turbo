@@ -26,10 +26,11 @@ type UpdateLegendRequest = z.infer<typeof updateLegendSchema>;
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const legendId = BigInt(params.id);
+    const { id } = await params;
+    const legendId = BigInt(id);
     const body = await request.json();
     const validatedData = updateLegendSchema.parse(body);
 
@@ -121,10 +122,11 @@ export async function PUT(
 // GET single legend by ID
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const legendId = BigInt(params.id);
+    const { id } = await params;
+    const legendId = BigInt(id);
 
     const legend = await prisma.legend.findUnique({
       where: { id: legendId }
@@ -165,10 +167,11 @@ export async function GET(
 // DELETE legend by ID
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const legendId = BigInt(params.id);
+    const { id } = await params;
+    const legendId = BigInt(id);
 
     // Check if legend exists
     const existingLegend = await prisma.legend.findUnique({
