@@ -1,0 +1,34 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing pnpm..."
+        - corepack enable
+        - corepack prepare pnpm@9.0.0 --activate
+        - echo "Installing dependencies..."
+        - pnpm install --frozen-lockfile
+        - echo "Building workspace packages..."
+        - pnpm --filter @repo/ui build || echo "UI package build skipped (if no build script)"
+        - echo "Generating Prisma client..."
+        - pnpm --filter web prisma:generate
+    build:
+      commands:
+        - echo "Building Next.js application..."
+        - pnpm --filter web build
+        - echo "Build completed. Listing .next directory:"
+        - ls -la apps/web/.next/ || echo ".next directory not found"
+        - echo "Listing public directory:"
+        - ls -la apps/web/public/ || echo "public directory not found"
+  artifacts:
+    baseDirectory: apps/web
+    files:
+      - '.next/**/*'
+      - 'public/**/*'
+      - 'package.json'
+  cache:
+    paths:
+      - node_modules/**/*
+      - apps/web/node_modules/**/*
+      - apps/web/.next/cache/**/*
+      - .pnpm-store/**/*

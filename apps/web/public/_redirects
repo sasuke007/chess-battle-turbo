@@ -1,0 +1,17 @@
+# Next.js redirects and rewrites for Amplify
+# This file ensures proper routing for Next.js on AWS Amplify
+
+# API routes
+/api/*  /api/:splat  200
+
+# Dynamic routes
+/game/*  /game/:splat  200
+/join/*  /join/:splat  200
+/sign-in/*  /sign-in/:splat  200
+
+# Static files
+/_next/static/*  /_next/static/:splat  200
+/_next/image*  /_next/image/:splat  200
+
+# Fallback to index for client-side routing
+/*  /index.html  200
