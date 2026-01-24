@@ -23,3 +23,35 @@ While I give you a couple of seconds.
 
 Find number of online players. Need this to show people.
 
+Recommended Architecture
+
+┌─────────────────┐                                                                                                                                                                
+│   Free Users    │──> Stockfish.js in Browser (Depth 15)                                                                                                                          
+└─────────────────┘
+
+┌─────────────────┐                                                                                                                                                                
+│  Premium Users  │──> Server Analysis (Depth 25)                                                                                                                                  
+└─────────────────┘    │                                                                                                                                                           
+├─> Queue System (Redis/BullMQ)                                                                                                                             
+├─> K8s Pods (Auto-scaling)                                                                                                                                 
+└─> Cache frequent positions
+
+┌─────────────────┐                                                                                                                                                                
+│  Opening Book   │──> Pre-computed database lookups                                                                                                                               
+└─────────────────┘    (No computation needed)
+
+My Recommendation
+
+Start with Stockfish.js because:
+1. ✅ Zero infrastructure cost
+2. ✅ Scales automatically with users
+3. ✅ Fast enough for 99% of use cases
+4. ✅ Easy to implement (2-3 hours)
+5. ✅ Same tech chess.com uses for free analysis
+
+Add server-side later only if:
+- You have premium tier that needs deeper analysis
+- You want to offer "cloud analysis" as a feature
+- You need to analyze many positions in batch
+
+Would you like me to help implement the browser-based Stockfish.js solution first?                     

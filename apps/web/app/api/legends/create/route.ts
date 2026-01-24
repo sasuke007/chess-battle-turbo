@@ -29,18 +29,6 @@ export async function POST(request: NextRequest) {
     const validatedData = createLegendSchema.parse(body);
     console.log("Validated data:", validatedData);
 
-    // Check if legend with same name already exists
-    const existingLegend = await prisma.legend.findFirst({
-      where: { name: validatedData.name }
-    });
-
-    if (existingLegend) {
-      return NextResponse.json(
-        { error: "A legend with this name already exists" },
-        { status: 400 }
-      );
-    }
-
     // Create the legend
     const legend = await prisma.legend.create({
       data: {
@@ -90,6 +78,16 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Handle unique constraint violation
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          { error: "A legend with this name already exists" },
+          { status: 400 }
+        );
+      }
     }
 
     console.error("Error creating legend:", error);

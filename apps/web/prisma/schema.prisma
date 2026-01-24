@@ -233,7 +233,7 @@ model Legend {
   referenceId String @unique @default(cuid())
 
   // ===== BASIC INFORMATION =====
-  name String // Full name (e.g., "Magnus Carlsen")
+  name String @unique // Full name (e.g., "Magnus Carlsen")
   era  String // Chess era (e.g., "Modern Era", "Romantic Era")
 
   // ===== VISUAL & DISPLAY =====
