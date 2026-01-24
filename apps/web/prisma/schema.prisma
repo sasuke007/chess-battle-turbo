@@ -22,13 +22,14 @@ model User {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   onboarded         Boolean          @default(false)
-  chessComProfile   ChessComProfile?
-  gamesAsCreator    Game[]           @relation("CreatorGames")
-  gamesAsOpponent   Game[]           @relation("OpponentGames")
-  gamesWon          Game[]           @relation("WinnerGames")
-  transactions      Transaction[]
-  stats             UserStats?
-  wallet            Wallet?
+  chessComProfile      ChessComProfile?
+  gamesAsCreator       Game[]             @relation("CreatorGames")
+  gamesAsOpponent      Game[]             @relation("OpponentGames")
+  gamesWon             Game[]             @relation("WinnerGames")
+  transactions         Transaction[]
+  stats                UserStats?
+  wallet               Wallet?
+  matchmakingRequests  MatchmakingQueue[]
 
   @@index([googleId])
   @@index([email])
@@ -302,4 +303,45 @@ enum GameResult {
   DRAW
   CREATOR_TIMEOUT
   OPPONENT_TIMEOUT
+}
+
+enum MatchmakingStatus {
+  SEARCHING
+  MATCHED
+  CANCELLED
+  EXPIRED
+}
+
+model MatchmakingQueue {
+  id          BigInt @id @default(autoincrement())
+  referenceId String @unique @default(cuid())
+
+  // Player info
+  userId          BigInt
+  rating          Int?   // Player's rating for this time control (from ChessComProfile)
+  timeControlType String // "bullet", "blitz", "rapid", "daily"
+
+  // Game preferences
+  legendReferenceId  String? // Legend.referenceId (no FK - just stored for position lookup)
+  timeControlSeconds Int     // e.g., 300 for 5 min
+  incrementSeconds   Int     // e.g., 5
+
+  // Queue state
+  status MatchmakingStatus @default(SEARCHING)
+
+  // Timing
+  createdAt DateTime  @default(now())
+  expiresAt DateTime  // createdAt + 60 seconds
+  matchedAt DateTime?
+
+  // If matched, store game reference ID (no FK - just for returning to client)
+  matchedGameRef String? // Game.referenceId when matched
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status, timeControlSeconds, incrementSeconds, rating])
+  @@index([expiresAt])
+  @@map("matchmaking_queue")
 }

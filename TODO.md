@@ -21,6 +21,8 @@ We can also implement a admin mode where you can create your own game rooms($30/
 
 While I give you a couple of seconds.
 
+What do you play here.
+
 Find number of online players. Need this to show people.
 
 Recommended Architecture

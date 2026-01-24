@@ -61,6 +61,20 @@ export default function Play() {
 
     setIsCreatingGame(true);
 
+    // For Quick Game mode, route to matchmaking queue
+    if (selectedMode === "quick") {
+      const params = new URLSearchParams({
+        time: timeControl.time.toString(),
+        increment: timeControl.increment.toString(),
+      });
+      if (playAsLegend && selectedHero) {
+        params.set("legend", selectedHero);
+      }
+      router.push(`/queue?${params.toString()}`);
+      return;
+    }
+
+    // For Friend or AI mode, create game directly
     const gameData = {
       userReferenceId: userReferenceId,
       stakeAmount: 0,
@@ -307,10 +321,10 @@ export default function Play() {
               {isCreatingGame ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Creating Game...</span>
+                  <span>{selectedMode === "quick" ? "Finding Match..." : "Creating Game..."}</span>
                 </div>
               ) : (
-                "Start Game"
+                selectedMode === "quick" ? "Find Match" : "Start Game"
               )}
             </button>
 
