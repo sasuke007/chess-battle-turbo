@@ -7,7 +7,7 @@ const createChessPositionSchema = z.object({
   // Required fields
   fen: z.string().min(1, "FEN is required"),
   sideToMove: z.enum(["white", "black"], {
-    errorMap: () => ({ message: "Side to move must be 'white' or 'black'" }),
+    message: "Side to move must be 'white' or 'black'",
   }),
 
   // Optional core data
