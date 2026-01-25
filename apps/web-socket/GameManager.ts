@@ -30,8 +30,13 @@ export class GameManager {
       let isReconnection = false;
 
       if (!gameSession) {
-        // Fetch game data from API 
+        // Fetch game data from API
         const gameData : GameData = await fetchGameByRef(gameReferenceId);
+
+        console.log("=== GAME MANAGER FETCHED GAME DATA ===");
+        console.log("gameData.gameData:", gameData.gameData);
+        console.log("gameData.gameData?.gameMode:", gameData.gameData?.gameMode);
+        console.log("=======================================");
 
         // Validate game status
         if (

@@ -4,6 +4,7 @@ import { ClockManager } from "./ClockManager";
 import {
   GameData,
   PlayerConnection,
+  PlayerInfo,
   GameStartedPayload,
   MoveMadePayload,
   GameOverPayload,
@@ -29,6 +30,12 @@ export class GameSession {
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
 
+  // AI game fields
+  private isAIGame: boolean = false;
+  private humanPlayerColor: Color | null = null;
+  private botColor: Color | null = null;
+  private aiDifficulty: "easy" | "medium" | "hard" | "expert" = "medium";
+
   // Disconnect handling
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly DISCONNECT_GRACE_PERIOD = 30000; // 30 seconds
@@ -39,6 +46,23 @@ export class GameSession {
     // Initialize chess instance with the starting FEN from database
     this.chess = new Chess(gameData.startingFen);
 
+    // Detect AI game from gameData
+    console.log("=== GAME SESSION CONSTRUCTOR DEBUG ===");
+    console.log("gameData.gameData:", JSON.stringify(gameData.gameData, null, 2));
+    console.log("gameData.gameData?.gameMode:", gameData.gameData?.gameMode);
+
+    if (gameData.gameData?.gameMode === "AI") {
+      this.isAIGame = true;
+      this.aiDifficulty = (gameData.gameData.difficulty as "easy" | "medium" | "hard" | "expert") || "medium";
+      // Player color from gameData
+      const playerColor = gameData.gameData.playerColor;
+      this.humanPlayerColor = playerColor === "white" ? "w" : "b";
+      this.botColor = playerColor === "white" ? "b" : "w";
+      console.log(`AI game detected - Player: ${this.humanPlayerColor}, Bot: ${this.botColor}, Difficulty: ${this.aiDifficulty}`);
+    } else {
+      console.log("NOT an AI game - gameMode:", gameData.gameData?.gameMode);
+    }
+    console.log("======================================");
 
     // Initialize clock manager
     this.clockManager = new ClockManager(
@@ -101,7 +125,7 @@ export class GameSession {
     console.log("Opponent ID:", this.gameData.opponent?.userReferenceId);
     console.log("Is creator?", isCreator);
     console.log("Is opponent?", isOpponent);
-    console.log("Full game data:", JSON.stringify(this.gameData, null, 2));
+    console.log("Is AI game?", this.isAIGame);
     console.log("=======================");
 
     if (!isCreator && !isOpponent) {
@@ -131,7 +155,20 @@ export class GameSession {
       console.log(`Opponent joined game ${this.gameData.referenceId}`);
     }
 
-    // If both players are present and game hasn't started, start it
+    // For AI games, start immediately when the human player joins
+    if (this.isAIGame && !this.gameStarted && this.gameData.status === "IN_PROGRESS") {
+      // Determine which player is the human
+      const humanPlayerReferenceId = this.gameData.gameData?.playerReferenceId;
+      const isHumanPlayer = userReferenceId === humanPlayerReferenceId;
+
+      if (isHumanPlayer) {
+        console.log("Human player joined AI game - starting immediately");
+        await this.startAIGame(socket, userReferenceId);
+        return;
+      }
+    }
+
+    // For regular games, wait for both players
     if (
       this.creatorPlayer &&
       this.opponentPlayer &&
@@ -197,6 +234,81 @@ export class GameSession {
   }
 
   /**
+   * Start an AI game when the human player connects
+   * In AI games, the bot doesn't have a socket - moves are sent from the client
+   */
+  private async startAIGame(socket: Socket, userReferenceId: string): Promise<void> {
+    this.gameStarted = true;
+
+    // Create bot player info
+    const botPlayerInfo: PlayerInfo = {
+      userReferenceId: this.gameData.gameData?.botReferenceId || "bot",
+      name: this.gameData.gameData?.botName || "Chess Bot",
+      code: "BOT",
+      profilePictureUrl: null,
+    };
+
+    // Determine human player info
+    const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
+    const humanPlayerInfo = isCreator ? this.gameData.creator : this.gameData.opponent!;
+
+    // Create player connection for human
+    const humanPlayer: PlayerConnection = {
+      socket,
+      userReferenceId,
+      color: this.humanPlayerColor!,
+      playerInfo: humanPlayerInfo,
+    };
+
+    // Assign white/black players based on configured color
+    if (this.humanPlayerColor === "w") {
+      this.whitePlayer = humanPlayer;
+      // Create a virtual black player for the bot (no socket)
+      this.blackPlayer = {
+        socket: socket, // Use human's socket for broadcasts
+        userReferenceId: botPlayerInfo.userReferenceId,
+        color: "b",
+        playerInfo: botPlayerInfo,
+      };
+    } else {
+      this.blackPlayer = humanPlayer;
+      // Create a virtual white player for the bot
+      this.whitePlayer = {
+        socket: socket, // Use human's socket for broadcasts
+        userReferenceId: botPlayerInfo.userReferenceId,
+        color: "w",
+        playerInfo: botPlayerInfo,
+      };
+    }
+
+    // Store references
+    if (isCreator) {
+      this.creatorPlayer = humanPlayer;
+    } else {
+      this.opponentPlayer = humanPlayer;
+    }
+
+    // Start white's clock
+    this.clockManager.startClock("w");
+
+    // Emit game_started to the human player with AI game info
+    const payload: GameStartedPayload = {
+      gameReferenceId: this.gameData.referenceId,
+      yourColor: this.humanPlayerColor!,
+      fen: this.chess.fen(),
+      whiteTime: this.clockManager.getTimeInSeconds("w"),
+      blackTime: this.clockManager.getTimeInSeconds("b"),
+      whitePlayer: this.whitePlayer!.playerInfo,
+      blackPlayer: this.blackPlayer!.playerInfo,
+      isAIGame: true,
+      difficulty: this.aiDifficulty,
+    };
+
+    socket.emit("game_started", payload);
+    console.log(`AI Game ${this.gameData.referenceId} started - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}`);
+  }
+
+  /**
    * Handle a move attempt from a player
    */
   public async makeMove(
@@ -224,9 +336,24 @@ export class GameSession {
       return;
     }
 
-    if (player.color !== currentTurn) {
-      socket.emit("move_error", { message: "It's not your turn" });
-      return;
+    // In AI games, allow the human player's socket to make moves for both sides
+    // The client sends bot moves from the human's socket
+    if (this.isAIGame) {
+      // In AI games, the human player can make moves for both colors
+      // (they send their own moves AND the bot's moves computed client-side)
+      const isHumanPlayer = player.color === this.humanPlayerColor;
+      if (!isHumanPlayer) {
+        socket.emit("move_error", { message: "You are not in this game" });
+        return;
+      }
+      // Allow the move regardless of whose turn it is
+      // The client will only send moves at the appropriate time
+    } else {
+      // Regular game: strict turn checking
+      if (player.color !== currentTurn) {
+        socket.emit("move_error", { message: "It's not your turn" });
+        return;
+      }
     }
 
     // Attempt the move
@@ -238,7 +365,7 @@ export class GameSession {
       return;
     }
 
-    console.log(`Move made: ${move.san} in game ${this.gameData.referenceId}`);
+    console.log(`Move made: ${move.san} in game ${this.gameData.referenceId}${this.isAIGame ? " (AI game)" : ""}`);
 
     // Stop current player's clock and add increment
     this.clockManager.stopClock();
@@ -260,8 +387,12 @@ export class GameSession {
       promotion: move.promotion,
     };
 
-    // Broadcast to both players
-    this.broadcast("move_made", moveMadePayload);
+    // Broadcast to player (in AI games, just emit to the human player)
+    if (this.isAIGame) {
+      socket.emit("move_made", moveMadePayload);
+    } else {
+      this.broadcast("move_made", moveMadePayload);
+    }
 
     // Check for game end conditions
     if (this.chess.isGameOver()) {
@@ -270,7 +401,12 @@ export class GameSession {
     }
 
     // Persist move to database (async, non-blocking)
-    this.persistMoveToDb(player.userReferenceId, move).catch((error) => {
+    // For AI games, use the appropriate player reference ID
+    const movePlayerId = this.isAIGame && currentTurn === this.botColor
+      ? this.gameData.gameData?.botReferenceId || player.userReferenceId
+      : player.userReferenceId;
+
+    this.persistMoveToDb(movePlayerId, move).catch((error) => {
       console.error("Error persisting move to DB:", error);
     });
   }
@@ -339,6 +475,23 @@ export class GameSession {
       `Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`
     );
 
+    // In AI games, if the human disconnects, end the game (bot wins)
+    if (this.isAIGame && this.gameStarted && !this.gameEnded) {
+      const isHumanPlayer = player.color === this.humanPlayerColor;
+      if (isHumanPlayer) {
+        console.log("Human player disconnected from AI game - starting grace period");
+        // Start disconnect timer - if human doesn't reconnect, bot wins
+        const timer = setTimeout(async () => {
+          console.log("Human player did not reconnect to AI game - bot wins");
+          const result: GameResult = this.botColor === "w" ? "CREATOR_WON" : "OPPONENT_WON";
+          await this.endGame(result, this.botColor, "timeout");
+        }, this.DISCONNECT_GRACE_PERIOD);
+        this.disconnectTimers.set(player.userReferenceId, timer);
+      }
+      return;
+    }
+
+    // Regular game disconnect handling
     // Notify opponent
     const opponent =
       player === this.whitePlayer ? this.blackPlayer : this.whitePlayer;
@@ -444,10 +597,21 @@ export class GameSession {
   }
 
   /**
-   * Check if both players are present
+   * Check if both players are present (or for AI games, just the human player)
    */
   public hasBothPlayers(): boolean {
+    if (this.isAIGame) {
+      // For AI games, we only need the human player
+      return this.gameStarted;
+    }
     return this.creatorPlayer !== null && this.opponentPlayer !== null;
+  }
+
+  /**
+   * Check if this is an AI game
+   */
+  public getIsAIGame(): boolean {
+    return this.isAIGame;
   }
 
   /**

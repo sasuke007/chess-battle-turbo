@@ -3,6 +3,42 @@ import { prisma } from '../lib/prisma';
 async function main() {
   console.log('🌱 Starting database seed...');
 
+  // Create bot user for AI games
+  const botUser = await prisma.user.upsert({
+    where: { email: 'bot@chessbattle.local' },
+    update: {},
+    create: {
+      code: 'CHESS_BOT_001',
+      googleId: 'bot_system_user',
+      email: 'bot@chessbattle.local',
+      name: 'Chess Bot',
+      profilePictureUrl: null,
+      isActive: true,
+      onboarded: true,
+      wallet: {
+        create: {
+          balance: 0,
+          lockedAmount: 0,
+        },
+      },
+      stats: {
+        create: {
+          totalGamesPlayed: 0,
+          gamesWon: 0,
+          gamesLost: 0,
+          gamesDrawn: 0,
+          totalMoneyWon: 0,
+          totalMoneyLost: 0,
+          totalPlatformFeesPaid: 0,
+          netProfit: 0,
+          currentWinStreak: 0,
+          longestWinStreak: 0,
+        },
+      },
+    },
+  });
+  console.log(`🤖 Created/Updated bot user: ${botUser.name} (${botUser.email}) - Reference ID: ${botUser.referenceId}`);
+
   // Create dummy users with wallets
   const users = [
     {

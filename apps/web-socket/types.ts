@@ -12,6 +12,15 @@ export interface PlayerInfo {
   profilePictureUrl: string | null;
 }
 
+export interface AIGameConfig {
+  gameMode: "AI";
+  difficulty: "easy" | "medium" | "hard" | "expert";
+  playerColor: "white" | "black";
+  playerReferenceId: string;
+  botReferenceId: string;
+  botName: string;
+}
+
 export interface GameData {
   referenceId: string;
   creatorId: string;
@@ -29,6 +38,12 @@ export interface GameData {
   gameData?: {
     fen?: string;
     moveHistory?: any[];
+    gameMode?: string;
+    difficulty?: string;
+    playerColor?: string;
+    playerReferenceId?: string;
+    botReferenceId?: string;
+    botName?: string;
   };
   creator: PlayerInfo;
   opponent?: PlayerInfo;
@@ -92,6 +107,9 @@ export interface GameStartedPayload {
   blackTime: number;
   whitePlayer: PlayerInfo;
   blackPlayer: PlayerInfo;
+  // AI game fields (optional)
+  isAIGame?: boolean;
+  difficulty?: "easy" | "medium" | "hard" | "expert";
 }
 
 export interface MoveMadePayload {

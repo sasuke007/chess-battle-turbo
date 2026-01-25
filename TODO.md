@@ -56,4 +56,7 @@ Add server-side later only if:
 - You want to offer "cloud analysis" as a feature
 - You need to analyze many positions in batch
 
-Would you like me to help implement the browser-based Stockfish.js solution first?                     
+Would you like me to help implement the browser-based Stockfish.js solution first?
+
+User should be able to see the last move played it should be able go back move by move.
+

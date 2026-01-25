@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
+import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
   const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
@@ -31,6 +32,24 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [blackPlayer, setBlackPlayer] = useState<any>(null);
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
+
+  // AI game state
+  const [isAIGame, setIsAIGame] = useState(false);
+  const isAIGameRef = useRef(false); // Ref for use in callbacks
+  const [aiDifficulty, setAIDifficulty] = useState<Difficulty>("medium");
+  const [botColor, setBotColor] = useState<Color | null>(null);
+  const [isBotThinking, setIsBotThinking] = useState(false);
+  const botMoveInProgressRef = useRef(false);
+
+  // Bot move hook - callbacks must be stable to prevent effect re-runs
+  const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
+  const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
+
+  const { computeBotMove } = useBotMove({
+    difficulty: aiDifficulty,
+    onThinkingStart,
+    onThinkingEnd,
+  });
 
 
   // Get legal moves for a selected piece
@@ -146,6 +165,16 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setWhitePlayer(payload.whitePlayer);
       setBlackPlayer(payload.blackPlayer);
 
+      // Detect AI game from payload
+      if (payload.isAIGame) {
+        setIsAIGame(true);
+        isAIGameRef.current = true;
+        setAIDifficulty(payload.difficulty || "medium");
+        // Bot color is opposite of player's color
+        setBotColor(payload.yourColor === "w" ? "b" : "w");
+        console.log("AI game detected - Bot color:", payload.yourColor === "w" ? "black" : "white");
+      }
+
       // Load FEN if provided
       if (payload.fen) {
         const newGame = new Chess(payload.fen);
@@ -171,7 +200,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     socketRef.current.on("move_error", (payload: any) => {
       console.error("Move error:", payload);
-      alert(payload.message || "Invalid move");
+      // In AI games, don't show alert for bot move errors (duplicates from race conditions)
+      // The game continues normally since the valid move was already processed
+      if (!isAIGameRef.current) {
+        alert(payload.message || "Invalid move");
+      }
     });
 
     socketRef.current.on("clock_update", (payload: any) => {
@@ -222,6 +255,84 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       socketRef.current?.disconnect();
     };
   }, [isLoaded, gameId, myColor, userReferenceId]);
+
+  // Store game in a ref so we can access current state without triggering effect re-runs
+  const gameRef = useRef(game);
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
+
+  // Effect to trigger bot moves in AI games
+  useEffect(() => {
+    // Only run for AI games when it's the bot's turn
+    if (!isAIGame || !gameStarted || gameOver || !botColor || currentTurn !== botColor) {
+      return;
+    }
+
+    // Prevent multiple bot moves - check BEFORE doing anything async
+    if (botMoveInProgressRef.current) {
+      console.log("Bot move already in progress, skipping");
+      return;
+    }
+
+    // Set the flag IMMEDIATELY, before any async work
+    botMoveInProgressRef.current = true;
+
+    // Get legal moves from current game state
+    const currentGame = gameRef.current;
+    const currentFen = currentGame.fen();
+    const legalMoves = currentGame.moves({ verbose: true });
+
+    if (legalMoves.length === 0) {
+      botMoveInProgressRef.current = false;
+      return; // No legal moves, game should end
+    }
+
+    // Convert to UCI format strings (e.g., "e2e4")
+    const legalMovesUCI = legalMoves.map((m) => `${m.from}${m.to}${m.promotion || ""}`);
+
+    const makeBotMove = async () => {
+      try {
+        console.log("Bot computing move for FEN:", currentFen);
+        console.log("Legal moves available:", legalMovesUCI);
+        const botMoveUCI = await computeBotMove(currentFen, legalMovesUCI);
+        console.log("Bot selected move:", botMoveUCI);
+
+        // Parse UCI move (e.g., "e2e4" or "e7e8q")
+        const from = botMoveUCI.slice(0, 2) as Square;
+        const to = botMoveUCI.slice(2, 4) as Square;
+        const promotion = botMoveUCI.length > 4 ? botMoveUCI[4] as "q" | "r" | "b" | "n" : undefined;
+
+        // Send bot move to server
+        if (socketRef.current) {
+          socketRef.current.emit("make_move", {
+            gameReferenceId: gameId,
+            from,
+            to,
+            promotion: promotion || "q",
+          });
+          console.log("Bot move sent:", { from, to, promotion });
+        }
+      } catch (error) {
+        console.error("Error computing bot move:", error);
+        // On any error, try to make a legal move to keep the game going
+        if (legalMoves.length > 0 && socketRef.current) {
+          const fallbackMove = legalMoves[0]!;
+          socketRef.current.emit("make_move", {
+            gameReferenceId: gameId,
+            from: fallbackMove.from,
+            to: fallbackMove.to,
+            promotion: fallbackMove.promotion || "q",
+          });
+          console.log("Bot emergency fallback move sent:", fallbackMove);
+        }
+      } finally {
+        botMoveInProgressRef.current = false;
+      }
+    };
+
+    makeBotMove();
+  }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId]);
 
   // Show loading state while auth is loading
   if (!isLoaded) {
@@ -306,8 +417,16 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   <span className="text-xl">
                     {currentTurn === "w" ? "White" : "Black"}
                     {currentTurn === myColor && " (Your turn)"}
+                    {isAIGame && currentTurn === botColor && " (Bot)"}
                   </span>
                 </div>
+                {/* Bot thinking indicator */}
+                {isAIGame && isBotThinking && (
+                  <div className="mt-4 flex items-center gap-2 text-blue-400">
+                    <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    <span>Bot thinking...</span>
+                  </div>
+                )}
               </div>
 
               {/* Game Status */}

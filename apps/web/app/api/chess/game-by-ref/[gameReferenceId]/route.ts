@@ -79,7 +79,7 @@ export async function GET(
         creatorTimeRemaining: game.creatorTimeRemaining,
         opponentTimeRemaining: game.opponentTimeRemaining,
         status: game.status,
-        gameData: game.gameData as { fen?: string; moveHistory?: any[] } | undefined,
+        gameData: game.gameData as Record<string, unknown> | undefined,
         creator: {
           userReferenceId: game.creator.referenceId,
           name: game.creator.name,

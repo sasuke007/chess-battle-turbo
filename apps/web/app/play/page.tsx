@@ -4,7 +4,10 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
+import DifficultySelector from "../components/DifficultySelector";
+import ColorSelector, { PlayerColor } from "../components/ColorSelector";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
+import { Difficulty } from "@/lib/hooks/useBotMove";
 import { CompleteUserObject } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
@@ -42,6 +45,8 @@ export default function Play() {
   const [selectedMode, setSelectedMode] = useState<"quick" | "friend" | "ai">("quick");
   const [playAsLegend, setPlayAsLegend] = useState(false);
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [playerColor, setPlayerColor] = useState<PlayerColor>("random");
 
   // TODO: We can have photos of the legends and a short description of the players like this and this should be enough.
   const chessHeroes = [
@@ -74,7 +79,42 @@ export default function Play() {
       return;
     }
 
-    // For Friend or AI mode, create game directly
+    // For AI mode, create AI game
+    if (selectedMode === "ai") {
+      const aiGameData = {
+        userReferenceId: userReferenceId,
+        initialTimeSeconds: timeControl.time,
+        incrementSeconds: timeControl.increment,
+        difficulty: difficulty,
+        playerColor: playerColor,
+      };
+
+      try {
+        const response = await fetch("/api/chess/create-ai-game", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(aiGameData),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to create AI game");
+        }
+
+        const gameRef = data.data.game.referenceId;
+        router.push(`/game/${gameRef}`);
+      } catch (error) {
+        console.error("Error creating AI game:", error);
+        alert(error instanceof Error ? error.message : "Failed to create AI game");
+        setIsCreatingGame(false);
+      }
+      return;
+    }
+
+    // For Friend mode, create game directly
     const gameData = {
       userReferenceId: userReferenceId,
       stakeAmount: 0,
@@ -205,10 +245,19 @@ export default function Play() {
               </button>
             </div>
 
+            {/* AI Mode Settings */}
+            {selectedMode === "ai" && (
+              <div className="space-y-4">
+                <DifficultySelector value={difficulty} onChange={setDifficulty} />
+                <ColorSelector value={playerColor} onChange={setPlayerColor} />
+              </div>
+            )}
+
             {/* Separator */}
             <div className="border-t border-white/10 mb-6"></div>
 
-            {/* Play as Chess Legend */}
+            {/* Play as Chess Legend (hide for AI games) */}
+            {selectedMode !== "ai" && (
             <div className={cn(
               "rounded-xl border transition-all duration-200",
               "bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-xl",
@@ -298,6 +347,7 @@ export default function Play() {
                 )}
               </AnimatePresence>
             </div>
+            )}
 
             {/* Time Control Selector */}
             <div className="space-y-3">
