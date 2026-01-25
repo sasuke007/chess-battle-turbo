@@ -25,6 +25,7 @@ function QueueContent() {
   const [queueState, setQueueState] = useState<QueueState>("initializing");
   const [queueReferenceId, setQueueReferenceId] = useState<string | null>(null);
   const [opponentInfo, setOpponentInfo] = useState<OpponentInfo | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [gameReferenceId, setGameReferenceId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);

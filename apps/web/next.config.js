@@ -3,6 +3,14 @@ const nextConfig = {
   // Only use standalone output for Docker builds
   // Amplify uses standard Next.js output
   ...(process.env.USE_STANDALONE === 'true' && { output: 'standalone' }),
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

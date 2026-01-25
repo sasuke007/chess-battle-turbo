@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/app/components/Navbar";
 import { Plus, Edit2, Save, X, Trash2, Crown } from "lucide-react";
@@ -621,9 +622,11 @@ export default function LegendsAdmin() {
                     <div className="flex items-start gap-4 mb-4">
                       {/* Avatar */}
                       {legend.profilePhotoUrl ? (
-                        <img
+                        <Image
                           src={legend.profilePhotoUrl}
                           alt={legend.name}
+                          width={48}
+                          height={48}
                           className="w-12 h-12 object-cover grayscale group-hover:grayscale-0 transition-all"
                         />
                       ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn, getInitials } from "@/lib/utils";
 import { CompleteUserObject } from "@/lib/types";
@@ -36,10 +37,7 @@ export default function JoinPage({
 }: {
   params: Promise<{ gameReferenceId: string }>;
 }) {
-  const {
-    isLoaded,
-    userObject,
-  }: { isLoaded: boolean; userObject: CompleteUserObject | null } =
+  const { userObject }: { userObject: CompleteUserObject | null } =
     useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
   const router = useRouter();
@@ -231,9 +229,11 @@ export default function JoinPage({
             </p>
             <div className="flex items-center gap-4">
               {gameDetails.creator.profilePictureUrl ? (
-                <img
+                <Image
                   src={gameDetails.creator.profilePictureUrl}
                   alt={gameDetails.creator.name}
+                  width={56}
+                  height={56}
                   className="w-14 h-14 object-cover grayscale"
                 />
               ) : (

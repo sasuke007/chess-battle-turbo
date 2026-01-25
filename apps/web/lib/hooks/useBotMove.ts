@@ -122,7 +122,7 @@ export function useBotMove(options: UseBotMoveOptions): UseBotMoveReturn {
         onThinkingEnd?.();
       }
     },
-    [difficulty, getBestMove, getDifficultyConfig, getThinkingTime, onThinkingStart, onThinkingEnd]
+    [getBestMove, getDifficultyConfig, getThinkingTime, onThinkingStart, onThinkingEnd]
   );
 
   const cancelThinking = useCallback(() => {

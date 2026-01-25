@@ -9,7 +9,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [chessComHandle, setChessComHandle] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export default function OnboardingPage() {
               disabled={loading}
             />
             <p style={{ fontFamily: "'Geist', sans-serif" }} className="mt-2 text-xs text-white/20">
-              We'll fetch your ratings and stats from chess.com
+              We&apos;ll fetch your ratings and stats from chess.com
             </p>
           </motion.div>
 
@@ -209,7 +209,7 @@ export default function OnboardingPage() {
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="inline-flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors"
             >
-              Don't have an account? Create one
+              Don&apos;t have an account? Create one
               <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
             </a>
           </motion.div>

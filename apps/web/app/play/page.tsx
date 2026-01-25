@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
@@ -393,16 +394,16 @@ export default function Play() {
 
                   {/* Minimal toggle */}
                   <div className={cn(
-                    "w-12 h-6 border relative transition-colors duration-300",
+                    "w-10 h-5 border relative overflow-hidden transition-colors duration-300 flex-shrink-0",
                     playAsLegend ? "border-white bg-white" : "border-white/30"
                   )}>
                     <motion.div
-                      animate={{ x: playAsLegend ? 24 : 0 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       className={cn(
-                        "absolute top-0 left-0 w-6 h-full transition-colors duration-300",
+                        "absolute top-0 w-1/2 h-full transition-colors duration-300",
                         playAsLegend ? "bg-black" : "bg-white/50"
                       )}
+                      animate={{ left: playAsLegend ? "50%" : "0%" }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   </div>
                 </button>
@@ -434,9 +435,11 @@ export default function Play() {
                             >
                               <div className="flex items-center gap-2.5">
                                 {legend.profilePhotoUrl ? (
-                                  <img
+                                  <Image
                                     src={legend.profilePhotoUrl}
                                     alt={legend.name}
+                                    width={32}
+                                    height={32}
                                     className={cn(
                                       "w-8 h-8 object-cover grayscale transition-all",
                                       selectedHero === legend.id ? "grayscale-0" : "opacity-70"
@@ -597,7 +600,7 @@ export default function Play() {
                 style={{ fontFamily: "'Instrument Serif', serif" }}
                 className="text-white/30 text-sm italic"
               >
-                "In chess, as in life, forethought wins."
+                &ldquo;In chess, as in life, forethought wins.&rdquo;
               </p>
               <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/20 text-[10px] tracking-[0.2em] uppercase mt-2">
                 Charles Buxton
