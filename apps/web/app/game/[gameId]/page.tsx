@@ -288,7 +288,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 py-8">
+      <div className="relative max-w-7xl mx-auto px-4 pt-20 pb-8">
         {!gameStarted ? (
           <div className="flex flex-col items-center justify-center min-h-[80vh]">
             <motion.div
@@ -312,7 +312,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8"
           >
             {/* Left - Game Info */}
             <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">

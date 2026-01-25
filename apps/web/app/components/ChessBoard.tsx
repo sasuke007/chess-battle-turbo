@@ -25,7 +25,7 @@ type ChessProps = {
 
 const ChessBoard = ({
   board = new Chess().board(),
-  squareSize = "size-12 md:size-16 lg:size-20",
+  squareSize = "size-8 sm:size-10 md:size-14 lg:size-16",
   whiteSquareColor = "bg-white",
   blackSquareColor = "bg-black",
   squareBorderColor = "border-neutral-800",
