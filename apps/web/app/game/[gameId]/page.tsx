@@ -428,18 +428,16 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </div>
               </div>
 
-              {/* Board with frame */}
-              <div className="relative">
-                <div className="absolute -inset-3 border border-white/10" />
-                <div className="relative border border-white/20">
-                  <ChessBoard
-                    board={game.board()}
-                    selectedSquare={selectedSquare}
-                    legalMoves={legalMoves}
-                    onSquareClick={handleSquareClick}
-                    playerColor={myColor}
-                  />
-                </div>
+              {/* Board - m-8 accounts for the -inset-8 outer frame */}
+              <div className="m-8">
+                <ChessBoard
+                  board={game.board()}
+                  selectedSquare={selectedSquare}
+                  legalMoves={legalMoves}
+                  onSquareClick={handleSquareClick}
+                  playerColor={myColor}
+                  showCoordinates={true}
+                />
               </div>
 
               {/* Player Clock & Info */}

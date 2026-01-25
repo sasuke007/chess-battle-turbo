@@ -577,16 +577,9 @@ export default function Play() {
             transition={{ delay: 0.6, duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-xl relative"
           >
-            {/* Board frame */}
-            <div className="relative">
-              {/* Outer frame */}
-              <div className="absolute -inset-4 border border-white/10" />
-              <div className="absolute -inset-8 border border-white/5" />
-
-              {/* Board */}
-              <div className="relative border border-white/20 shadow-2xl shadow-black/80">
-                <ChessBoard />
-              </div>
+            {/* Chess board - m-8 accounts for the -inset-8 outer frame */}
+            <div className="m-8">
+              <ChessBoard isInteractive={false} showCoordinates={true} />
             </div>
 
             {/* Caption */}
