@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { Chess, Color, PieceSymbol, Square } from "chess.js";
 import Image from "next/image";
+import { DefeatOverlay, DrawOverlay } from "./GameEndEffects";
 
 type ChessProps = {
   board?: ({
@@ -17,6 +18,7 @@ type ChessProps = {
   playerColor?: Color | null;
   showCoordinates?: boolean;
   lastMove?: { from: Square; to: Square } | null;
+  gameEndState?: "victory" | "defeat" | "draw" | null;
 };
 
 const ChessBoard = ({
@@ -29,6 +31,7 @@ const ChessBoard = ({
   playerColor = "w",
   showCoordinates = true,
   lastMove = null,
+  gameEndState = null,
 }: ChessProps) => {
   // Size configurations
   const sizeConfig = {
@@ -89,7 +92,7 @@ const ChessBoard = ({
   };
 
   return (
-    <div className="flex items-center justify-center w-full">
+    <div className="flex items-center justify-center w-full select-none">
       {/* Board with outer frames */}
       <div className="relative">
         {/* Outer decorative frames */}
@@ -97,7 +100,13 @@ const ChessBoard = ({
         <div className="absolute -inset-8 border border-white/5" />
 
         {/* Main board container */}
-        <div className="relative border border-white/20 shadow-2xl shadow-black/80">
+        <div className={cn(
+          "relative border border-white/20 shadow-2xl shadow-black/80",
+          gameEndState === "defeat" && "transition-all duration-1000"
+        )}>
+          {/* Game end overlays */}
+          <DefeatOverlay isActive={gameEndState === "defeat"} />
+          <DrawOverlay isActive={gameEndState === "draw"} />
           {/* The board itself */}
           {displayBoard.map((row, rowIndex) => (
             <div key={rowIndex} className="flex">
@@ -178,8 +187,8 @@ const ChessBoard = ({
                         className={cn(
                           "absolute inset-0 z-10",
                           isLight
-                            ? "bg-sky-400/40 ring-2 ring-inset ring-sky-500/60"
-                            : "bg-sky-500/30 ring-2 ring-inset ring-sky-400/50"
+                            ? "bg-amber-200/40 ring-1 ring-inset ring-amber-400/50"
+                            : "bg-amber-400/25 ring-1 ring-inset ring-amber-300/40"
                         )}
                       />
                     )}
@@ -188,22 +197,16 @@ const ChessBoard = ({
                     {isLegalMove && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center">
                         {hasPiece ? (
-                          // Capture indicator - corner triangles
+                          // Capture indicator - subtle corner triangles (same color on all squares)
                           <>
-                            <div className={cn(
-                              "absolute top-0 left-0 w-0 h-0",
-                              "border-t-[10px] border-l-[10px] border-r-[10px] border-b-[10px]",
-                              "border-t-red-500/60 border-l-red-500/60",
-                              "border-r-transparent border-b-transparent",
-                              "sm:border-t-[12px] sm:border-l-[12px] sm:border-r-[12px] sm:border-b-[12px]"
-                            )} />
-                            <div className={cn(
-                              "absolute bottom-0 right-0 w-0 h-0",
-                              "border-t-[10px] border-l-[10px] border-r-[10px] border-b-[10px]",
-                              "border-b-red-500/60 border-r-red-500/60",
-                              "border-l-transparent border-t-transparent",
-                              "sm:border-t-[12px] sm:border-l-[12px] sm:border-r-[12px] sm:border-b-[12px]"
-                            )} />
+                            <div
+                              className="absolute top-0 left-0 w-0 h-0 border-[8px] sm:border-[10px] border-r-transparent border-b-transparent"
+                              style={{ borderTopColor: 'rgba(220, 80, 80, 0.45)', borderLeftColor: 'rgba(220, 80, 80, 0.45)' }}
+                            />
+                            <div
+                              className="absolute bottom-0 right-0 w-0 h-0 border-[8px] sm:border-[10px] border-l-transparent border-t-transparent"
+                              style={{ borderBottomColor: 'rgba(220, 80, 80, 0.45)', borderRightColor: 'rgba(220, 80, 80, 0.45)' }}
+                            />
                           </>
                         ) : (
                           // Move indicator - elegant dot
@@ -211,8 +214,8 @@ const ChessBoard = ({
                             className={cn(
                               "w-3 h-3 sm:w-4 sm:h-4 rounded-full",
                               isLight
-                                ? "bg-neutral-900/30"
-                                : "bg-white/30"
+                                ? "bg-neutral-900/25"
+                                : "bg-white/25"
                             )}
                           />
                         )}

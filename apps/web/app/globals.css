@@ -23,6 +23,15 @@ a {
   text-decoration: none;
 }
 
+/* Pointer cursor for clickable elements */
+a,
+button,
+[role="button"],
+.cursor-pointer,
+[onclick] {
+  cursor: pointer;
+}
+
 /* Custom Scrollbar Styles */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;

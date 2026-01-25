@@ -509,15 +509,12 @@ export default function Play() {
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              {/* Invert animation on hover */}
-              <motion.div
-                className="absolute inset-0 bg-black origin-bottom"
-                initial={{ scaleY: 0 }}
-                whileHover={{ scaleY: 1 }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              {/* Invert animation on hover - uses CSS for reliable hover */}
+              <div
+                className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"
               />
 
-              <div className="relative py-4 px-6 flex items-center justify-center gap-3">
+              <div className="relative z-10 py-4 px-6 flex items-center justify-center gap-3">
                 {isCreatingGame ? (
                   <>
                     <motion.div

@@ -5,9 +5,11 @@ import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
+import { VictoryConfetti } from "../../components/GameEndEffects";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
+import { useChessSound } from "@/lib/hooks/useChessSound";
 import { cn, formatTime } from "@/lib/utils";
 import { motion } from "motion/react";
 import type {
@@ -34,6 +36,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   const socketRef = useRef<Socket | null>(null);
   const [myColor, setMyColor] = useState<Color | null>(null);
+  const myColorRef = useRef<Color | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [whiteTime, setWhiteTime] = useState(300);
   const [blackTime, setBlackTime] = useState(300);
@@ -57,6 +60,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     onThinkingStart,
     onThinkingEnd,
   });
+
+  const { playSound, playSoundForMove, checkTenSecondWarning, toggleMute, isMuted } = useChessSound();
 
   const getLegalMovesForSquare = useCallback(
     (square: Square): Square[] => {
@@ -127,6 +132,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     socketRef.current.on("game_started", (payload: GameStartedPayload) => {
       setGameStarted(true);
       setMyColor(payload.yourColor);
+      myColorRef.current = payload.yourColor;
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
       setWhitePlayer(payload.whitePlayer);
@@ -144,6 +150,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         setGame(newGame);
         setCurrentTurn(newGame.turn());
       }
+
+      // Play game start sound
+      playSound('game-start');
     });
 
     socketRef.current.on("move_made", (payload: MoveMadePayload) => {
@@ -152,11 +161,23 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setCurrentTurn(payload.turn);
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
-      const moves = newGame.history({ verbose: true });
-      setMoveHistory(moves);
+
+      // Update move history by adding the new move
+      setMoveHistory(prev => [...prev, {
+        from: payload.from,
+        to: payload.to,
+        san: payload.san,
+        promotion: payload.promotion,
+      } as Move]);
+
+      // Play sound for the move using the SAN from payload
+      if (!newGame.isGameOver()) {
+        playSoundForMove(payload.san);
+      }
     });
 
     socketRef.current.on("move_error", (payload: MoveErrorPayload) => {
+      playSound('illegal');
       if (!isAIGameRef.current) {
         alert(payload.message || "Invalid move");
       }
@@ -165,6 +186,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     socketRef.current.on("clock_update", (payload: ClockUpdatePayload) => {
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
+
+      // Check for ten second warning on my clock
+      const myTime = myColorRef.current === 'w' ? payload.whiteTime : payload.blackTime;
+      if (myColorRef.current) {
+        checkTenSecondWarning(myTime);
+      }
     });
 
     socketRef.current.on("game_over", (payload: GameOverPayload) => {
@@ -177,13 +204,18 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setGameResult(`${resultText} — ${payload.method}`);
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
+
+      // Play game end sound
+      playSound('game-end');
     });
 
     socketRef.current.on("opponent_disconnected", () => {
+      playSound('notify');
       alert("Opponent disconnected. They have 30 seconds to reconnect.");
     });
 
     socketRef.current.on("opponent_reconnected", () => {
+      playSound('notify');
       alert("Opponent reconnected!");
     });
 
@@ -268,8 +300,14 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     );
   }
 
+  // Determine if this is a victory for confetti
+  const isVictory = gameOver && gameResult?.includes("Victory");
+
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Victory confetti effect */}
+      <VictoryConfetti isActive={isVictory || false} />
+
       {/* Subtle grid background */}
       <div
         className="fixed inset-0 opacity-[0.015] pointer-events-none"
@@ -307,6 +345,28 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           >
             {/* Left - Game Info */}
             <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
+              {/* Sound Toggle - Mobile Only */}
+              <div className="lg:hidden border border-white/10 p-3 flex items-center justify-between">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40"
+                >
+                  Sound
+                </p>
+                <button
+                  onClick={toggleMute}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1 border transition-colors text-sm",
+                    isMuted
+                      ? "border-white/10 text-white/40"
+                      : "border-white/20 text-white"
+                  )}
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  <span>{isMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A"}</span>
+                </button>
+              </div>
+
               {/* Current Turn */}
               <div className="border border-white/10 p-5">
                 <p
@@ -437,6 +497,15 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onSquareClick={handleSquareClick}
                   playerColor={myColor}
                   showCoordinates={true}
+                  gameEndState={
+                    gameOver
+                      ? gameResult?.includes("Victory")
+                        ? "victory"
+                        : gameResult?.includes("Draw")
+                        ? "draw"
+                        : "defeat"
+                      : null
+                  }
                 />
               </div>
 
@@ -467,8 +536,31 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
             </div>
 
-            {/* Right - Empty or additional info */}
-            <div className="lg:col-span-3 order-3 hidden lg:block">
+            {/* Right - Controls and info */}
+            <div className="lg:col-span-3 order-3 hidden lg:block space-y-4">
+              {/* Sound Controls */}
+              <div className="border border-white/10 p-5">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                >
+                  Sound
+                </p>
+                <button
+                  onClick={toggleMute}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 px-4 py-2 border transition-colors",
+                    isMuted
+                      ? "border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
+                      : "border-white/20 text-white hover:border-white/40"
+                  )}
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  <span className="text-lg">{isMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A"}</span>
+                  <span className="text-sm">{isMuted ? "Unmute" : "Mute"}</span>
+                </button>
+              </div>
+
               {/* Decorative element */}
               <div className="border border-white/5 p-6 text-center">
                 <p
