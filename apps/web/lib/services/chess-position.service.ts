@@ -53,3 +53,63 @@ export async function incrementPositionPlayCount(positionId: bigint) {
     },
   });
 }
+
+/**
+ * Fetches a random chess position from a specific legend's games
+ * @param legendReferenceId - The legend's referenceId (cuid)
+ * @returns A random chess position from that legend's games or null if none found
+ */
+export async function getRandomPositionByLegend(legendReferenceId: string) {
+  // Find the legend by referenceId
+  const legend = await prisma.legend.findUnique({
+    where: { referenceId: legendReferenceId },
+  });
+
+  if (!legend) {
+    console.warn(`Legend not found with referenceId: ${legendReferenceId}`);
+    return null;
+  }
+
+  // Count positions where this legend played (as white or black)
+  const count = await prisma.chessPosition.count({
+    where: {
+      isActive: true,
+      OR: [
+        { whitePlayerId: legend.id },
+        { blackPlayerId: legend.id },
+      ],
+    },
+  });
+
+  if (count === 0) {
+    console.warn(`No positions found for legend: ${legend.name}`);
+    return null;
+  }
+
+  // Generate a random skip value
+  const skip = Math.floor(Math.random() * count);
+
+  const position = await prisma.chessPosition.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        { whitePlayerId: legend.id },
+        { blackPlayerId: legend.id },
+      ],
+    },
+    skip,
+    select: {
+      id: true,
+      referenceId: true,
+      fen: true,
+      sideToMove: true,
+      whitePlayerName: true,
+      blackPlayerName: true,
+      tournamentName: true,
+      positionType: true,
+      sourceType: true,
+    },
+  });
+
+  return position;
+}

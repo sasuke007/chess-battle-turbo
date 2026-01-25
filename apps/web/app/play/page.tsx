@@ -1,13 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
-import DifficultySelector from "../components/DifficultySelector";
-import ColorSelector, { PlayerColor } from "../components/ColorSelector";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
-import { Difficulty } from "@/lib/hooks/useBotMove";
 import { CompleteUserObject } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
@@ -45,18 +42,36 @@ export default function Play() {
   const [selectedMode, setSelectedMode] = useState<"quick" | "friend" | "ai">("quick");
   const [playAsLegend, setPlayAsLegend] = useState(false);
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [playerColor, setPlayerColor] = useState<PlayerColor>("random");
 
-  // TODO: We can have photos of the legends and a short description of the players like this and this should be enough.
-  const chessHeroes = [
-    { id: "carlsen", name: "Magnus Carlsen", title: "The GOAT", era: "Modern Era" },
-    { id: "kasparov", name: "Garry Kasparov", title: "The Beast", era: "Modern Era" },
-    { id: "morphy", name: "Paul Morphy", title: "The Pride", era: "Romantic Era" },
-    { id: "tal", name: "Mikhail Tal", title: "The Magician", era: "Soviet Era" },
-    { id: "fischer", name: "Bobby Fischer", title: "The Genius", era: "Modern Era" },
-    { id: "capablanca", name: "José Capablanca", title: "The Machine", era: "Classical Era" },
-  ];
+  // Legends fetched from API
+  interface Legend {
+    id: string;
+    name: string;
+    era: string;
+    profilePhotoUrl: string | null;
+    description: string;
+    playingStyle: string | null;
+  }
+  const [legends, setLegends] = useState<Legend[]>([]);
+  const [legendsLoading, setLegendsLoading] = useState(true);
+
+  // Fetch visible legends from API
+  useEffect(() => {
+    async function fetchLegends() {
+      try {
+        const response = await fetch("/api/legends?isVisible=true&isActive=true");
+        const data = await response.json();
+        if (data.success && data.data?.legends) {
+          setLegends(data.data.legends);
+        }
+      } catch (error) {
+        console.error("Failed to fetch legends:", error);
+      } finally {
+        setLegendsLoading(false);
+      }
+    }
+    fetchLegends();
+  }, []);
 
   const handleCreateGame = async () => {
     if (!userReferenceId) {
@@ -80,13 +95,14 @@ export default function Play() {
     }
 
     // For AI mode, create AI game
+    // Difficulty is auto-determined by user rating, color is always random
     if (selectedMode === "ai") {
       const aiGameData = {
         userReferenceId: userReferenceId,
         initialTimeSeconds: timeControl.time,
         incrementSeconds: timeControl.increment,
-        difficulty: difficulty,
-        playerColor: playerColor,
+        // If playing as a legend, include the selected legend
+        ...(playAsLegend && selectedHero && { selectedLegend: selectedHero }),
       };
 
       try {
@@ -245,19 +261,11 @@ export default function Play() {
               </button>
             </div>
 
-            {/* AI Mode Settings */}
-            {selectedMode === "ai" && (
-              <div className="space-y-4">
-                <DifficultySelector value={difficulty} onChange={setDifficulty} />
-                <ColorSelector value={playerColor} onChange={setPlayerColor} />
-              </div>
-            )}
-
             {/* Separator */}
             <div className="border-t border-white/10 mb-6"></div>
 
-            {/* Play as Chess Legend (hide for AI games) */}
-            {selectedMode !== "ai" && (
+            {/* Play as Chess Legend - only show if legends are available */}
+            {!legendsLoading && legends.length > 0 && (
             <div className={cn(
               "rounded-xl border transition-all duration-200",
               "bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-xl",
@@ -307,35 +315,43 @@ export default function Play() {
                   >
                     <div className="px-4 pb-4 border-t border-white/10">
                       <div className="pt-4 space-y-2">
-                        <p className="text-xs text-neutral-400 mb-3">Select a chess legend to emulate their playing style</p>
+                        <p className="text-xs text-neutral-400 mb-3">Select a chess legend to play their famous positions</p>
                         <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                          {chessHeroes.map((hero) => (
+                          {legends.map((legend) => (
                             <button
-                              key={hero.id}
-                              onClick={() => setSelectedHero(hero.id)}
+                              key={legend.id}
+                              onClick={() => setSelectedHero(legend.id)}
                               className={cn(
                                 "p-3 rounded-lg border transition-all duration-200 text-left",
                                 "bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent",
-                                selectedHero === hero.id
+                                selectedHero === legend.id
                                   ? "border-white/30 shadow-[0_4px_16px_0_rgba(255,255,255,0.1)]"
                                   : "border-white/10 hover:border-white/20 hover:scale-[1.02]"
                               )}
                             >
                               <div className="flex items-start gap-2">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-600 to-neutral-800 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-xs font-bold text-white">
-                                    {hero.name.split(' ').map(n => n[0]).join('')}
-                                  </span>
-                                </div>
+                                {legend.profilePhotoUrl ? (
+                                  <img
+                                    src={legend.profilePhotoUrl}
+                                    alt={legend.name}
+                                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-600 to-neutral-800 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-bold text-white">
+                                      {legend.name.split(' ').map(n => n[0]).join('')}
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                   <p className={cn(
                                     "text-xs font-medium truncate",
-                                    selectedHero === hero.id ? "text-white" : "text-neutral-300"
+                                    selectedHero === legend.id ? "text-white" : "text-neutral-300"
                                   )}>
-                                    {hero.name}
+                                    {legend.name}
                                   </p>
-                                  <p className="text-[10px] text-neutral-500 truncate">{hero.title}</p>
-                                  <p className="text-[10px] text-neutral-600">{hero.era}</p>
+                                  <p className="text-[10px] text-neutral-500 truncate">{legend.playingStyle || legend.description}</p>
+                                  <p className="text-[10px] text-neutral-600">{legend.era}</p>
                                 </div>
                               </div>
                             </button>

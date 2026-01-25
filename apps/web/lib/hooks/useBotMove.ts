@@ -15,12 +15,14 @@ interface DifficultyConfig {
  * Difficulty is now controlled by Stockfish search depth.
  * Shallower search = weaker play (naturally makes mistakes).
  * No more artificial "blunder chance" - the engine just plays weaker at lower depths.
+ *
+ * Note: Using pure JS Stockfish (not WASM) so depths are reduced for performance.
  */
 const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
-  easy: { depth: 5, moveTime: 500, elo: 800 },
-  medium: { depth: 12, moveTime: 1000, elo: 1400 },
-  hard: { depth: 18, moveTime: 1500, elo: 1800 },
-  expert: { depth: 22, moveTime: 2500, elo: 2200 },
+  easy: { depth: 3, moveTime: 300, elo: 800 },
+  medium: { depth: 6, moveTime: 500, elo: 1400 },
+  hard: { depth: 10, moveTime: 1000, elo: 1800 },
+  expert: { depth: 14, moveTime: 1500, elo: 2200 },
 };
 
 interface UseBotMoveOptions {

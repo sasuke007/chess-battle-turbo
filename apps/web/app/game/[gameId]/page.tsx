@@ -256,12 +256,6 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     };
   }, [isLoaded, gameId, myColor, userReferenceId]);
 
-  // Store game in a ref so we can access current state without triggering effect re-runs
-  const gameRef = useRef(game);
-  useEffect(() => {
-    gameRef.current = game;
-  }, [game]);
-
   // Effect to trigger bot moves in AI games
   useEffect(() => {
     // Only run for AI games when it's the bot's turn
@@ -278,10 +272,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     // Set the flag IMMEDIATELY, before any async work
     botMoveInProgressRef.current = true;
 
-    // Get legal moves from current game state
-    const currentGame = gameRef.current;
-    const currentFen = currentGame.fen();
-    const legalMoves = currentGame.moves({ verbose: true });
+    // Get legal moves from current game state (use game directly, not ref)
+    const currentFen = game.fen();
+    const legalMoves = game.moves({ verbose: true });
 
     if (legalMoves.length === 0) {
       botMoveInProgressRef.current = false;
@@ -332,7 +325,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     };
 
     makeBotMove();
-  }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId]);
+  }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId, game]);
 
   // Show loading state while auth is loading
   if (!isLoaded) {

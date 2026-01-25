@@ -288,8 +288,10 @@ export class GameSession {
       this.opponentPlayer = humanPlayer;
     }
 
-    // Start white's clock
-    this.clockManager.startClock("w");
+    // Start the clock for whoever's turn it is according to the FEN
+    const currentTurn = this.chess.turn();
+    this.clockManager.startClock(currentTurn);
+    console.log(`Starting clock for ${currentTurn === "w" ? "white" : "black"} (from FEN)`);
 
     // Emit game_started to the human player with AI game info
     const payload: GameStartedPayload = {
