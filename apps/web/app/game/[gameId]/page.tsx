@@ -1,6 +1,5 @@
 "use client";
 
-{/* when user makes a move, move should be visible in ui first and then backend calls should go it feels like a smooth transition*/}
 import { useState, useCallback, useEffect, useRef, use } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
@@ -9,20 +8,33 @@ import ChessBoard from "../../components/ChessBoard";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
+import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
+
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
   const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
-  // Unwrap params Promise
   const { gameId } = use(params);
-  
+
   const [game, setGame] = useState<Chess>(new Chess());
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [currentTurn, setCurrentTurn] = useState<"w" | "b">("w");
-  
-  // WebSocket and game state
+
   const socketRef = useRef<Socket | null>(null);
   const [myColor, setMyColor] = useState<Color | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -33,15 +45,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
 
-  // AI game state
   const [isAIGame, setIsAIGame] = useState(false);
-  const isAIGameRef = useRef(false); // Ref for use in callbacks
+  const isAIGameRef = useRef(false);
   const [aiDifficulty, setAIDifficulty] = useState<Difficulty>("medium");
   const [botColor, setBotColor] = useState<Color | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const botMoveInProgressRef = useRef(false);
 
-  // Bot move hook - callbacks must be stable to prevent effect re-runs
   const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
   const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
 
@@ -51,8 +61,6 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     onThinkingEnd,
   });
 
-
-  // Get legal moves for a selected piece
   const getLegalMovesForSquare = useCallback(
     (square: Square): Square[] => {
       const moves = game.moves({ square, verbose: true });
@@ -61,19 +69,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     [game]
   );
 
-  // Handle square click
   const handleSquareClick = useCallback(
     (square: Square) => {
       if (gameOver || !gameStarted) return;
-      
-      // Only allow moves if it's my turn
       if (myColor !== currentTurn) return;
 
-      // If no square is selected, select the clicked square if it has a piece
       if (!selectedSquare) {
         const piece = game.get(square);
-        
-        // Only allow selecting pieces of the current player's color
         if (piece && piece.color === myColor) {
           setSelectedSquare(square);
           setLegalMoves(getLegalMovesForSquare(square));
@@ -81,54 +83,36 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         return;
       }
 
-      // If the same square is clicked again, deselect it
       if (selectedSquare === square) {
         setSelectedSquare(null);
         setLegalMoves([]);
         return;
       }
 
-      // Try to make a move
       const from = selectedSquare;
       const to = square;
 
-      // Send move to server via WebSocket
       if (socketRef.current) {
         socketRef.current.emit("make_move", {
           gameReferenceId: gameId,
           from,
           to,
-          promotion: "q", // Always promote to queen for simplicity
+          promotion: "q",
         });
       }
 
-      // Clear selection
       setSelectedSquare(null);
       setLegalMoves([]);
     },
     [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare]
   );
 
-  // Setup WebSocket connection
   useEffect(() => {
-    // Wait for auth to load and ensure we have both gameId and userReferenceId
-    if (!isLoaded || !gameId || !userReferenceId) {
-      console.log("Waiting for auth or game data...", { isLoaded, gameId, userReferenceId });
-      return;
-    }
+    if (!isLoaded || !gameId || !userReferenceId) return;
+    if (socketRef.current?.connected) return;
 
-    // Don't create a new socket if one already exists and is connected
-    if (socketRef.current?.connected) {
-      console.log("Socket already connected, reusing existing connection");
-      return;
-    }
-
-    console.log("Initializing WebSocket connection with:", { gameId, userReferenceId });
-
-    // Get WebSocket URL from environment variable or use default
     const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:3002";
 
-    // Initialize WebSocket with reconnection enabled (Socket.IO default)
     socketRef.current = io(WEBSOCKET_URL, {
       reconnection: true,
       reconnectionDelay: 1000,
@@ -137,27 +121,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("connect", () => {
-      console.log("Connected to WebSocket server:", socketRef.current?.id);
-      console.log("Attempting to join game with:", {
-        gameReferenceId: gameId,
-        userReferenceId,
-        userObjectAvailable: !!userObject,
-      });
-
-      // Join/rejoin the game (server will handle reconnection logic)
       socketRef.current!.emit("join_game", {
         gameReferenceId: gameId,
         userReferenceId,
       });
     });
 
-    socketRef.current.on("reconnect", (attemptNumber: number) => {
-      console.log(`Reconnected to server after ${attemptNumber} attempts`);
-      // Socket.IO will automatically trigger 'connect' event, which will rejoin the game
-    });
-
     socketRef.current.on("game_started", (payload: any) => {
-      console.log("Game started:", payload);
       setGameStarted(true);
       setMyColor(payload.yourColor);
       setWhiteTime(payload.whiteTime);
@@ -165,17 +135,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setWhitePlayer(payload.whitePlayer);
       setBlackPlayer(payload.blackPlayer);
 
-      // Detect AI game from payload
       if (payload.isAIGame) {
         setIsAIGame(true);
         isAIGameRef.current = true;
         setAIDifficulty(payload.difficulty || "medium");
-        // Bot color is opposite of player's color
         setBotColor(payload.yourColor === "w" ? "b" : "w");
-        console.log("AI game detected - Bot color:", payload.yourColor === "w" ? "black" : "white");
       }
 
-      // Load FEN if provided
       if (payload.fen) {
         const newGame = new Chess(payload.fen);
         setGame(newGame);
@@ -184,24 +150,16 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("move_made", (payload: any) => {
-      console.log("Move made:", payload);
-
-      // Update game state
       const newGame = new Chess(payload.fen);
       setGame(newGame);
       setCurrentTurn(payload.turn);
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
-
-      // Add to move history
       const moves = newGame.history({ verbose: true });
       setMoveHistory(moves);
     });
 
     socketRef.current.on("move_error", (payload: any) => {
-      console.error("Move error:", payload);
-      // In AI games, don't show alert for bot move errors (duplicates from race conditions)
-      // The game continues normally since the valid move was already processed
       if (!isAIGameRef.current) {
         alert(payload.message || "Invalid move");
       }
@@ -213,18 +171,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("game_over", (payload: any) => {
-      console.log("Game over:", payload);
       setGameOver(true);
-      
-      const resultText = payload.result === "DRAW" 
-        ? "Game ended in a draw"
+      const resultText = payload.result === "DRAW"
+        ? "Draw"
         : payload.winner === myColor
-        ? "You won!"
-        : "You lost!";
-      
-      setGameResult(`${resultText} (${payload.method})`);
-      
-      // Update final times
+        ? "Victory"
+        : "Defeat";
+      setGameResult(`${resultText} — ${payload.method}`);
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
     });
@@ -238,16 +191,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("error", (payload: any) => {
-      console.error("WebSocket error:", payload);
-      
-      // Handle "not part of game" error
       if (payload.message && payload.message.includes("not part of")) {
         alert("You are not part of this game. Redirecting...");
-        // Try to join the game first
         router.push(`/join/${gameId}`);
         return;
       }
-      
       alert(payload.message || "An error occurred");
     });
 
@@ -256,47 +204,29 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     };
   }, [isLoaded, gameId, myColor, userReferenceId]);
 
-  // Effect to trigger bot moves in AI games
   useEffect(() => {
-    // Only run for AI games when it's the bot's turn
-    if (!isAIGame || !gameStarted || gameOver || !botColor || currentTurn !== botColor) {
-      return;
-    }
+    if (!isAIGame || !gameStarted || gameOver || !botColor || currentTurn !== botColor) return;
+    if (botMoveInProgressRef.current) return;
 
-    // Prevent multiple bot moves - check BEFORE doing anything async
-    if (botMoveInProgressRef.current) {
-      console.log("Bot move already in progress, skipping");
-      return;
-    }
-
-    // Set the flag IMMEDIATELY, before any async work
     botMoveInProgressRef.current = true;
 
-    // Get legal moves from current game state (use game directly, not ref)
     const currentFen = game.fen();
     const legalMoves = game.moves({ verbose: true });
 
     if (legalMoves.length === 0) {
       botMoveInProgressRef.current = false;
-      return; // No legal moves, game should end
+      return;
     }
 
-    // Convert to UCI format strings (e.g., "e2e4")
     const legalMovesUCI = legalMoves.map((m) => `${m.from}${m.to}${m.promotion || ""}`);
 
     const makeBotMove = async () => {
       try {
-        console.log("Bot computing move for FEN:", currentFen);
-        console.log("Legal moves available:", legalMovesUCI);
         const botMoveUCI = await computeBotMove(currentFen, legalMovesUCI);
-        console.log("Bot selected move:", botMoveUCI);
-
-        // Parse UCI move (e.g., "e2e4" or "e7e8q")
         const from = botMoveUCI.slice(0, 2) as Square;
         const to = botMoveUCI.slice(2, 4) as Square;
         const promotion = botMoveUCI.length > 4 ? botMoveUCI[4] as "q" | "r" | "b" | "n" : undefined;
 
-        // Send bot move to server
         if (socketRef.current) {
           socketRef.current.emit("make_move", {
             gameReferenceId: gameId,
@@ -304,11 +234,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             to,
             promotion: promotion || "q",
           });
-          console.log("Bot move sent:", { from, to, promotion });
         }
       } catch (error) {
         console.error("Error computing bot move:", error);
-        // On any error, try to make a legal move to keep the game going
         if (legalMoves.length > 0 && socketRef.current) {
           const fallbackMove = legalMoves[0]!;
           socketRef.current.emit("make_move", {
@@ -317,7 +245,6 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             to: fallbackMove.to,
             promotion: fallbackMove.promotion || "q",
           });
-          console.log("Bot emergency fallback move sent:", fallbackMove);
         }
       } finally {
         botMoveInProgressRef.current = false;
@@ -327,146 +254,246 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     makeBotMove();
   }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId, game]);
 
-  // Show loading state while auth is loading
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, "0")}`;
+  };
+
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">Loading...</h1>
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
-        </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
+            Loading...
+          </p>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        {/**
-         * TODO: Add a good loader here.
-         */}
+    <div className="min-h-screen bg-black text-white">
+      {/* Subtle grid background */}
+      <div
+        className="fixed inset-0 opacity-[0.015] pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      <div className="relative max-w-7xl mx-auto px-4 py-8">
         {!gameStarted ? (
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Waiting for game to start...</h1>
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
+          <div className="flex flex-col items-center justify-center min-h-[80vh]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <div className="w-16 h-16 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-6" />
+              <h1
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+                className="text-3xl text-white mb-2"
+              >
+                Waiting for opponent
+              </h1>
+              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40">
+                The game will start momentarily
+              </p>
+            </motion.div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Chess Board */}
-            <div className="lg:col-span-2 flex justify-center">
-              <ChessBoard
-                board={game.board()}
-                selectedSquare={selectedSquare}
-                legalMoves={legalMoves}
-                onSquareClick={handleSquareClick}
-                playerColor={myColor}
-              />
-            </div>
-
-            {/* Game Info Sidebar */}
-            <div className="space-y-6">
-              {/* Players and Clocks */}
-              <div className="bg-neutral-800 rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-4">Players</h2>
-                
-                {/* Black Player */}
-                <div className="mb-4 p-3 bg-neutral-700 rounded">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-black border-2 border-white" />
-                      <span className="font-semibold">{blackPlayer?.name || "Black"}</span>
-                      {myColor === "b" && <span className="text-xs text-green-400">(You)</span>}
-                    </div>
-                    <div className={`text-2xl font-mono ${currentTurn === "b" ? "text-green-400" : ""}`}>
-                      {Math.floor(blackTime / 60)}:{String(blackTime % 60).padStart(2, "0")}
-                    </div>
-                  </div>
-                </div>
-
-                {/* White Player */}
-                <div className="p-3 bg-neutral-700 rounded">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-white" />
-                      <span className="font-semibold">{whitePlayer?.name || "White"}</span>
-                      {myColor === "w" && <span className="text-xs text-green-400">(You)</span>}
-                    </div>
-                    <div className={`text-2xl font-mono ${currentTurn === "w" ? "text-green-400" : ""}`}>
-                      {Math.floor(whiteTime / 60)}:{String(whiteTime % 60).padStart(2, "0")}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+          >
+            {/* Left - Game Info */}
+            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
               {/* Current Turn */}
-              <div className="bg-neutral-800 rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-4">Current Turn</h2>
+              <div className="border border-white/10 p-5">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                >
+                  Current Turn
+                </p>
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full ${
-                      currentTurn === "w" ? "bg-white" : "bg-black border-2 border-white"
-                    }`}
-                  />
-                  <span className="text-xl">
+                  <div className={cn(
+                    "w-6 h-6",
+                    currentTurn === "w" ? "bg-white" : "bg-black border border-white/30"
+                  )} />
+                  <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium">
                     {currentTurn === "w" ? "White" : "Black"}
-                    {currentTurn === myColor && " (Your turn)"}
+                    {currentTurn === myColor && " (You)"}
                     {isAIGame && currentTurn === botColor && " (Bot)"}
                   </span>
                 </div>
-                {/* Bot thinking indicator */}
                 {isAIGame && isBotThinking && (
-                  <div className="mt-4 flex items-center gap-2 text-blue-400">
-                    <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                    <span>Bot thinking...</span>
+                  <div className="mt-3 flex items-center gap-2 text-white/50">
+                    <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                    <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs">
+                      Bot thinking...
+                    </span>
                   </div>
                 )}
               </div>
 
               {/* Game Status */}
-              <div className="bg-neutral-800 rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-4">Status</h2>
-                <div className="space-y-2">
+              {(gameOver || game.isCheck()) && (
+                <div className={cn(
+                  "border p-5",
+                  gameOver ? "border-white bg-white text-black" : "border-white/10"
+                )}>
                   {gameOver ? (
-                    <div className="text-center p-4 bg-neutral-700 rounded">
-                      <p className="text-xl font-bold mb-2">Game Over!</p>
-                      <p className="text-lg">{gameResult}</p>
+                    <div className="text-center">
+                      <p
+                        style={{ fontFamily: "'Instrument Serif', serif" }}
+                        className="text-2xl mb-1"
+                      >
+                        {gameResult?.split(" — ")[0]}
+                      </p>
+                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-sm opacity-60">
+                        {gameResult?.split(" — ")[1]}
+                      </p>
                     </div>
-                  ) : (
-                    <>
-                      {game.isCheck() && (
-                        <p className="text-yellow-500 font-semibold">Check!</p>
-                      )}
-                    </>
+                  ) : game.isCheck() && (
+                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-center">
+                      Check!
+                    </p>
                   )}
                 </div>
-              </div>
+              )}
 
               {/* Move History */}
-              <div className="bg-neutral-800 rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-4">Move History</h2>
-                <div className="max-h-96 overflow-y-auto space-y-2">
+              <div className="border border-white/10 p-5">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                >
+                  Moves
+                </p>
+                <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-1">
                   {moveHistory.length === 0 ? (
-                    <p className="text-neutral-400">No moves yet</p>
+                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/30 text-sm">
+                      No moves yet
+                    </p>
                   ) : (
-                    moveHistory.map((move, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 text-sm bg-neutral-700 rounded p-2"
-                      >
-                        <span className="font-bold text-neutral-400">
-                          {Math.floor(index / 2) + 1}.
-                        </span>
-                        <span className="font-mono">{move.san}</span>
-                        <span className="text-neutral-500 text-xs">
-                          ({move.from} → {move.to})
-                        </span>
-                      </div>
-                    ))
+                    <div className="grid grid-cols-2 gap-1">
+                      {moveHistory.map((move, index) => (
+                        <div
+                          key={index}
+                          className={cn(
+                            "px-2 py-1 text-sm",
+                            index % 2 === 0 ? "bg-white/5" : ""
+                          )}
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                        >
+                          {index % 2 === 0 && (
+                            <span className="text-white/30 mr-2">{Math.floor(index / 2) + 1}.</span>
+                          )}
+                          <span className="text-white/80 font-mono">{move.san}</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* Center - Chess Board */}
+            <div className="lg:col-span-6 order-1 lg:order-2">
+              {/* Opponent Clock & Info */}
+              <div className="flex items-center justify-between mb-4 px-2">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-8 h-8 flex items-center justify-center",
+                    myColor === "w" ? "bg-black border border-white/30" : "bg-white"
+                  )}>
+                    <span className={myColor === "w" ? "text-white" : "text-black"}>
+                      {myColor === "w" ? "♚" : "♔"}
+                    </span>
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
+                      {myColor === "w" ? blackPlayer?.name || "Black" : whitePlayer?.name || "White"}
+                    </p>
+                    {isAIGame && botColor && myColor !== botColor && (
+                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-xs">Bot</p>
+                    )}
+                  </div>
+                </div>
+                <div className={cn(
+                  "px-4 py-2 font-mono text-xl",
+                  currentTurn !== myColor ? "bg-white text-black" : "bg-white/10 text-white"
+                )}>
+                  {formatTime(myColor === "w" ? blackTime : whiteTime)}
+                </div>
+              </div>
+
+              {/* Board with frame */}
+              <div className="relative">
+                <div className="absolute -inset-3 border border-white/10" />
+                <div className="relative border border-white/20">
+                  <ChessBoard
+                    board={game.board()}
+                    selectedSquare={selectedSquare}
+                    legalMoves={legalMoves}
+                    onSquareClick={handleSquareClick}
+                    playerColor={myColor}
+                  />
+                </div>
+              </div>
+
+              {/* Player Clock & Info */}
+              <div className="flex items-center justify-between mt-4 px-2">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-8 h-8 flex items-center justify-center",
+                    myColor === "w" ? "bg-white" : "bg-black border border-white/30"
+                  )}>
+                    <span className={myColor === "w" ? "text-black" : "text-white"}>
+                      {myColor === "w" ? "♔" : "♚"}
+                    </span>
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
+                      {myColor === "w" ? whitePlayer?.name || "White" : blackPlayer?.name || "Black"}
+                    </p>
+                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-xs">You</p>
+                  </div>
+                </div>
+                <div className={cn(
+                  "px-4 py-2 font-mono text-xl",
+                  currentTurn === myColor ? "bg-white text-black" : "bg-white/10 text-white"
+                )}>
+                  {formatTime(myColor === "w" ? whiteTime : blackTime)}
+                </div>
+              </div>
+            </div>
+
+            {/* Right - Empty or additional info */}
+            <div className="lg:col-span-3 order-3 hidden lg:block">
+              {/* Decorative element */}
+              <div className="border border-white/5 p-6 text-center">
+                <p
+                  style={{ fontFamily: "'Instrument Serif', serif" }}
+                  className="text-white/20 text-sm italic"
+                >
+                  "The beauty of a move lies not in its appearance but in the thought behind it."
+                </p>
+                <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/10 text-[10px] uppercase tracking-widest mt-2">
+                  Aaron Nimzowitsch
+                </p>
+              </div>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

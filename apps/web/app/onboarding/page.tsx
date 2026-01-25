@@ -2,8 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
+import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
+import { ArrowRight, ExternalLink } from "lucide-react";
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -14,7 +28,7 @@ export default function OnboardingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!chessComHandle.trim()) {
       setError("Please enter your chess.com username");
       return;
@@ -24,7 +38,6 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // Call API to validate and save chess.com handle
       const response = await fetch("/api/user/chess-com-profile", {
         method: "POST",
         headers: {
@@ -39,7 +52,6 @@ export default function OnboardingPage() {
         throw new Error(data.error || "Failed to save chess.com profile");
       }
 
-      // Redirect to home page after successful connection
       router.push("/");
     } catch (err) {
       console.error("Onboarding error:", err);
@@ -49,36 +61,75 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = () => {
-    // User can add chess.com handle later from profile
     router.push("/");
   };
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
+            Loading...
+          </p>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
-      <div className="bg-neutral-800 rounded-lg p-8 max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome to Chess Battle! ♟️
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative">
+      {/* Subtle grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 border border-white/10 p-8 sm:p-12 max-w-md w-full"
+      >
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-center mb-10"
+        >
+          <h1
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="text-3xl sm:text-4xl text-white mb-3"
+          >
+            Welcome to Chess Battle
           </h1>
-          <p className="text-neutral-400">
-            Connect your chess.com account (optional)
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40">
+            Connect your chess.com account
           </p>
-          <p className="text-sm text-neutral-500 mt-2">
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/20 mt-2">
             You can add this later from your profile
           </p>
-        </div>
+        </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="chessComHandle" className="block text-sm font-medium text-neutral-300 mb-2">
+          {/* Input */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <label
+              htmlFor="chessComHandle"
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="block text-xs text-white/40 uppercase tracking-widest mb-3"
+            >
               Chess.com Username
             </label>
             <input
@@ -87,55 +138,95 @@ export default function OnboardingPage() {
               value={chessComHandle}
               onChange={(e) => setChessComHandle(e.target.value)}
               placeholder="e.g., anaestheticcoder"
-              className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+              className={cn(
+                "w-full px-4 py-3 bg-transparent border border-white/10",
+                "text-white placeholder-white/20",
+                "focus:outline-none focus:border-white/40 transition-colors duration-300"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
               disabled={loading}
             />
-            <p className="mt-2 text-xs text-neutral-500">
+            <p style={{ fontFamily: "'Geist', sans-serif" }} className="mt-2 text-xs text-white/20">
               We'll fetch your ratings and stats from chess.com
             </p>
-          </div>
+          </motion.div>
 
+          {/* Error */}
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border border-white/20 p-4"
+            >
+              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/60 text-sm">
+                {error}
+              </p>
+            </motion.div>
           )}
 
-          <div className="space-y-3">
-            <Button
+          {/* Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-3"
+          >
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-white text-black hover:bg-gray-200 font-semibold text-lg py-6"
+              className={cn(
+                "group relative w-full flex items-center justify-center gap-2 px-8 py-4",
+                "bg-white text-black",
+                "transition-all duration-300 overflow-hidden",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
             >
-              {loading ? "Connecting..." : "Connect Chess.com Account"}
-            </Button>
+              <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+              <span className="relative z-10 font-medium group-hover:text-white transition-colors duration-300">
+                {loading ? "Connecting..." : "Connect Chess.com"}
+              </span>
+              {!loading && (
+                <ArrowRight className="w-4 h-4 relative z-10 group-hover:text-white transition-colors duration-300" strokeWidth={1.5} />
+              )}
+            </button>
 
-            <Button
+            <button
               type="button"
               onClick={handleSkip}
               disabled={loading}
-              className="w-full bg-neutral-700 text-white hover:bg-neutral-600 font-semibold text-lg py-6"
+              className={cn(
+                "group w-full flex items-center justify-center gap-2 px-8 py-4",
+                "border border-white/10 hover:border-white/30",
+                "text-white/60 hover:text-white transition-all duration-300",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
             >
               Skip for Now
-            </Button>
-          </div>
+            </button>
+          </motion.div>
 
-          <div className="text-center">
-            <p className="text-xs text-neutral-500">
-              Don't have a chess.com account?{" "}
-              <a
-                href="https://www.chess.com/register"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white hover:underline"
-              >
-                Create one here
-              </a>
-            </p>
-          </div>
+          {/* Link to chess.com */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-center pt-4"
+          >
+            <a
+              href="https://www.chess.com/register"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="inline-flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors"
+            >
+              Don't have an account? Create one
+              <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
+            </a>
+          </motion.div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
-

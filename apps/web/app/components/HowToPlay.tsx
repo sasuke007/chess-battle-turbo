@@ -4,105 +4,147 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { motion } from "motion/react";
 
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
+
 export const HowToPlay = () => {
   const steps = [
     {
       number: "01",
-      title: "Choose a Legendary Position",
-      description:
-        "Select from iconic chess positions from the greatest games in history. Kasparov, Carlsen, Morphy, and more.",
-      icon: "⚡",
+      title: "Choose Position",
+      description: "Select from iconic positions played by Kasparov, Carlsen, Morphy, and other chess legends.",
     },
     {
       number: "02",
-      title: "Share With Your Friend",
-      description:
-        "Get a unique link to the position and challenge your friend to battle from that critical moment.",
-      icon: "🔗",
+      title: "Challenge",
+      description: "Get a unique link and challenge your friend to battle from that critical moment.",
     },
     {
       number: "03",
-      title: "Play the Position",
-      description:
-        "Step into the shoes of chess legends. Navigate through the same critical decisions they faced.",
-      icon: "♟️",
+      title: "Play",
+      description: "Step into the shoes of chess legends. Navigate the same critical decisions they faced.",
     },
     {
       number: "04",
-      title: "Master the Classics",
-      description:
-        "Learn from the best games ever played. Experience tactical brilliance and strategic mastery firsthand.",
-      icon: "👑",
+      title: "Master",
+      description: "Learn from the best games ever played. Experience tactical brilliance firsthand.",
     },
   ];
 
   return (
-    <section className="w-full py-20 px-4 bg-neutral-900">
-      <div className="max-w-7xl mx-auto">
+    <section className="w-full py-24 px-6 bg-black relative">
+      {/* Subtle grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      <div className="max-w-6xl mx-auto relative">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
-            <span className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-500">
-              How to Play
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="h-px w-16 bg-white/20" />
+            <span
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-white/40 text-[10px] tracking-[0.4em] uppercase"
+            >
+              How It Works
             </span>
+            <div className="h-px w-16 bg-white/20" />
+          </div>
+
+          <h2
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="text-4xl sm:text-5xl md:text-6xl text-white mb-4"
+          >
+            Four Simple Steps
           </h2>
-          <p className="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto">
-            Relive legendary chess moments and challenge your friends from the most critical positions in chess history
+
+          <p
+            style={{ fontFamily: "'Geist', sans-serif" }}
+            className="text-white/40 text-lg max-w-xl mx-auto"
+          >
+            Relive legendary chess moments and challenge your friends
           </p>
         </motion.div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Steps Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.3,
-                delay: index * 0.1,
-                ease: "easeOut",
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
               className={cn(
-                "group relative overflow-hidden rounded-2xl",
-                "bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent",
-                "backdrop-blur-xl border border-white/10",
-                "shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]",
-                "hover:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)]",
-                "hover:scale-[1.02] hover:border-white/20",
-                "p-8"
+                "group relative bg-black p-8",
+                "hover:bg-white transition-colors duration-500"
               )}
             >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-neutral-700/10 via-transparent to-neutral-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
               {/* Step Number */}
-              <div className="relative mb-6">
-                <span className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-neutral-600 to-neutral-800">
+              <div className="mb-8">
+                <span
+                  style={{ fontFamily: "'Instrument Serif', serif" }}
+                  className={cn(
+                    "text-6xl font-light",
+                    "text-white/10 group-hover:text-black/10",
+                    "transition-colors duration-500"
+                  )}
+                >
                   {step.number}
                 </span>
               </div>
 
-              {/* Icon */}
-              <div className="relative mb-6 text-5xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                {step.icon}
-              </div>
-
               {/* Content */}
-              <div className="relative">
-                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-neutral-100 transition-colors">
+              <div>
+                <h3
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className={cn(
+                    "text-xl font-semibold mb-3",
+                    "text-white group-hover:text-black",
+                    "transition-colors duration-500"
+                  )}
+                >
                   {step.title}
                 </h3>
-                <p className="text-neutral-400 leading-relaxed group-hover:text-neutral-300 transition-colors">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className={cn(
+                    "text-sm leading-relaxed",
+                    "text-white/50 group-hover:text-black/60",
+                    "transition-colors duration-500"
+                  )}
+                >
                   {step.description}
                 </p>
               </div>
+
+              {/* Corner accent */}
+              <div className={cn(
+                "absolute top-4 right-4 w-8 h-8",
+                "border-t border-r",
+                "border-white/10 group-hover:border-black/10",
+                "transition-colors duration-500"
+              )} />
             </motion.div>
           ))}
         </div>

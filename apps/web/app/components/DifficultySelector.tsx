@@ -2,7 +2,20 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 import { Difficulty, DIFFICULTY_OPTIONS } from "@/lib/hooks/useBotMove";
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
 
 type DifficultySelectorProps = {
   value: Difficulty;
@@ -14,33 +27,58 @@ export default function DifficultySelector({
   onChange,
 }: DifficultySelectorProps) {
   return (
-    <div className="w-full max-w-md">
-      <label className="block text-sm font-medium text-gray-300 mb-3">
+    <div className="w-full">
+      <label
+        style={{ fontFamily: "'Geist', sans-serif" }}
+        className="block text-xs text-white/40 uppercase tracking-widest mb-4"
+      >
         Bot Difficulty
       </label>
-      <div className="grid grid-cols-2 gap-2">
-        {DIFFICULTY_OPTIONS.map((option) => (
-          <button
+      <div className="grid grid-cols-2 gap-3">
+        {DIFFICULTY_OPTIONS.map((option, index) => (
+          <motion.button
             key={option.value}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
             type="button"
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex flex-col items-center justify-center p-4 rounded-lg border transition-all",
+              "group relative flex flex-col items-center justify-center p-5 border transition-all duration-300 overflow-hidden",
               value === option.value
                 ? "bg-white text-black border-white"
-                : "bg-neutral-900 text-gray-300 border-neutral-800 hover:bg-neutral-800 hover:border-neutral-700"
+                : "bg-transparent text-white/60 border-white/10 hover:border-white/30"
             )}
           >
-            <span className="font-semibold text-lg">{option.label}</span>
+            {/* Hover fill effect for unselected */}
+            {value !== option.value && (
+              <span className="absolute inset-0 bg-white origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-300" />
+            )}
+
             <span
+              style={{ fontFamily: "'Instrument Serif', serif" }}
               className={cn(
-                "text-xs mt-1",
-                value === option.value ? "text-gray-600" : "text-gray-500"
+                "relative z-10 text-xl transition-colors duration-300",
+                value === option.value
+                  ? "text-black"
+                  : "text-white group-hover:text-black"
+              )}
+            >
+              {option.label}
+            </span>
+
+            <span
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className={cn(
+                "relative z-10 text-xs mt-1 transition-colors duration-300",
+                value === option.value
+                  ? "text-black/50"
+                  : "text-white/30 group-hover:text-black/50"
               )}
             >
               ~{option.elo} ELO
             </span>
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>

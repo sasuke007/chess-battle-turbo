@@ -1,11 +1,24 @@
 "use client"
 
-import React, {useState} from 'react'
-import {Footer} from '../components/Footer'
-import {Bot, ChevronDown, Video} from 'lucide-react'
-import {AnimatePresence, motion} from 'motion/react'
-import {PricingTable} from '@clerk/nextjs'
-import {dark} from '@clerk/themes'
+import React, { useState } from 'react'
+import { Footer } from '../components/Footer'
+import { Navbar } from '../components/Navbar'
+import { Bot, ChevronDown, Video } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { PricingTable } from '@clerk/nextjs'
+import { dark } from '@clerk/themes'
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -30,8 +43,8 @@ export default function PricingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-white">
-      {/* <Navbar /> */}
+    <div className="min-h-screen bg-black text-white">
+      <Navbar />
 
       {/* Hero Section with Video Background */}
       <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
@@ -40,31 +53,43 @@ export default function PricingPage() {
           loop
           muted
           playsInline
-          className="absolute inset-0 min-w-full min-h-full w-auto h-auto opacity-[0.3] object-cover"
+          className="absolute inset-0 min-w-full min-h-full w-auto h-auto opacity-20 object-cover grayscale"
         >
           <source
             src="/Kings_Gambit_Chess_Board_Animation.mp4"
             type="video/mp4"
           />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/30 via-neutral-900/50 to-neutral-900 pointer-events-none"></div>
-        
+
+        {/* Gradient overlays - matching homepage */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+
+        {/* Subtle grid background */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+            backgroundSize: '80px 80px',
+          }}
+        />
+
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-6"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl mb-6 text-white"
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 to-neutral-300">
-              Pricing
-            </span>
+            Pricing
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg sm:text-xl md:text-2xl text-neutral-400 max-w-2xl"
+            style={{ fontFamily: "'Geist', sans-serif" }}
+            className="text-lg sm:text-xl md:text-2xl text-white/40 max-w-2xl"
           >
             All-in-one chess creation suite. Powered by AI.
           </motion.p>
@@ -72,15 +97,16 @@ export default function PricingPage() {
       </section>
 
       {/* Main Content */}
-      <div className="relative ">
+      <div className="relative">
         <main>
           <section className="py-10">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-md text-neutral-400 mb-8 mx-auto"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-md text-white/40 mb-8 mx-auto"
               >
                 Game Recorder, Position Editor, AI Assistant, Voice Coach, Analysis Generator - all in one powerful package.
               </motion.p>
@@ -93,47 +119,55 @@ export default function PricingPage() {
               viewport={{ once: true }}
               className="max-w-4xl mx-auto px-4 sm:px-6"
             >
-              <PricingTable 
+              <PricingTable
                 appearance={{
                   baseTheme: dark,
                   variables: {
-                    colorPrimary: '#a3a3a3',
-                    colorBackground: '#0a0a0a',
-                    colorInputBackground: '#1a1a1a',
+                    colorPrimary: '#ffffff',
+                    colorBackground: '#000000',
+                    colorInputBackground: '#0a0a0a',
                     colorText: '#ffffff',
-                    colorTextSecondary: '#737373',
-                    colorNeutral: '#525252',
-                    borderRadius: '0.75rem',
-                    fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif',
-                    fontFamilyButtons: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif',
+                    colorTextSecondary: '#666666',
+                    colorNeutral: '#333333',
+                    borderRadius: '0',
+                    fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
+                    fontFamilyButtons: "'Geist', ui-sans-serif, system-ui, sans-serif",
                   },
                   elements: {
-                    card: 'bg-gradient-to-b from-neutral-800/40 to-neutral-900/60 border border-white/10 backdrop-blur-md shadow-2xl font-[family-name:var(--font-geist-sans)]',
+                    card: 'bg-black border border-white/10 shadow-none',
                     badge: '',
                     button: '',
-                    dividerRow: 'border-neutral-800',
-                    priceTitle: 'bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400',
+                    dividerRow: 'border-white/10',
+                    priceTitle: 'text-white',
                     pricingTableGrid: 'gap-6',
                   }
                 }}
               />
             </motion.div>
 
-            <p className="text-sm text-neutral-500 text-center mt-8 mb-8 max-w-xl mx-auto p-4">
+            <p
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-sm text-white/30 text-center mt-8 mb-8 max-w-xl mx-auto p-4"
+            >
               Join our community of chess creators and masters. Get priority access to new features and shape the future of chess training.
             </p>
           </section>
         </main>
-              
+
         {/* Creator Logos */}
         <div className="mt-20">
           <div className="w-full max-w-3xl mx-auto">
-            <p className="text-center text-white/50 mb-4 text-sm font-light">Supported by grandmasters at</p>
+            <p
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-center text-white/30 mb-4 text-xs uppercase tracking-widest"
+            >
+              Supported by grandmasters at
+            </p>
             <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 6%, rgb(0, 0, 0) 12%, rgb(0, 0, 0) 88%, rgba(0, 0, 0, 0) 94%, rgba(0, 0, 0, 0) 100%)' }}>
               <div className="flex animate-scroll whitespace-nowrap py-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="flex-shrink-0 mx-8">
-                    <div className="h-8 w-24 bg-white/10 rounded animate-pulse" />
+                    <div className="h-8 w-24 bg-white/5 border border-white/10" />
                   </div>
                 ))}
               </div>
@@ -144,25 +178,54 @@ export default function PricingPage() {
         {/* Comparison Table */}
         <section className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light mb-12 text-center">Compare Plans</h2>
-            <div className="overflow-x-auto border border-white/5 rounded-2xl">
-              <table className="w-full rounded-2xl overflow-hidden text-sm">
+            <h2
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="text-3xl sm:text-4xl lg:text-5xl mb-12 text-center text-white"
+            >
+              Compare Plans
+            </h2>
+            <div className="overflow-x-auto border border-white/10">
+              <table className="w-full overflow-hidden text-sm">
                 <thead>
                   <tr>
-                    <th className="p-4 text-left bg-neutral-600/10"></th>
-                    <th className="p-4 text-center bg-neutral-600/10">
-                      <h3 className="text-sm font-medium text-white mb-2">Basic</h3>
-                      <p className="text-xl font-light text-neutral-400">$8</p>
+                    <th className="p-4 text-left bg-white/5"></th>
+                    <th className="p-4 text-center bg-white/5">
+                      <h3
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-sm font-medium text-white mb-2"
+                      >
+                        Basic
+                      </h3>
+                      <p
+                        style={{ fontFamily: "'Instrument Serif', serif" }}
+                        className="text-xl text-white/60"
+                      >
+                        $8
+                      </p>
                     </th>
                     <th className="p-4 text-center">
-                      <h3 className="text-sm font-medium text-white mb-2">Creator</h3>
-                      <p className="text-xl font-light text-neutral-400">$25</p>
+                      <h3
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-sm font-medium text-white mb-2"
+                      >
+                        Creator
+                      </h3>
+                      <p
+                        style={{ fontFamily: "'Instrument Serif', serif" }}
+                        className="text-xl text-white/60"
+                      >
+                        $25
+                      </p>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td colSpan={3} className="p-4 text-sm font-medium text-white bg-neutral-600/10 flex items-center gap-2">
+                    <td
+                      colSpan={3}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="p-4 text-xs uppercase tracking-widest font-medium text-white/60 bg-white/5 flex items-center gap-2"
+                    >
                       Chess Tools <Video className="w-3 h-3" />
                     </td>
                   </tr>
@@ -172,14 +235,33 @@ export default function PricingPage() {
                     { label: "Quality", basic: "1080p", creator: "4K, 60 FPS" },
                     { label: "Recording Length", basic: "15 mins", creator: "Unlimited" },
                   ].map((row) => (
-                    <tr key={row.label} className="border-t border-neutral-800">
-                      <td className="p-4 text-neutral-400 bg-neutral-600/20">{row.label}</td>
-                      <td className="p-4 text-center text-neutral-400 bg-neutral-600/10">{row.basic}</td>
-                      <td className="p-4 text-center text-neutral-400">{row.creator}</td>
+                    <tr key={row.label} className="border-t border-white/10">
+                      <td
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="p-4 text-white/40 bg-white/[0.02]"
+                      >
+                        {row.label}
+                      </td>
+                      <td
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="p-4 text-center text-white/40 bg-white/5"
+                      >
+                        {row.basic}
+                      </td>
+                      <td
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="p-4 text-center text-white/40"
+                      >
+                        {row.creator}
+                      </td>
                     </tr>
                   ))}
                   <tr>
-                    <td colSpan={3} className="p-4 text-sm font-medium text-white bg-neutral-600/10 flex items-center gap-2">
+                    <td
+                      colSpan={3}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="p-4 text-xs uppercase tracking-widest font-medium text-white/60 bg-white/5 flex items-center gap-2"
+                    >
                       AI Features <Bot className="w-3 h-3" />
                     </td>
                   </tr>
@@ -187,10 +269,25 @@ export default function PricingPage() {
                     { label: "AI Voice Coach", basic: "-", creator: "240 min/mo" },
                     { label: "AI Analysis", basic: "Basic", creator: "2M nodes/mo" },
                   ].map((row) => (
-                    <tr key={row.label} className="border-t border-neutral-800">
-                      <td className="p-4 text-neutral-400 bg-neutral-600/20">{row.label}</td>
-                      <td className="p-4 text-center text-neutral-400 bg-neutral-600/10">{row.basic}</td>
-                      <td className="p-4 text-center text-neutral-400">{row.creator}</td>
+                    <tr key={row.label} className="border-t border-white/10">
+                      <td
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="p-4 text-white/40 bg-white/[0.02]"
+                      >
+                        {row.label}
+                      </td>
+                      <td
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="p-4 text-center text-white/40 bg-white/5"
+                      >
+                        {row.basic}
+                      </td>
+                      <td
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="p-4 text-center text-white/40"
+                      >
+                        {row.creator}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -202,16 +299,33 @@ export default function PricingPage() {
         {/* FAQ Section */}
         <section className="py-20">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light mb-12 text-center">Frequently Asked Questions</h2>
-            <div className="space-y-4">
+            <h2
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="text-3xl sm:text-4xl lg:text-5xl mb-12 text-center text-white"
+            >
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-3">
               {faqs.map((faq, index) => (
-                <div key={index} className="border border-neutral-800 rounded-lg overflow-hidden">
-                  <button 
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="border border-white/10 overflow-hidden"
+                >
+                  <button
                     onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                    className="w-full p-4 text-left flex justify-between items-center bg-neutral-800/30 hover:bg-neutral-700/30 transition-colors"
+                    className="w-full p-5 text-left flex justify-between items-center bg-white/[0.02] hover:bg-white/5 transition-colors"
                   >
-                    <span className="text-md font-light text-white">{faq.question}</span>
-                    <ChevronDown className={`w-5 h-5 text-neutral-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`} />
+                    <span
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-sm font-medium text-white"
+                    >
+                      {faq.question}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-white/40 transition-transform duration-300 ${openFaq === index ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {openFaq === index && (
@@ -221,13 +335,16 @@ export default function PricingPage() {
                         exit={{ height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="p-4 bg-neutral-800/10 text-sm text-neutral-400 leading-relaxed">
+                        <div
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="p-5 border-t border-white/5 text-sm text-white/40 leading-relaxed"
+                        >
                           {faq.answer}
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>

@@ -1,11 +1,24 @@
 "use client";
 
 import React from "react";
-import {cn} from "../../lib/utils";
+import { cn } from "../../lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import {SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser} from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
 
 export const Navbar = () => {
   const { isSignedIn } = useUser();
@@ -18,68 +31,110 @@ export const Navbar = () => {
       router.push("/sign-in");
     }
   };
+
   return (
-    <div
+    <nav
       className={cn(
-        "fixed top-0 left-0 right-0 w-full z-50 flex justify-between gap-4 items-center px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-1 md:py-1 lg:py-1 bg-[rgba(255_255_255_0.13)] backdrop-blur-xs"
+        "fixed top-0 left-0 right-0 w-full z-50",
+        "flex justify-between items-center",
+        "px-4 sm:px-6 lg:px-8 py-3",
+        "bg-black/40 backdrop-blur-xl",
+        "border-b border-white/[0.08]",
+        "supports-[backdrop-filter]:bg-black/30"
       )}
+      style={{
+        WebkitBackdropFilter: 'blur(20px)',
+      }}
     >
-      <div className={cn(" text-2xl font-bold")}>
-        <Link href="/" className="block">
-          <Image
-            src="/chess-logo-bnw.png"
-            alt="Logo"
-            width={100}
-            height={100}
-            className={cn(
-              "w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-16 lg:h-16 transition-all duration-300 ease-in-out",
-              "hover:scale-105 ",
-              "drop-shadow-[0_4px_8px_rgba(255,255,255,0.15)]",
-              "hover:drop-shadow-[0_8px_16px_rgba(255,255,255,0.3)]",
-              "filter brightness-100 hover:brightness-110",
-              "cursor-pointer"
-            )}
-          />
-        </Link>
-      </div>
-      <div className={cn("flex gap-2 sm:gap-3 md:gap-3 lg:gap-4 items-center")}>
-        {/* Play Now Button */}
+      {/* Logo */}
+      <Link href="/" className="flex items-center gap-3 group">
+        <Image
+          src="/chess-logo-bnw.png"
+          alt="Chess Battle"
+          width={100}
+          height={100}
+          className={cn(
+            "w-10 h-10 sm:w-11 sm:h-11",
+            "transition-all duration-300",
+            "group-hover:opacity-80"
+          )}
+        />
+        <span
+          style={{ fontFamily: "'Instrument Serif', serif" }}
+          className="hidden sm:block text-white text-lg tracking-tight"
+        >
+          Chess Battle
+        </span>
+      </Link>
+
+      {/* Right Side Actions */}
+      <div className="flex items-center gap-3">
+        {/* Play Button */}
         <button
           onClick={handlePlayClick}
           className={cn(
-            "relative bg-gradient-to-br from-neutral-200 via-neutral-300 to-neutral-400",
-            "text-neutral-900 rounded-lg font-bold",
-            "text-xs sm:text-sm md:text-sm lg:text-base",
-            "h-7 sm:h-8 md:h-9 lg:h-9",
-            "px-3 sm:px-4 md:px-6 lg:px-8",
-            "cursor-pointer transition-all duration-300",
-            "hover:scale-105 hover:from-neutral-100 hover:via-neutral-200 hover:to-neutral-300",
-            "shadow-[0_4px_16px_rgba(255,255,255,0.2)]",
-            "hover:shadow-[0_6px_24px_rgba(255,255,255,0.3)]",
-            "before:absolute before:inset-0 before:rounded-lg",
-            "before:bg-gradient-to-t before:from-transparent before:via-white/20 before:to-white/40",
-            "before:opacity-70 overflow-hidden"
+            "group relative overflow-hidden",
+            "bg-white text-black",
+            "h-9 px-5",
+            "text-sm font-medium tracking-wide",
+            "transition-all duration-300"
           )}
+          style={{ fontFamily: "'Geist', sans-serif" }}
         >
-          <span className="relative z-10">Play Now ♟️</span>
+          {/* Invert animation */}
+          <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+          <span className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
+            Play
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
         </button>
 
         <SignedOut>
           <SignInButton>
-            <button className="relative bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 text-white rounded-lg font-medium text-xs sm:text-sm md:text-sm lg:text-base h-7 sm:h-8 md:h-9 lg:h-9 px-2 sm:px-3 md:px-3 lg:px-4 cursor-pointer transition-all duration-300 hover:scale-105 hover:bg-neutral-950 shadow-lg hover:shadow-xl before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-t before:from-transparent before:via-white/10 before:to-white/30 before:opacity-70 overflow-hidden backdrop-blur-xs shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px]">
-              <span className={cn("")}>Sign In</span>
+            <button
+              className={cn(
+                "h-9 px-4",
+                "border border-white/20 hover:border-white/40",
+                "bg-white/5 hover:bg-white/10",
+                "text-white/70 hover:text-white",
+                "text-sm font-medium tracking-wide",
+                "transition-all duration-300",
+                "backdrop-blur-sm"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            >
+              Sign In
             </button>
           </SignInButton>
           <SignUpButton>
-            <button className="relative bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 text-white rounded-lg font-medium text-xs sm:text-sm md:text-sm lg:text-base h-7 sm:h-8 md:h-9 lg:h-9 px-2 sm:px-3 md:px-3 lg:px-4 cursor-pointer transition-all duration-300 hover:scale-105 hover:bg-neutral-950 shadow-lg hover:shadow-xl before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-t before:from-transparent before:via-white/10 before:to-white/30 before:opacity-70 overflow-hidden shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px]">
+            <button
+              className={cn(
+                "hidden sm:block",
+                "h-9 px-4",
+                "border border-white/10 hover:border-white/20",
+                "text-white/50 hover:text-white/70",
+                "text-sm font-medium tracking-wide",
+                "transition-all duration-300"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            >
               Sign Up
             </button>
           </SignUpButton>
         </SignedOut>
+
         <SignedIn>
-          <UserButton />
+          <div className="ml-2">
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-9 h-9 border border-white/20",
+                },
+              }}
+            />
+          </div>
         </SignedIn>
       </div>
-    </div>
+    </nav>
   );
 };

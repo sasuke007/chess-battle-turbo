@@ -13,6 +13,19 @@ import {
   OpponentInfo,
 } from "@/lib/hooks/useMatchmaking";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
+import { motion } from "motion/react";
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
 
 type QueueState = "initializing" | "searching" | "timeout" | "matched" | "error";
 
@@ -28,16 +41,13 @@ function QueueContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Track if we've already initiated the request
   const hasInitiatedRef = useRef(false);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get params from URL
   const initialTimeSeconds = parseInt(searchParams.get("time") || "300", 10);
   const incrementSeconds = parseInt(searchParams.get("increment") || "5", 10);
   const legendReferenceId = searchParams.get("legend") || null;
 
-  // Get time control label
   const getTimeControlLabel = () => {
     const mins = Math.floor(initialTimeSeconds / 60);
     if (incrementSeconds > 0) {
@@ -46,19 +56,15 @@ function QueueContent() {
     return `${mins} min`;
   };
 
-  // Redirect to game
   const redirectToGame = useCallback((gameRef: string) => {
-    // Clear any existing timeout
     if (redirectTimeoutRef.current) {
       clearTimeout(redirectTimeoutRef.current);
     }
-    // Use replace to prevent going back to queue
     redirectTimeoutRef.current = setTimeout(() => {
       router.replace(`/game/${gameRef}`);
     }, 1500);
   }, [router]);
 
-  // Initialize queue entry on mount
   useEffect(() => {
     if (!isLoaded || !userObject?.user?.referenceId) return;
     if (hasInitiatedRef.current) return;
@@ -86,8 +92,6 @@ function QueueContent() {
         }
 
         if (data.data.immediateMatch) {
-          // Immediate match found!
-          console.log("Immediate match found:", data.data.immediateMatch);
           setQueueState("matched");
           setOpponentInfo({
             name: data.data.immediateMatch.opponentName,
@@ -96,8 +100,6 @@ function QueueContent() {
           setGameReferenceId(data.data.immediateMatch.gameReferenceId);
           redirectToGame(data.data.immediateMatch.gameReferenceId);
         } else {
-          // Start polling
-          console.log("No immediate match, starting polling for:", data.data.queueEntry.referenceId);
           setQueueReferenceId(data.data.queueEntry.referenceId);
           setQueueState("searching");
         }
@@ -112,7 +114,6 @@ function QueueContent() {
 
     createMatchRequest();
 
-    // Cleanup timeout on unmount
     return () => {
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
@@ -120,10 +121,8 @@ function QueueContent() {
     };
   }, [isLoaded, userObject?.user?.referenceId, legendReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
 
-  // Handle match found callback from polling
   const handleMatchFound = useCallback(
     (gameRef: string, opponent: OpponentInfo) => {
-      console.log("Match found via polling:", gameRef, opponent);
       setQueueState("matched");
       setOpponentInfo(opponent);
       setGameReferenceId(gameRef);
@@ -132,19 +131,14 @@ function QueueContent() {
     [redirectToGame]
   );
 
-  // Handle timeout callback
   const handleTimeout = useCallback(() => {
-    console.log("Queue timeout");
     setQueueState("timeout");
   }, []);
 
-  // Handle error callback
   const handleError = useCallback((error: string) => {
     console.error("Matchmaking error:", error);
-    // Don't change state on polling errors - keep searching
   }, []);
 
-  // Use matchmaking hook for polling (only when we have a queueReferenceId)
   const matchmaking = useMatchmaking({
     queueReferenceId,
     onMatchFound: handleMatchFound,
@@ -153,7 +147,6 @@ function QueueContent() {
     enabled: queueState === "searching" && !!queueReferenceId,
   });
 
-  // Handle cancel
   const handleCancel = async () => {
     if (userObject?.user?.referenceId && queueReferenceId) {
       try {
@@ -169,11 +162,9 @@ function QueueContent() {
         console.error("Error cancelling:", error);
       }
     }
-
     router.replace("/play");
   };
 
-  // Handle retry
   const handleRetry = () => {
     hasInitiatedRef.current = false;
     setQueueState("initializing");
@@ -183,16 +174,23 @@ function QueueContent() {
     setGameReferenceId(null);
   };
 
-  // Handle back
   const handleBack = () => {
     router.replace("/play");
   };
 
-  // Show loading while auth loads
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen bg-neutral-900 items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="flex min-h-screen bg-black items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
+            Loading...
+          </p>
+        </motion.div>
       </div>
     );
   }
@@ -200,22 +198,44 @@ function QueueContent() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#141414] to-[#1a1a1a] flex items-center justify-center pt-16 sm:pt-18">
-        <div className="w-full max-w-lg p-4">
+      <div className="min-h-screen bg-black flex items-center justify-center pt-16 sm:pt-18 relative">
+        {/* Subtle grid background */}
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        <div className="w-full max-w-lg p-4 relative z-10">
           {/* Error state */}
           {queueState === "error" && (
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold text-white">Error</h2>
-              <p className="text-neutral-400">
-                {errorMessage || "Something went wrong"}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-6"
+            >
+              <div className="w-16 h-16 border border-white/20 flex items-center justify-center mx-auto">
+                <span className="text-2xl">✕</span>
+              </div>
+              <h2
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+                className="text-2xl text-white"
+              >
+                Something went wrong
+              </h2>
+              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40">
+                {errorMessage || "An error occurred"}
               </p>
               <button
                 onClick={handleBack}
-                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                className="px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-all duration-300"
+                style={{ fontFamily: "'Geist', sans-serif" }}
               >
                 Back to Play
               </button>
-            </div>
+            </motion.div>
           )}
 
           {/* Initializing or Searching state */}
@@ -254,8 +274,8 @@ export default function QueuePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen bg-neutral-900 items-center justify-center">
-          <div className="text-white text-xl">Loading...</div>
+        <div className="flex min-h-screen bg-black items-center justify-center">
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
         </div>
       }
     >

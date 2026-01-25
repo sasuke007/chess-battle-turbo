@@ -2,12 +2,24 @@
 
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CompleteUserObject } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks";
+import { motion } from "motion/react";
+import { Navbar } from "@/app/components/Navbar";
+import { Swords, Clock, DollarSign, ArrowLeft } from "lucide-react";
 
-{/* this page will only be shown when user want to play with a friend, the information on this page looks correct */}
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
 
 interface GameDetails {
   referenceId: string;
@@ -48,7 +60,6 @@ export default function JoinPage({
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
 
-  // Unwrap the params Promise using React.use()
   const { gameReferenceId } = use(params);
 
   useEffect(() => {
@@ -99,9 +110,6 @@ export default function JoinPage({
         throw new Error(data.error || "Failed to join game");
       }
 
-      console.log("Successfully joined game:", data);
-
-      // Redirect to game page
       router.push(`/game/${gameDetails.referenceId}`);
     } catch (err) {
       console.error("Error joining game:", err);
@@ -114,148 +122,297 @@ export default function JoinPage({
     }
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading game details...</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-black flex items-center justify-center pt-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
+              Loading game details...
+            </p>
+          </motion.div>
+        </div>
+      </>
     );
   }
 
   if (error || !gameDetails) {
     return (
-      <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
-        <div className="bg-neutral-800 rounded-lg p-8 max-w-md">
-          <h1 className="text-2xl font-bold text-red-400 mb-4">Error</h1>
-          <p className="text-white mb-6">{error || "Game not found"}</p>
-          <Button
-            onClick={() => router.push("/play")}
-            className="w-full bg-white text-black hover:bg-gray-200"
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-black flex items-center justify-center pt-16 p-4 relative">
+          {/* Grid background */}
+          <div
+            className="absolute inset-0 opacity-[0.015]"
+            style={{
+              backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+              backgroundSize: '60px 60px',
+            }}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative z-10 border border-white/10 p-8 max-w-md text-center"
           >
-            Create New Game
-          </Button>
+            <div className="w-16 h-16 border border-white/20 flex items-center justify-center mx-auto mb-6">
+              <span className="text-2xl text-white/40">×</span>
+            </div>
+            <h2
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="text-2xl text-white mb-3"
+            >
+              Game Not Found
+            </h2>
+            <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 mb-8">
+              {error || "This game doesn't exist or is no longer available."}
+            </p>
+            <button
+              onClick={() => router.push("/play")}
+              className={cn(
+                "group relative w-full flex items-center justify-center gap-2 px-8 py-4",
+                "bg-white text-black",
+                "transition-all duration-300 overflow-hidden"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            >
+              <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+              <span className="relative z-10 font-medium group-hover:text-white transition-colors duration-300">
+                Create New Game
+              </span>
+            </button>
+          </motion.div>
         </div>
-      </div>
+      </>
     );
   }
 
   const alreadyStarted = gameDetails.status !== "WAITING_FOR_OPPONENT";
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
-      <div className="bg-neutral-800 rounded-lg p-8 max-w-2xl w-full">
-        <h1 className="text-3xl font-bold text-white mb-6 text-center">
-          Chess Challenge
-        </h1>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-black flex items-center justify-center pt-16 sm:pt-20 p-4 relative">
+        {/* Grid background */}
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+            backgroundSize: '60px 60px',
+          }}
+        />
 
-        <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 border border-white/10 p-6 sm:p-10 max-w-xl w-full"
+        >
+          {/* Header with Swords icon */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-center mb-8"
+          >
+            <div className="w-16 h-16 bg-white flex items-center justify-center mx-auto mb-6">
+              <Swords className="w-8 h-8 text-black" strokeWidth={1.5} />
+            </div>
+            <h1
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="text-3xl sm:text-4xl text-white"
+            >
+              Chess Challenge
+            </h1>
+          </motion.div>
+
           {/* Creator Info */}
-          <div className="bg-neutral-700 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-neutral-300 mb-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="border border-white/10 p-5 mb-6"
+          >
+            <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/40 uppercase tracking-widest mb-4">
               Challenge from
-            </h2>
+            </p>
             <div className="flex items-center gap-4">
               {gameDetails.creator.profilePictureUrl ? (
                 <img
                   src={gameDetails.creator.profilePictureUrl}
                   alt={gameDetails.creator.name}
-                  className="w-16 h-16 rounded-full"
+                  className="w-14 h-14 object-cover grayscale"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-neutral-600 flex items-center justify-center text-2xl font-bold text-white">
-                  {}
+                <div className="w-14 h-14 bg-white flex items-center justify-center">
+                  <span
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-sm font-bold text-black"
+                  >
+                    {getInitials(gameDetails.creator.name)}
+                  </span>
                 </div>
               )}
               <div>
-                <p className="text-xl font-bold text-white">
+                <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-lg font-medium text-white">
                   {gameDetails.creator.name}
                 </p>
-                <p className="text-sm text-neutral-400">
+                <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-sm text-white/30">
                   @{gameDetails.creator.code}
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Game Details */}
-          <div className="bg-neutral-700 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-neutral-300 mb-4">
-              Game Details
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-neutral-400">Stake Amount</p>
-                <p className="text-2xl font-bold text-white">
-                  ${gameDetails.stakeAmount}
-                </p>
+          {/* Game Details Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-2 gap-4 mb-6"
+          >
+            <div className="border border-white/10 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-white/30" strokeWidth={1.5} />
+                <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/40 uppercase tracking-wide">
+                  Stake
+                </span>
               </div>
-              <div>
-                <p className="text-sm text-neutral-400">Total Pot</p>
-                <p className="text-2xl font-bold text-green-400">
-                  ${gameDetails.totalPot}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-neutral-400">Time Control</p>
-                <p className="text-lg font-semibold text-white">
-                  {gameDetails.initialTimeSeconds / 60}+
-                  {gameDetails.incrementSeconds}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-neutral-400">Platform Fee</p>
-                <p className="text-lg font-semibold text-white">
-                  ${gameDetails.platformFeeAmount}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Message */}
-          {alreadyStarted && (
-            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4">
-              <p className="text-yellow-400 text-center">
-                This game has already started or is no longer available.
+              <p style={{ fontFamily: "'Instrument Serif', serif" }} className="text-2xl text-white">
+                ${gameDetails.stakeAmount}
               </p>
             </div>
+
+            <div className="border border-white/10 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-white/30" strokeWidth={1.5} />
+                <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/40 uppercase tracking-wide">
+                  Total Pot
+                </span>
+              </div>
+              <p style={{ fontFamily: "'Instrument Serif', serif" }} className="text-2xl text-white">
+                ${gameDetails.totalPot}
+              </p>
+            </div>
+
+            <div className="border border-white/10 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-4 h-4 text-white/30" strokeWidth={1.5} />
+                <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/40 uppercase tracking-wide">
+                  Time Control
+                </span>
+              </div>
+              <p style={{ fontFamily: "'Instrument Serif', serif" }} className="text-2xl text-white">
+                {gameDetails.initialTimeSeconds / 60}+{gameDetails.incrementSeconds}
+              </p>
+            </div>
+
+            <div className="border border-white/10 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/40 uppercase tracking-wide">
+                  Platform Fee
+                </span>
+              </div>
+              <p style={{ fontFamily: "'Instrument Serif', serif" }} className="text-2xl text-white">
+                ${gameDetails.platformFeeAmount}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Warning for already started games */}
+          {alreadyStarted && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="border border-white/20 p-4 mb-6"
+            >
+              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/60 text-center text-sm">
+                This game has already started or is no longer available.
+              </p>
+            </motion.div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
-            <Button
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="flex gap-4"
+          >
+            <button
               onClick={() => router.push("/")}
-              className="flex-1 bg-neutral-700 border border-neutral-600 text-white font-semibold text-lg py-6 hover:bg-neutral-700"
               disabled={joining}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleJoinGame}
               className={cn(
-                "flex-1 font-semibold text-lg py-6",
-                alreadyStarted
-                  ? "bg-neutral-600 text-neutral-400 cursor-not-allowed"
-                  : "bg-white text-black hover:bg-gray-200"
+                "flex-1 flex items-center justify-center gap-2 px-6 py-4",
+                "border border-white/10 hover:border-white/30",
+                "text-white/60 hover:text-white transition-all duration-300",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
-              disabled={joining || alreadyStarted}
+              style={{ fontFamily: "'Geist', sans-serif" }}
             >
-              {joining
-                ? "Joining..."
-                : alreadyStarted
-                  ? "Game Unavailable"
-                  : "Accept Challenge"}
-            </Button>
-          </div>
+              <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+              <span>Cancel</span>
+            </button>
 
-          {/* Warning */}
-          <div className="text-center text-sm text-neutral-400">
-            <p>
-              By accepting this challenge, ${gameDetails.stakeAmount} will be
-            </p>
-            <p>deducted from your wallet and locked until the game ends.</p>
-          </div>
-        </div>
+            <button
+              onClick={handleJoinGame}
+              disabled={joining || alreadyStarted}
+              className={cn(
+                "group relative flex-1 flex items-center justify-center gap-2 px-6 py-4",
+                "transition-all duration-300 overflow-hidden",
+                alreadyStarted
+                  ? "bg-white/10 text-white/30 cursor-not-allowed"
+                  : "bg-white text-black",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            >
+              {!alreadyStarted && (
+                <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+              )}
+              <span className={cn(
+                "relative z-10 font-medium transition-colors duration-300",
+                !alreadyStarted && "group-hover:text-white"
+              )}>
+                {joining
+                  ? "Joining..."
+                  : alreadyStarted
+                    ? "Unavailable"
+                    : "Accept Challenge"}
+              </span>
+            </button>
+          </motion.div>
+
+          {/* Stake Warning */}
+          {!alreadyStarted && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-center mt-6"
+            >
+              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/20">
+                By accepting, ${gameDetails.stakeAmount} will be deducted from your wallet
+              </p>
+            </motion.div>
+          )}
+        </motion.div>
       </div>
-    </div>
+    </>
   );
 }

@@ -1,98 +1,295 @@
-import { Mail, Star } from 'lucide-react'
+"use client";
+
+import { Mail, Twitter, Github, Youtube, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+
+// Load fonts
+const fontLink = typeof document !== 'undefined' ? (() => {
+  const existing = document.querySelector('link[href*="Instrument+Serif"]');
+  if (!existing) {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+  return true;
+})() : null;
+
+const footerLinks = {
+  product: [
+    { name: "Play Online", href: "/play" },
+    { name: "Legendary Positions", href: "/play" },
+    { name: "Play vs Bot", href: "/play" },
+    { name: "Pricing", href: "/pricing" },
+  ],
+  company: [
+    { name: "About Us", href: "#" },
+    { name: "Blog", href: "#" },
+    { name: "Careers", href: "#", badge: "Hiring" },
+    { name: "Contact", href: "#" },
+  ],
+  resources: [
+    { name: "Help Center", href: "#" },
+    { name: "Community", href: "#" },
+    { name: "API Docs", href: "#" },
+    { name: "Status", href: "#" },
+  ],
+  legal: [
+    { name: "Terms of Service", href: "#" },
+    { name: "Privacy Policy", href: "#" },
+    { name: "Cookie Policy", href: "#" },
+  ],
+};
+
+const socialLinks = [
+  { icon: Twitter, href: "#", label: "Twitter" },
+  { icon: Github, href: "#", label: "GitHub" },
+  { icon: Youtube, href: "#", label: "YouTube" },
+  { icon: Mail, href: "#", label: "Email" },
+];
 
 export function Footer() {
   return (
-    <footer className="w-full mt-20 border-t border-white/10 bg-neutral-800/30 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-6 py-16 lg:py-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
+    <footer className="w-full bg-black relative overflow-hidden">
+      {/* Top decorative border */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+      {/* Subtle grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 lg:py-20">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+
           {/* Brand Section */}
-          <div className="lg:col-span-4 space-y-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.4)]">
-                <Star className="w-6 h-6 text-white fill-white" />
-              </div>
-              <span className="text-2xl font-bold tracking-tighter text-white">
-                Chess Battle Turbo
-              </span>
-            </div>
-            <p className="text-neutral-400 text-sm leading-relaxed max-w-sm">
-              The world's most advanced AI-powered chess training platform. 
-              Experience legendary positions, real-time coaching, and master the game like never before.
-            </p>
-            <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all border border-white/5 group">
-                <Mail className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors" />
-              </a>
-            </div>
-          </div>
-
-          {/* Links Sections - Flex Row on Mobile */}
-          <div className="lg:col-span-4 flex flex-row gap-8 sm:gap-12 lg:gap-8">
-            {/* Quick Links */}
-            <div className="flex-1 space-y-6">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">Product</h3>
-              <ul className="space-y-4">
-                {["Features", "AI Tools", "Pricing", "Changelog"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors flex items-center group">
-                      <span className="w-0 h-px bg-indigo-500 mr-0 group-hover:w-2 group-hover:mr-2 transition-all duration-300"></span>
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Resources Links */}
-            <div className="flex-1 space-y-6">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">Resources</h3>
-              <ul className="space-y-4">
-                {["Documentation", "Support", "Terms", "Privacy"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors flex items-center group">
-                      <span className="w-0 h-px bg-indigo-500 mr-0 group-hover:w-2 group-hover:mr-2 transition-all duration-300"></span>
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Newsletter */}
           <div className="lg:col-span-4 space-y-6">
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">Stay Updated</h3>
-            <p className="text-sm text-neutral-400">
-              Get the latest updates on new grandmaster positions and AI feature releases.
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-12 h-12 bg-white flex items-center justify-center group-hover:bg-white/90 transition-colors">
+                <span className="text-black text-2xl">♟</span>
+              </div>
+              <div>
+                <span
+                  style={{ fontFamily: "'Instrument Serif', serif" }}
+                  className="text-xl text-white block"
+                >
+                  Chess Battle
+                </span>
+                <span
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] text-white/30 uppercase tracking-widest"
+                >
+                  The Ultimate Platform
+                </span>
+              </div>
+            </Link>
+
+            <p
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-white/40 text-sm leading-relaxed max-w-sm"
+            >
+              Challenge friends, play legendary positions from chess history,
+              and master the game with our immersive battle experience.
             </p>
-            <form className="relative group">
-              <input 
-                type="email" 
-                placeholder="Enter your email" 
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.05] transition-all"
-              />
-              <button className="absolute right-2 top-2 bottom-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg hover:shadow-indigo-500/20 active:scale-95">
-                Subscribe
-              </button>
-            </form>
+
+            {/* Newsletter */}
+            <div className="pt-2">
+              <p
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs text-white/50 uppercase tracking-widest mb-3"
+              >
+                Stay Updated
+              </p>
+              <form className="flex group">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className={cn(
+                    "flex-1 bg-white/[0.03] border border-white/10",
+                    "px-4 py-3 text-sm text-white",
+                    "placeholder:text-white/20",
+                    "focus:outline-none focus:border-white/30 focus:bg-white/[0.05]",
+                    "transition-all duration-300"
+                  )}
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                />
+                <button
+                  type="submit"
+                  className={cn(
+                    "group/btn relative overflow-hidden",
+                    "px-6 py-3 bg-white text-black",
+                    "text-sm font-medium",
+                    "transition-all duration-300"
+                  )}
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover/btn:scale-x-100 transition-transform duration-300" />
+                  <span className="relative group-hover/btn:text-white transition-colors duration-300">
+                    Subscribe
+                  </span>
+                </button>
+              </form>
+            </div>
+
+            {/* Social Links */}
+            <div className="flex items-center gap-2 pt-4">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  aria-label={social.label}
+                  className={cn(
+                    "w-10 h-10 border border-white/10",
+                    "flex items-center justify-center",
+                    "hover:border-white/30 hover:bg-white hover:text-black",
+                    "text-white/40 transition-all duration-300"
+                  )}
+                >
+                  <social.icon className="w-4 h-4" strokeWidth={1.5} />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Links Grid */}
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
+            {/* Product */}
+            <div className="space-y-4">
+              <h3
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs font-medium uppercase tracking-[0.2em] text-white/60"
+              >
+                Product
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.product.map((item) => (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="group inline-flex items-center gap-1 text-sm text-white/40 hover:text-white transition-colors"
+                    >
+                      {item.name}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 translate-x-0.5 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div className="space-y-4">
+              <h3
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs font-medium uppercase tracking-[0.2em] text-white/60"
+              >
+                Company
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.company.map((item) => (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="group inline-flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors"
+                    >
+                      {item.name}
+                      {item.badge && (
+                        <span className="relative inline-flex items-center gap-1.5 text-[9px] px-2 py-0.5 border border-white/20 text-white/60 font-medium uppercase tracking-wider group-hover:border-white/40 group-hover:text-white/80 transition-all">
+                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div className="space-y-4">
+              <h3
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs font-medium uppercase tracking-[0.2em] text-white/60"
+              >
+                Resources
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.resources.map((item) => (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="group inline-flex items-center gap-1 text-sm text-white/40 hover:text-white transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div className="space-y-4">
+              <h3
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs font-medium uppercase tracking-[0.2em] text-white/60"
+              >
+                Legal
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.legal.map((item) => (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-sm text-white/40 hover:text-white transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-        
-        <div className="mt-20 pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-[11px] font-medium uppercase tracking-widest text-neutral-500">
-            <p>© 2026 Chess Battle Turbo</p>
-            <span className="hidden sm:block w-1 h-1 bg-neutral-600 rounded-full"></span>
-            <p>All Rights Reserved</p>
-          </div>
-          <div className="flex items-center gap-8">
-            {["Terms", "Privacy", "Cookies"].map((item) => (
-              <a key={item} href="#" className="text-[11px] font-medium uppercase tracking-widest text-neutral-500 hover:text-white transition-colors">
-                {item}
-              </a>
-            ))}
+
+        {/* Bottom Bar */}
+        <div className="mt-16 pt-8 border-t border-white/[0.08]">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-xs text-white/30 tracking-wide"
+            >
+              © {new Date().getFullYear()} Chess Battle. All rights reserved.
+            </p>
+
+            <div className="flex items-center gap-6">
+              <span
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs text-white/20"
+              >
+                Made with precision
+              </span>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-xs text-white/30"
+                >
+                  All systems operational
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }
