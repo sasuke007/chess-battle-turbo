@@ -4,18 +4,6 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { motion } from "motion/react";
 
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
-
 export const HowToPlay = () => {
   const steps = [
     {
@@ -41,7 +29,7 @@ export const HowToPlay = () => {
   ];
 
   return (
-    <section className="w-full py-24 px-6 bg-black relative">
+    <section className="w-full py-12 sm:py-24 px-6 bg-black relative">
       {/* Subtle grid background */}
       <div
         className="absolute inset-0 opacity-[0.02]"
@@ -58,7 +46,7 @@ export const HowToPlay = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-20"
+          className="text-center mb-10 sm:mb-20"
         >
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="h-px w-16 bg-white/20" />

@@ -1,21 +1,9 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 import { Search, Clock, X } from "lucide-react";
 import { motion } from "motion/react";
-
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
 
 interface QueueSearchingProps {
   timeRemaining: number;
@@ -30,12 +18,6 @@ export function QueueSearching({
   isLoading = false,
   timeControlLabel = "5 min",
 }: QueueSearchingProps) {
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

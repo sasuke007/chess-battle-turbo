@@ -4,18 +4,6 @@ import { Mail, Twitter, Github, Youtube, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
-
 const footerLinks = {
   product: [
     { name: "Play Online", href: "/play" },
@@ -64,7 +52,7 @@ export function Footer() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 lg:py-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-10 sm:py-16 lg:py-20">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
 
@@ -261,7 +249,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-white/[0.08]">
+        <div className="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-white/[0.08]">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p
               style={{ fontFamily: "'Geist', sans-serif" }}

@@ -8,20 +8,17 @@ import ChessBoard from "../../components/ChessBoard";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
-import { cn } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 import { motion } from "motion/react";
-
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
+import type {
+  Player,
+  GameStartedPayload,
+  MoveMadePayload,
+  MoveErrorPayload,
+  ClockUpdatePayload,
+  GameOverPayload,
+  ErrorPayload,
+} from "@/lib/types/socket-events";
 
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
@@ -40,8 +37,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [whiteTime, setWhiteTime] = useState(300);
   const [blackTime, setBlackTime] = useState(300);
-  const [whitePlayer, setWhitePlayer] = useState<any>(null);
-  const [blackPlayer, setBlackPlayer] = useState<any>(null);
+  const [whitePlayer, setWhitePlayer] = useState<Player | null>(null);
+  const [blackPlayer, setBlackPlayer] = useState<Player | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
 
@@ -127,7 +124,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       });
     });
 
-    socketRef.current.on("game_started", (payload: any) => {
+    socketRef.current.on("game_started", (payload: GameStartedPayload) => {
       setGameStarted(true);
       setMyColor(payload.yourColor);
       setWhiteTime(payload.whiteTime);
@@ -149,7 +146,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       }
     });
 
-    socketRef.current.on("move_made", (payload: any) => {
+    socketRef.current.on("move_made", (payload: MoveMadePayload) => {
       const newGame = new Chess(payload.fen);
       setGame(newGame);
       setCurrentTurn(payload.turn);
@@ -159,18 +156,18 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setMoveHistory(moves);
     });
 
-    socketRef.current.on("move_error", (payload: any) => {
+    socketRef.current.on("move_error", (payload: MoveErrorPayload) => {
       if (!isAIGameRef.current) {
         alert(payload.message || "Invalid move");
       }
     });
 
-    socketRef.current.on("clock_update", (payload: any) => {
+    socketRef.current.on("clock_update", (payload: ClockUpdatePayload) => {
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
     });
 
-    socketRef.current.on("game_over", (payload: any) => {
+    socketRef.current.on("game_over", (payload: GameOverPayload) => {
       setGameOver(true);
       const resultText = payload.result === "DRAW"
         ? "Draw"
@@ -190,7 +187,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       alert("Opponent reconnected!");
     });
 
-    socketRef.current.on("error", (payload: any) => {
+    socketRef.current.on("error", (payload: ErrorPayload) => {
       if (payload.message && payload.message.includes("not part of")) {
         alert("You are not part of this game. Redirecting...");
         router.push(`/join/${gameId}`);
@@ -253,12 +250,6 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     makeBotMove();
   }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId, game]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${String(secs).padStart(2, "0")}`;
-  };
 
   if (!isLoaded) {
     return (

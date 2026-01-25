@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "../../../../../lib/prisma";
-
-class ValidationError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 400,
-    public details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
+import { ValidationError } from "@/lib/errors/validation-error";
 
 export async function GET(
   request: NextRequest,

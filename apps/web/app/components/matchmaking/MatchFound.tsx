@@ -3,18 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Swords } from "lucide-react";
-
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
+import { getInitials } from "@/lib/utils";
 
 interface MatchFoundProps {
   opponentName: string;
@@ -25,15 +14,6 @@ export function MatchFound({
   opponentName,
   opponentProfilePictureUrl,
 }: MatchFoundProps) {
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

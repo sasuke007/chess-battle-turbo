@@ -3,11 +3,8 @@ import {Decimal} from "@prisma/client/runtime/library";
 import {z} from "zod";
 import {prisma} from "@/lib/prisma";
 import {getRandomChessPosition, incrementPositionPlayCount} from "@/lib/services/chess-position.service";
-
-
-//TODO: first fetch the user game payload
-//TODO: then find a game which according to the filters user has selected.
-//TODO: then return a game with all the fields that are required to take decision further.
+import { ValidationError } from "@/lib/errors/validation-error";
+import { validateAndFetchUser, validateSufficientBalance } from "@/lib/services/user-validation.service";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -20,46 +17,6 @@ const createGameSchema = z.object({
 });
 
 type CreateGameRequest = z.infer<typeof createGameSchema>;
-
-async function validateAndFetchUser(userReferenceId: string) {
-  const user = await prisma.user.findUnique({
-    where: { referenceId: userReferenceId },
-    include: { wallet: true },
-  });
-
-  if (!user) {
-    throw new ValidationError("User not found", 404);
-  }
-
-  if (!user.isActive) {
-    throw new ValidationError("User account is not active", 400);
-  }
-
-  if (!user.wallet) {
-    throw new ValidationError("User wallet not found", 404);
-  }
-
-  return user;
-}
-
-function validateSufficientBalance(
-  balance: Decimal,
-  lockedAmount: Decimal,
-  requiredAmount: Decimal
-) {
-  const availableBalance = balance.sub(lockedAmount);
-  
-  if (availableBalance.lt(requiredAmount)) {
-    throw new ValidationError("Insufficient balance", 400, {
-      required: requiredAmount.toNumber(),
-      available: availableBalance.toNumber(),
-      balance: balance.toString(),
-      locked: lockedAmount.toString(),
-    });
-  }
-
-  return availableBalance;
-}
 
 function calculateGameAmounts(stakeAmount: number) {
   const stakeAmountDecimal = new Decimal(stakeAmount);
@@ -146,17 +103,6 @@ async function createGameTransaction(
   });
 }
 
-class ValidationError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 400,
-    public details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     // 1. Parse and validate request body using Zod schema
@@ -169,14 +115,7 @@ export async function POST(request: NextRequest) {
     // 3. Calculate amounts
     const amounts = calculateGameAmounts(validatedData.stakeAmount);
 
-    // 4. Balance validation removed - this is now a legendary position chess site, not a betting site
-    // validateSufficientBalance(
-    //   new Decimal(user.wallet!.balance),
-    //   new Decimal(user.wallet!.lockedAmount),
-    //   amounts.stakeAmountDecimal
-    // );
-
-    // 5. Fetch random chess position
+    // 4. Fetch random chess position
     const chessPosition = await getRandomChessPosition();
 
     // Default starting position FEN if no chess position found
@@ -185,7 +124,7 @@ export async function POST(request: NextRequest) {
     const chessPositionId = chessPosition?.id ?? null;
     const startingFen = chessPosition?.fen ?? DEFAULT_STARTING_FEN;
 
-    // 6. Execute transaction
+    // 5. Execute transaction
     const result = await createGameTransaction(
       user.id,
       user.name,
@@ -196,12 +135,12 @@ export async function POST(request: NextRequest) {
       startingFen,
     );
 
-    // 7. Increment position play count if a position was used
+    // 6. Increment position play count if a position was used
     if (chessPositionId) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
-    // 8. Return success response
+    // 7. Return success response
     return NextResponse.json(
       {
         success: true,

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { ValidationError } from "@/lib/errors/validation-error";
+import { validateAndFetchUser } from "@/lib/services/user-validation.service";
 
 const joinGameSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -10,47 +12,32 @@ const joinGameSchema = z.object({
 
 type JoinGameRequest = z.infer<typeof joinGameSchema>;
 
-async function validateAndFetchUser(userReferenceId: string) {
-  const user = await prisma.user.findUnique({
-    where: { referenceId: userReferenceId },
-    include: { wallet: true },
-  });
-
-  if (!user) {
-    throw new ValidationError("User not found", 404);
-  }
-
-  if (!user.isActive) {
-    throw new ValidationError("User account is not active", 400);
-  }
-
-  if (!user.wallet) {
-    throw new ValidationError("User wallet not found", 404);
-  }
-
-  return user;
+interface GameWithCreator {
+  id: bigint;
+  referenceId: string;
+  creatorId: bigint;
+  stakeAmount: Decimal;
+  status: string;
+  expiresAt: Date;
+  creator: {
+    id: bigint;
+    referenceId: string;
+    name: string;
+    profilePictureUrl: string | null;
+    code: string;
+  };
 }
 
-function validateSufficientBalance(
-  balance: Decimal,
-  lockedAmount: Decimal,
-  requiredAmount: Decimal
-) {
-  const availableBalance = balance.sub(lockedAmount);
-  
-  if (availableBalance.lt(requiredAmount)) {
-    throw new ValidationError("Insufficient balance", 400, {
-      required: requiredAmount.toNumber(),
-      available: availableBalance.toNumber(),
-      balance: balance.toString(),
-      locked: lockedAmount.toString(),
-    });
-  }
-
-  return availableBalance;
+interface UserWithWallet {
+  id: bigint;
+  name: string;
+  wallet: {
+    balance: Decimal;
+    lockedAmount: Decimal;
+  } | null;
 }
 
-async function validateAndFetchGame(gameReferenceId: string) {
+async function validateAndFetchGame(gameReferenceId: string): Promise<GameWithCreator> {
   const game = await prisma.game.findUnique({
     where: { referenceId: gameReferenceId },
     include: {
@@ -93,8 +80,8 @@ async function validateAndFetchGame(gameReferenceId: string) {
 }
 
 async function joinGameTransaction(
-  game: any,
-  opponent: any,
+  game: GameWithCreator,
+  opponent: UserWithWallet,
   opponentWalletBalance: Decimal,
   opponentWalletLockedAmount: Decimal
 ) {
@@ -159,17 +146,6 @@ async function joinGameTransaction(
   });
 }
 
-class ValidationError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 400,
-    public details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     // 1. Parse and validate request body
@@ -188,15 +164,7 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("You cannot join your own game", 400);
     }
 
-    // 5. Balance validation removed - this is now a legendary position chess site, not a betting site
-    // const stakeAmount = new Decimal(game.stakeAmount);
-    // validateSufficientBalance(
-    //   new Decimal(opponent.wallet!.balance),
-    //   new Decimal(opponent.wallet!.lockedAmount),
-    //   stakeAmount
-    // );
-
-    // 6. Execute join game transaction
+    // 5. Execute join game transaction
     const result = await joinGameTransaction(
       game,
       opponent,
@@ -204,7 +172,7 @@ export async function POST(request: NextRequest) {
       new Decimal(opponent.wallet!.lockedAmount)
     );
 
-    // 7. Return success response
+    // 6. Return success response
     return NextResponse.json(
       {
         success: true,

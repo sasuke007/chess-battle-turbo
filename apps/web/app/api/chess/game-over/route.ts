@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "../../../../lib/prisma";
+
+type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
+
+interface StatsUpdateData {
+  totalGamesPlayed?: { increment: number };
+  lastPlayedAt?: Date;
+  gamesWon?: { increment: number };
+  gamesLost?: { increment: number };
+  gamesDrawn?: { increment: number };
+  totalMoneyWon?: { increment: Decimal };
+  totalMoneyLost?: { increment: Decimal };
+  netProfit?: { increment: Decimal } | { decrement: Decimal };
+  currentWinStreak?: number | { increment: number };
+  longestWinStreak?: number;
+}
 
 const gameOverSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -271,7 +287,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function updateUserStats(
-  tx: any,
+  tx: TransactionClient,
   creatorId: bigint,
   opponentId: bigint | null,
   result: string,
@@ -284,7 +300,7 @@ async function updateUserStats(
   });
 
   if (creatorStats) {
-    let creatorUpdate: any = {
+    const creatorUpdate: StatsUpdateData = {
       totalGamesPlayed: { increment: 1 },
       lastPlayedAt: new Date(),
     };
@@ -323,7 +339,7 @@ async function updateUserStats(
     });
 
     if (opponentStats) {
-      let opponentUpdate: any = {
+      const opponentUpdate: StatsUpdateData = {
         totalGamesPlayed: { increment: 1 },
         lastPlayedAt: new Date(),
       };

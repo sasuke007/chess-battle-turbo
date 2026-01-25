@@ -8,18 +8,6 @@ import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } 
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
-
 export const Navbar = () => {
   const { isSignedIn } = useUser();
   const router = useRouter();
@@ -127,8 +115,58 @@ export const Navbar = () => {
           <div className="ml-2">
             <UserButton
               appearance={{
+                variables: {
+                  colorBackground: '#000000',
+                  colorText: '#ffffff',
+                  colorTextSecondary: 'rgba(255, 255, 255, 0.5)',
+                  colorPrimary: '#ffffff',
+                  colorNeutral: 'rgba(255, 255, 255, 0.4)',
+                  colorDanger: '#ef4444',
+                  borderRadius: '0px',
+                  fontFamily: "'Geist', sans-serif",
+                },
                 elements: {
-                  avatarBox: "w-9 h-9 border border-white/20",
+                  avatarBox: "w-9 h-9 border border-white/20 hover:border-white/40 transition-all duration-300",
+                  userButtonTrigger: "focus:shadow-none focus:ring-0",
+                  userButtonPopoverCard: {
+                    backgroundColor: '#000000',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+                    borderRadius: '0px',
+                  },
+                  userButtonPopoverActionButton: {
+                    fontFamily: "'Geist', sans-serif",
+                    fontSize: '13px',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    borderRadius: '0px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: '#ffffff',
+                    },
+                  },
+                  userButtonPopoverActionButtonText: {
+                    fontFamily: "'Geist', sans-serif",
+                  },
+                  userButtonPopoverActionButtonIcon: {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                  },
+                  userButtonPopoverFooter: {
+                    display: 'none',
+                  },
+                  userPreview: {
+                    padding: '16px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  },
+                  userPreviewMainIdentifier: {
+                    fontFamily: "'Geist', sans-serif",
+                    fontWeight: '500',
+                    color: '#ffffff',
+                  },
+                  userPreviewSecondaryIdentifier: {
+                    fontFamily: "'Geist', sans-serif",
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    fontSize: '12px',
+                  },
                 },
               }}
             />

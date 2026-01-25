@@ -29,24 +29,38 @@ export async function GET(request: NextRequest) {
         nationality: true,
         shortDescription: true,
         playingStyle: true,
+        birthYear: true,
+        deathYear: true,
+        achievements: true,
+        famousGames: true,
         isActive: true,
         isVisible: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     // Convert BigInt to string and format for frontend
     const legendsFormatted = legends.map(legend => ({
       id: legend.referenceId, // Use referenceId as the ID for frontend
-visibleId: legend.id.toString(),
+      visibleId: legend.id.toString(),
+      referenceId: legend.referenceId,
       name: legend.name,
       era: legend.era,
       profilePhotoUrl: legend.profilePhotoUrl,
       peakRating: legend.peakRating,
       nationality: legend.nationality,
-      description: legend.shortDescription,
+      shortDescription: legend.shortDescription,
+      description: legend.shortDescription, // Keep for backwards compatibility with play page
       playingStyle: legend.playingStyle,
+      birthYear: legend.birthYear,
+      deathYear: legend.deathYear,
+      achievements: legend.achievements,
+      famousGames: legend.famousGames,
       isActive: legend.isActive,
       isVisible: legend.isVisible,
+      createdAt: legend.createdAt,
+      updatedAt: legend.updatedAt,
     }));
 
     return NextResponse.json(

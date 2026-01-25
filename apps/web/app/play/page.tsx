@@ -11,18 +11,6 @@ import { Navbar } from "@/app/components/Navbar";
 import { Users, Zap, Crown, Bot, ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-// Distinctive typography
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
-
 export default function Play() {
   const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;

@@ -4,18 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
-
 export const AgadmatorFeature = () => {
   const [isMuted, setIsMuted] = useState(true);
   const [userPreferredMute, setUserPreferredMute] = useState(true);
@@ -57,7 +45,7 @@ export const AgadmatorFeature = () => {
   }, [userPreferredMute]);
 
   return (
-    <section className="w-full py-24 px-6 bg-black relative overflow-hidden">
+    <section className="w-full py-12 sm:py-24 px-6 bg-black relative overflow-hidden">
       {/* Subtle diagonal line pattern */}
       <div
         className="absolute inset-0 opacity-[0.015]"
@@ -79,7 +67,7 @@ export const AgadmatorFeature = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-8 sm:mb-16"
         >
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="h-px w-16 bg-white/20" />

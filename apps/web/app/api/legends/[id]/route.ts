@@ -22,7 +22,6 @@ const updateLegendSchema = z.object({
   isVisible: z.boolean().optional(),
 });
 
-type UpdateLegendRequest = z.infer<typeof updateLegendSchema>;
 
 export async function PUT(
   request: NextRequest,
@@ -30,14 +29,25 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const legendId = BigInt(id);
     const body = await request.json();
     const validatedData = updateLegendSchema.parse(body);
 
-    // Check if legend exists
-    const existingLegend = await prisma.legend.findUnique({
-      where: { id: legendId }
+    // Check if legend exists - try referenceId first, then BigInt id
+    let existingLegend = await prisma.legend.findUnique({
+      where: { referenceId: id }
     });
+
+    // Fallback to BigInt id if referenceId not found
+    if (!existingLegend) {
+      try {
+        const legendId = BigInt(id);
+        existingLegend = await prisma.legend.findUnique({
+          where: { id: legendId }
+        });
+      } catch {
+        // Invalid BigInt, legend not found
+      }
+    }
 
     if (!existingLegend) {
       return NextResponse.json(
@@ -51,7 +61,7 @@ export async function PUT(
       const duplicateName = await prisma.legend.findFirst({
         where: {
           name: validatedData.name,
-          id: { not: legendId }
+          id: { not: existingLegend.id }
         }
       });
 
@@ -64,7 +74,8 @@ export async function PUT(
     }
 
     // Prepare update data with proper JSON handling
-    const updateData: any = { ...validatedData };
+    // Using explicit type assertion due to complex Prisma JSON handling
+    const updateData: Record<string, unknown> = { ...validatedData };
     if ('achievements' in updateData) {
       updateData.achievements = updateData.achievements ? updateData.achievements : Prisma.JsonNull;
     }
@@ -74,7 +85,7 @@ export async function PUT(
 
     // Update the legend
     const legend = await prisma.legend.update({
-      where: { id: legendId },
+      where: { id: existingLegend.id },
       data: updateData,
     });
 
@@ -126,11 +137,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const legendId = BigInt(id);
 
-    const legend = await prisma.legend.findUnique({
-      where: { id: legendId }
+    // Try referenceId first, then BigInt id
+    let legend = await prisma.legend.findUnique({
+      where: { referenceId: id }
     });
+
+    if (!legend) {
+      try {
+        const legendId = BigInt(id);
+        legend = await prisma.legend.findUnique({
+          where: { id: legendId }
+        });
+      } catch {
+        // Invalid BigInt, legend not found
+      }
+    }
 
     if (!legend) {
       return NextResponse.json(
@@ -171,11 +193,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const legendId = BigInt(id);
 
-    // Check if legend exists
-    const existingLegend = await prisma.legend.findUnique({
-      where: { id: legendId },
+    // Try referenceId first, then BigInt id
+    let existingLegend = await prisma.legend.findUnique({
+      where: { referenceId: id },
       include: {
         _count: {
           select: {
@@ -185,6 +206,25 @@ export async function DELETE(
         },
       },
     });
+
+    if (!existingLegend) {
+      try {
+        const legendId = BigInt(id);
+        existingLegend = await prisma.legend.findUnique({
+          where: { id: legendId },
+          include: {
+            _count: {
+              select: {
+                gamesAsWhite: true,
+                gamesAsBlack: true,
+              },
+            },
+          },
+        });
+      } catch {
+        // Invalid BigInt, legend not found
+      }
+    }
 
     if (!existingLegend) {
       return NextResponse.json(
@@ -197,7 +237,7 @@ export async function DELETE(
 
     // Delete the legend (FK constraints will automatically set chess_positions references to NULL)
     await prisma.legend.delete({
-      where: { id: legendId },
+      where: { id: existingLegend.id },
     });
 
     return NextResponse.json(
@@ -206,7 +246,8 @@ export async function DELETE(
         message: "Legend deleted successfully",
         data: {
           deletedLegend: {
-            id: legendId.toString(),
+            id: existingLegend.id.toString(),
+            referenceId: existingLegend.referenceId,
             name: existingLegend.name,
             gamesAffected: totalGames,
           },

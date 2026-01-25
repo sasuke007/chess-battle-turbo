@@ -8,18 +8,6 @@ import { AnimatePresence, motion } from 'motion/react'
 import { PricingTable } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
-
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 

@@ -3,6 +3,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlayCount } from "@/lib/services/chess-position.service";
+import { ValidationError } from "@/lib/errors/validation-error";
 
 // Bot user constants - must match the seeded bot user
 const BOT_USER_CODE = "CHESS_BOT_001";
@@ -17,17 +18,6 @@ const createAIGameSchema = z.object({
 });
 
 type Difficulty = "easy" | "medium" | "hard" | "expert";
-
-class ValidationError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 400,
-    public details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
 
 async function validateAndFetchUserWithRating(userReferenceId: string) {
   const user = await prisma.user.findUnique({

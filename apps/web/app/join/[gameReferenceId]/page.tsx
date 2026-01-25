@@ -2,24 +2,12 @@
 
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { CompleteUserObject } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks";
 import { motion } from "motion/react";
 import { Navbar } from "@/app/components/Navbar";
 import { Swords, Clock, DollarSign, ArrowLeft } from "lucide-react";
-
-// Load fonts
-const fontLink = typeof document !== 'undefined' ? (() => {
-  const existing = document.querySelector('link[href*="Instrument+Serif"]');
-  if (!existing) {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }
-  return true;
-})() : null;
 
 interface GameDetails {
   referenceId: string;
@@ -120,15 +108,6 @@ export default function JoinPage({
       );
       setJoining(false);
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   if (loading) {
