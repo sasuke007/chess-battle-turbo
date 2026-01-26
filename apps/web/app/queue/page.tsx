@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
 import {
   QueueSearching,
-  QueueTimeout,
   MatchFound,
+  NoOpponentPopup,
 } from "@/app/components/matchmaking";
 import {
   useMatchmaking,
@@ -29,6 +29,7 @@ function QueueContent() {
   const [gameReferenceId, setGameReferenceId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingBotGame, setIsCreatingBotGame] = useState(false);
 
   const hasInitiatedRef = useRef(false);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -36,6 +37,7 @@ function QueueContent() {
   const initialTimeSeconds = parseInt(searchParams.get("time") || "300", 10);
   const incrementSeconds = parseInt(searchParams.get("increment") || "5", 10);
   const legendReferenceId = searchParams.get("legend") || null;
+  const legendName = searchParams.get("legendName") || null;
 
   const getTimeControlLabel = () => {
     const mins = Math.floor(initialTimeSeconds / 60);
@@ -54,53 +56,54 @@ function QueueContent() {
     }, 1500);
   }, [router]);
 
+  const createMatchRequest = useCallback(async () => {
+    if (!userObject?.user?.referenceId) return;
+
+    setIsCreating(true);
+    try {
+      const response = await fetch("/api/matchmaking/create-match-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userReferenceId: userObject.user.referenceId,
+          legendReferenceId,
+          initialTimeSeconds,
+          incrementSeconds,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to create match request");
+      }
+
+      if (data.data.immediateMatch) {
+        setQueueState("matched");
+        setOpponentInfo({
+          name: data.data.immediateMatch.opponentName,
+          profilePictureUrl: data.data.immediateMatch.opponentProfilePictureUrl,
+        });
+        setGameReferenceId(data.data.immediateMatch.gameReferenceId);
+        redirectToGame(data.data.immediateMatch.gameReferenceId);
+      } else {
+        setQueueReferenceId(data.data.queueEntry.referenceId);
+        setQueueState("searching");
+      }
+    } catch (error) {
+      console.error("Error creating match request:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to create match request");
+      setQueueState("error");
+    } finally {
+      setIsCreating(false);
+    }
+  }, [userObject?.user?.referenceId, legendReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
+
   useEffect(() => {
     if (!isLoaded || !userObject?.user?.referenceId) return;
     if (hasInitiatedRef.current) return;
 
     hasInitiatedRef.current = true;
-    setIsCreating(true);
-
-    const createMatchRequest = async () => {
-      try {
-        const response = await fetch("/api/matchmaking/create-match-request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userReferenceId: userObject.user.referenceId,
-            legendReferenceId,
-            initialTimeSeconds,
-            incrementSeconds,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || "Failed to create match request");
-        }
-
-        if (data.data.immediateMatch) {
-          setQueueState("matched");
-          setOpponentInfo({
-            name: data.data.immediateMatch.opponentName,
-            profilePictureUrl: data.data.immediateMatch.opponentProfilePictureUrl,
-          });
-          setGameReferenceId(data.data.immediateMatch.gameReferenceId);
-          redirectToGame(data.data.immediateMatch.gameReferenceId);
-        } else {
-          setQueueReferenceId(data.data.queueEntry.referenceId);
-          setQueueState("searching");
-        }
-      } catch (error) {
-        console.error("Error creating match request:", error);
-        setErrorMessage(error instanceof Error ? error.message : "Failed to create match request");
-        setQueueState("error");
-      } finally {
-        setIsCreating(false);
-      }
-    };
-
     createMatchRequest();
 
     return () => {
@@ -108,7 +111,7 @@ function QueueContent() {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [isLoaded, userObject?.user?.referenceId, legendReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
+  }, [isLoaded, userObject?.user?.referenceId, createMatchRequest]);
 
   const handleMatchFound = useCallback(
     (gameRef: string, opponent: OpponentInfo) => {
@@ -120,9 +123,26 @@ function QueueContent() {
     [redirectToGame]
   );
 
-  const handleTimeout = useCallback(() => {
+  const handleTimeout = useCallback(async () => {
+    // Cancel the queue entry immediately on timeout
+    if (userObject?.user?.referenceId && queueReferenceId) {
+      try {
+        await fetch("/api/matchmaking/cancel-match-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            queueReferenceId,
+            userReferenceId: userObject.user.referenceId,
+          }),
+        });
+      } catch (error) {
+        console.error("Error cancelling queue entry on timeout:", error);
+      }
+    }
+
+    setQueueReferenceId(null);
     setQueueState("timeout");
-  }, []);
+  }, [userObject?.user?.referenceId, queueReferenceId]);
 
   const handleError = useCallback((error: string) => {
     console.error("Matchmaking error:", error);
@@ -154,17 +174,49 @@ function QueueContent() {
     router.replace("/play");
   };
 
-  const handleRetry = () => {
-    hasInitiatedRef.current = false;
+  const handleRetry = async () => {
+    // Queue entry already cancelled on timeout, just reset state and retry
     setQueueState("initializing");
-    setQueueReferenceId(null);
     setErrorMessage(null);
     setOpponentInfo(null);
     setGameReferenceId(null);
+    await createMatchRequest();
   };
 
   const handleBack = () => {
     router.replace("/play");
+  };
+
+  const handlePlayBot = async () => {
+    if (!userObject?.user?.referenceId) return;
+
+    setIsCreatingBotGame(true);
+    try {
+      const response = await fetch("/api/chess/create-ai-game", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userReferenceId: userObject.user.referenceId,
+          initialTimeSeconds,
+          incrementSeconds,
+          ...(legendReferenceId && { selectedLegend: legendReferenceId }),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to create AI game");
+      }
+
+      router.replace(`/game/${data.data.game.referenceId}`);
+    } catch (error) {
+      console.error("Error creating AI game:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to create AI game");
+      setQueueState("error");
+    } finally {
+      setIsCreatingBotGame(false);
+    }
   };
 
   if (!isLoaded) {
@@ -237,12 +289,17 @@ function QueueContent() {
             />
           )}
 
-          {/* Timeout state */}
+          {/* Timeout state - Full screen popup */}
           {queueState === "timeout" && (
-            <QueueTimeout
+            <NoOpponentPopup
+              isOpen={true}
+              onPlayBot={handlePlayBot}
               onRetry={handleRetry}
               onBack={handleBack}
+              isCreatingBotGame={isCreatingBotGame}
               isRetrying={isCreating}
+              timeControl={{ time: initialTimeSeconds, increment: incrementSeconds }}
+              legendName={legendName}
             />
           )}
 

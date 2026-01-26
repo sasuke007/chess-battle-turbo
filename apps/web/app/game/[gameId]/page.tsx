@@ -6,6 +6,7 @@ import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import { VictoryConfetti } from "../../components/GameEndEffects";
+import PromotionPopup from "../../components/PromotionPopup";
 import { useRequireAuth } from "@/lib/hooks";
 import { CompleteUserObject } from "@/lib/types";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
@@ -44,6 +45,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [blackPlayer, setBlackPlayer] = useState<Player | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<{ from: Square; to: Square } | null>(null);
 
   const [isAIGame, setIsAIGame] = useState(false);
   const isAIGameRef = useRef(false);
@@ -71,6 +73,33 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     [game]
   );
 
+  const isPromotionMove = useCallback(
+    (from: Square, to: Square): boolean => {
+      const moves = game.moves({ square: from, verbose: true });
+      const targetMove = moves.find((m) => m.to === to);
+      return targetMove?.isPromotion() ?? false;
+    },
+    [game]
+  );
+
+  const handlePromotionSelect = useCallback(
+    (piece: "q" | "r" | "b" | "n") => {
+      if (!pendingPromotion || !socketRef.current) return;
+
+      socketRef.current.emit("make_move", {
+        gameReferenceId: gameId,
+        from: pendingPromotion.from,
+        to: pendingPromotion.to,
+        promotion: piece,
+      });
+
+      setPendingPromotion(null);
+      setSelectedSquare(null);
+      setLegalMoves([]);
+    },
+    [pendingPromotion, gameId]
+  );
+
   const handleSquareClick = useCallback(
     (square: Square) => {
       if (gameOver || !gameStarted) return;
@@ -94,6 +123,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       const from = selectedSquare;
       const to = square;
 
+      // Check if this is a promotion move
+      if (isPromotionMove(from, to)) {
+        setPendingPromotion({ from, to });
+        return;
+      }
+
       if (socketRef.current) {
         socketRef.current.emit("make_move", {
           gameReferenceId: gameId,
@@ -106,7 +141,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setSelectedSquare(null);
       setLegalMoves([]);
     },
-    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare]
+    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove]
   );
 
   useEffect(() => {
@@ -233,6 +268,15 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     };
   }, [isLoaded, gameId, myColor, userReferenceId]);
 
+  // Clear pending promotion if game ends
+  useEffect(() => {
+    if (gameOver && pendingPromotion) {
+      setPendingPromotion(null);
+      setSelectedSquare(null);
+      setLegalMoves([]);
+    }
+  }, [gameOver, pendingPromotion]);
+
   useEffect(() => {
     if (!isAIGame || !gameStarted || gameOver || !botColor || currentTurn !== botColor) return;
     if (botMoveInProgressRef.current) return;
@@ -307,6 +351,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     <div className="min-h-screen bg-black text-white">
       {/* Victory confetti effect */}
       <VictoryConfetti isActive={isVictory || false} />
+
+      {/* Promotion popup */}
+      <PromotionPopup
+        isOpen={pendingPromotion !== null}
+        color={myColor || "w"}
+        onSelect={handlePromotionSelect}
+      />
 
       {/* Subtle grid background */}
       <div
@@ -500,10 +551,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   gameEndState={
                     gameOver
                       ? gameResult?.includes("Victory")
-                        ? "victory"
+                        ? ("victory" as const)
                         : gameResult?.includes("Draw")
-                        ? "draw"
-                        : "defeat"
+                        ? ("draw" as const)
+                        : ("defeat" as const)
                       : null
                   }
                 />

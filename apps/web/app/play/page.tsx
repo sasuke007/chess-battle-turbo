@@ -72,6 +72,10 @@ export default function Play() {
       });
       if (playAsLegend && selectedHero) {
         params.set("legend", selectedHero);
+        const selectedLegendData = legends.find(l => l.id === selectedHero);
+        if (selectedLegendData) {
+          params.set("legendName", selectedLegendData.name);
+        }
       }
       router.push(`/queue?${params.toString()}`);
       return;
