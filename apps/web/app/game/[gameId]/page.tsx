@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import { VictoryConfetti } from "../../components/GameEndEffects";
 import PromotionPopup from "../../components/PromotionPopup";
-import { useRequireAuth } from "@/lib/hooks";
-import { CompleteUserObject } from "@/lib/types";
+import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 import { useChessSound } from "@/lib/hooks/useChessSound";
 import { cn, formatTime } from "@/lib/utils";
@@ -25,7 +24,7 @@ import type {
 
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
-  const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
+  const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
   const { gameId } = use(params);
 
@@ -145,7 +144,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   );
 
   useEffect(() => {
-    if (!isLoaded || !gameId || !userReferenceId) return;
+    if (!isReady || !gameId || !userReferenceId) return;
     if (socketRef.current?.connected) return;
 
     const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:3002";
@@ -266,7 +265,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [isLoaded, gameId, myColor, userReferenceId]);
+  }, [isReady, gameId, myColor, userReferenceId]);
 
   // Clear pending promotion if game ends
   useEffect(() => {
@@ -327,7 +326,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     makeBotMove();
   }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId, game]);
 
-  if (!isLoaded) {
+  if (!isReady) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <motion.div

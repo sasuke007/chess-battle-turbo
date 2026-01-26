@@ -4,8 +4,7 @@ import React, { useEffect, useState, use } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn, getInitials } from "@/lib/utils";
-import { CompleteUserObject } from "@/lib/types";
-import { useRequireAuth } from "@/lib/hooks";
+import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { motion } from "motion/react";
 import { Navbar } from "@/app/components/Navbar";
 import { Swords, Clock, DollarSign, ArrowLeft } from "lucide-react";
@@ -37,8 +36,7 @@ export default function JoinPage({
 }: {
   params: Promise<{ gameReferenceId: string }>;
 }) {
-  const { userObject }: { userObject: CompleteUserObject | null } =
-    useRequireAuth();
+  const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
   const router = useRouter();
   const [gameDetails, setGameDetails] = useState<GameDetails | null>(null);
@@ -108,7 +106,7 @@ export default function JoinPage({
     }
   };
 
-  if (loading) {
+  if (loading || !isReady) {
     return (
       <>
         <Navbar />
@@ -120,7 +118,7 @@ export default function JoinPage({
           >
             <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
-              Loading game details...
+              Loading...
             </p>
           </motion.div>
         </div>

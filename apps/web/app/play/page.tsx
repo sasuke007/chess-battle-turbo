@@ -5,15 +5,14 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
-import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
-import { CompleteUserObject } from "@/lib/types";
+import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
 import { Users, Zap, Crown, Bot, ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Play() {
-  const { isLoaded, userObject }: { isLoaded: boolean; userObject: CompleteUserObject | null } = useRequireAuth();
+  const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
   const router = useRouter();
 
@@ -166,7 +165,7 @@ export default function Play() {
     },
   ];
 
-  if (!isLoaded) {
+  if (!isReady) {
     return (
       <div className="flex min-h-screen bg-black items-center justify-center">
         <motion.div

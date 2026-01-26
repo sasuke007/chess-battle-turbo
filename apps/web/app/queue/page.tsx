@@ -12,7 +12,7 @@ import {
   useMatchmaking,
   OpponentInfo,
 } from "@/lib/hooks/useMatchmaking";
-import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
+import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth";
 import { motion } from "motion/react";
 
 type QueueState = "initializing" | "searching" | "timeout" | "matched" | "error";
@@ -20,7 +20,7 @@ type QueueState = "initializing" | "searching" | "timeout" | "matched" | "error"
 function QueueContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isLoaded, userObject } = useRequireAuth();
+  const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
 
   const [queueState, setQueueState] = useState<QueueState>("initializing");
   const [queueReferenceId, setQueueReferenceId] = useState<string | null>(null);
@@ -100,7 +100,7 @@ function QueueContent() {
   }, [userObject?.user?.referenceId, legendReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
 
   useEffect(() => {
-    if (!isLoaded || !userObject?.user?.referenceId) return;
+    if (!isReady || !userObject?.user?.referenceId) return;
     if (hasInitiatedRef.current) return;
 
     hasInitiatedRef.current = true;
@@ -111,7 +111,7 @@ function QueueContent() {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [isLoaded, userObject?.user?.referenceId, createMatchRequest]);
+  }, [isReady, userObject?.user?.referenceId, createMatchRequest]);
 
   const handleMatchFound = useCallback(
     (gameRef: string, opponent: OpponentInfo) => {
@@ -219,7 +219,7 @@ function QueueContent() {
     }
   };
 
-  if (!isLoaded) {
+  if (!isReady) {
     return (
       <div className="flex min-h-screen bg-black items-center justify-center">
         <motion.div

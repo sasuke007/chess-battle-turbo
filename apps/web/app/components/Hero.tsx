@@ -55,7 +55,7 @@ export default function Hero() {
             style={{ fontFamily: "'Geist', sans-serif" }}
             className="text-white/50 text-[10px] tracking-[0.4em] uppercase"
           >
-            The Ultimate Chess Experience
+            Where Chess History Comes Alive
           </span>
           <div className="h-px w-12 bg-white/30" />
         </motion.div>
@@ -66,11 +66,11 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
           style={{ fontFamily: "'Instrument Serif', serif" }}
-          className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-white leading-[0.9] tracking-tight mb-6"
+          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white leading-[0.95] tracking-tight mb-6"
         >
-          Chess
+          Relive Legendary
           <br />
-          <span className="text-white/40">Battle</span>
+          <span className="text-white/40">Chess Moments</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -81,9 +81,7 @@ export default function Hero() {
           style={{ fontFamily: "'Geist', sans-serif" }}
           className="text-white/40 text-lg sm:text-xl md:text-2xl max-w-2xl leading-relaxed mb-12"
         >
-          Challenge friends to epic battles from legendary positions.
-          <br className="hidden sm:block" />
-          Master the game. Claim victory.
+          Step into the exact positions where chess legends were made.
         </motion.p>
 
         {/* CTA Button */}
