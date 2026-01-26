@@ -547,6 +547,14 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onSquareClick={handleSquareClick}
                   playerColor={myColor}
                   showCoordinates={true}
+                  lastMove={
+                    moveHistory.length > 0 && moveHistory[moveHistory.length - 1]
+                      ? {
+                          from: moveHistory[moveHistory.length - 1]!.from,
+                          to: moveHistory[moveHistory.length - 1]!.to,
+                        }
+                      : null
+                  }
                   gameEndState={
                     gameOver
                       ? gameResult?.includes("Victory")

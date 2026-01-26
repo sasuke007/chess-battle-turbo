@@ -60,3 +60,13 @@ Would you like me to help implement the browser-based Stockfish.js solution firs
 
 User should be able to see the last move played it should be able go back move by move.
 
+Have to implement the back feature that user should be able to use last user move.(analyze chess.com website)
+
+and when a random position loads, user should see the last move played by the side.
+
+
+and the last move played on the board should be slightly highlighted.
+
+while calling gemini api will also have to add information of the last move that was played, 
+
+so that the players playing this positon have some more context.

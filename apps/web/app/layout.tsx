@@ -25,15 +25,24 @@ const instrumentSerif = Instrument_Serif({
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#171717',
 };
 
 export const metadata: Metadata = {
   title: "Chess Battle - The Ultimate Chess Experience",
   description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Chess Battle",
+  },
   icons: {
-    icon: "/chess-logo-bnw.png",
-    shortcut: "/chess-logo-bnw.png",
-    apple: "/chess-logo-bnw.png",
+    icon: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 

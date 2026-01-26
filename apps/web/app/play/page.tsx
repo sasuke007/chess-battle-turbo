@@ -351,7 +351,7 @@ export default function Play() {
             </motion.div>
 
             {/* Legends Section */}
-            {!legendsLoading && legends.length > 0 && (
+            {(legendsLoading || legends.length > 0) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -421,61 +421,78 @@ export default function Play() {
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <div className="px-5 pb-5 border-t border-white/10">
-                        <div className="pt-4 grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                          {legends.map((legend, index) => (
-                            <motion.button
-                              key={legend.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              onClick={() => setSelectedHero(legend.id)}
-                              className={cn(
-                                "p-3 border text-left transition-all duration-300",
-                                selectedHero === legend.id
-                                  ? "border-white bg-white"
-                                  : "border-white/10 hover:border-white/30"
-                              )}
+                        {legendsLoading ? (
+                          <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-3">
+                            <div className="relative w-8 h-8">
+                              <div className="absolute inset-0 border border-white/20 rounded-full" />
+                              <div
+                                className="absolute inset-0 border border-transparent border-t-white/60 rounded-full animate-spin"
+                              />
+                            </div>
+                            <p
+                              style={{ fontFamily: "'Geist', sans-serif" }}
+                              className="text-white/30 text-[10px] tracking-[0.2em] uppercase"
                             >
-                              <div className="flex items-center gap-2.5">
-                                {legend.profilePhotoUrl ? (
-                                  <Image
-                                    src={legend.profilePhotoUrl}
-                                    alt={legend.name}
-                                    width={32}
-                                    height={32}
-                                    className={cn(
-                                      "w-8 h-8 object-cover grayscale transition-all",
-                                      selectedHero === legend.id ? "grayscale-0" : "opacity-70"
-                                    )}
-                                  />
-                                ) : (
-                                  <div className={cn(
-                                    "w-8 h-8 flex items-center justify-center text-xs font-medium border",
-                                    selectedHero === legend.id
-                                      ? "bg-black text-white border-black"
-                                      : "bg-white/5 text-white/60 border-white/20"
-                                  )}>
-                                    {legend.name.split(' ').map(n => n[0]).join('')}
-                                  </div>
+                              Loading legends
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="pt-4 grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+                            {legends.map((legend, index) => (
+                              <motion.button
+                                key={legend.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                onClick={() => setSelectedHero(legend.id)}
+                                className={cn(
+                                  "p-3 border text-left transition-all duration-300",
+                                  selectedHero === legend.id
+                                    ? "border-white bg-white"
+                                    : "border-white/10 hover:border-white/30"
                                 )}
-                                <div className="flex-1 min-w-0">
-                                  <p style={{ fontFamily: "'Geist', sans-serif" }} className={cn(
-                                    "text-xs font-medium truncate transition-colors",
-                                    selectedHero === legend.id ? "text-black" : "text-white/80"
-                                  )}>
-                                    {legend.name}
-                                  </p>
-                                  <p className={cn(
-                                    "text-[10px] truncate transition-colors",
-                                    selectedHero === legend.id ? "text-black/50" : "text-white/40"
-                                  )}>
-                                    {legend.era}
-                                  </p>
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  {legend.profilePhotoUrl ? (
+                                    <Image
+                                      src={legend.profilePhotoUrl}
+                                      alt={legend.name}
+                                      width={32}
+                                      height={32}
+                                      className={cn(
+                                        "w-8 h-8 object-cover grayscale transition-all",
+                                        selectedHero === legend.id ? "grayscale-0" : "opacity-70"
+                                      )}
+                                    />
+                                  ) : (
+                                    <div className={cn(
+                                      "w-8 h-8 flex items-center justify-center text-xs font-medium border",
+                                      selectedHero === legend.id
+                                        ? "bg-black text-white border-black"
+                                        : "bg-white/5 text-white/60 border-white/20"
+                                    )}>
+                                      {legend.name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p style={{ fontFamily: "'Geist', sans-serif" }} className={cn(
+                                      "text-xs font-medium truncate transition-colors",
+                                      selectedHero === legend.id ? "text-black" : "text-white/80"
+                                    )}>
+                                      {legend.name}
+                                    </p>
+                                    <p className={cn(
+                                      "text-[10px] truncate transition-colors",
+                                      selectedHero === legend.id ? "text-black/50" : "text-white/40"
+                                    )}>
+                                      {legend.era}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            </motion.button>
-                          ))}
-                        </div>
+                              </motion.button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
