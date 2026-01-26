@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { usePWAInstall } from "../../lib/hooks";
+import { usePWAInstall } from "@/lib/hooks";
 import { InstallAppPopover } from "./InstallAppPopover";
 
 export const Navbar = () => {

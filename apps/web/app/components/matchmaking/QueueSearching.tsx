@@ -9,6 +9,7 @@ interface QueueSearchingProps {
   timeRemaining: number;
   onCancel: () => void;
   isLoading?: boolean;
+  isCancelling?: boolean;
   timeControlLabel?: string;
 }
 
@@ -16,6 +17,7 @@ export function QueueSearching({
   timeRemaining,
   onCancel,
   isLoading = false,
+  isCancelling = false,
   timeControlLabel = "5 min",
 }: QueueSearchingProps) {
   return (
@@ -96,17 +98,21 @@ export function QueueSearching({
       {/* Cancel button */}
       <button
         onClick={onCancel}
-        disabled={isLoading}
+        disabled={isLoading || isCancelling}
         className={cn(
-          "flex items-center gap-2 px-6 py-3",
+          "group flex items-center gap-2 px-6 py-3",
           "border border-white/10 hover:border-white/30 hover:bg-white hover:text-black",
           "text-white/60 hover:text-black transition-all duration-300",
-          "disabled:opacity-50 disabled:cursor-not-allowed"
+          "disabled:cursor-not-allowed"
         )}
         style={{ fontFamily: "'Geist', sans-serif" }}
       >
-        <X className="w-4 h-4" strokeWidth={1.5} />
-        <span>{isLoading ? "Cancelling..." : "Cancel Search"}</span>
+        {isCancelling ? (
+          <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 group-hover:border-black/20 group-hover:border-t-black rounded-full animate-spin transition-colors duration-300" />
+        ) : (
+          <X className="w-4 h-4" strokeWidth={1.5} />
+        )}
+        <span>{isCancelling ? "Cancelling..." : "Cancel Search"}</span>
       </button>
 
       {/* Tips */}

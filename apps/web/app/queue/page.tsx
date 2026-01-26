@@ -30,6 +30,7 @@ function QueueContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingBotGame, setIsCreatingBotGame] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const hasInitiatedRef = useRef(false);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -157,6 +158,7 @@ function QueueContent() {
   });
 
   const handleCancel = async () => {
+    setIsCancelling(true);
     if (userObject?.user?.referenceId && queueReferenceId) {
       try {
         await fetch("/api/matchmaking/cancel-match-request", {
@@ -285,6 +287,7 @@ function QueueContent() {
               timeRemaining={queueReferenceId ? matchmaking.timeRemaining : 60}
               onCancel={handleCancel}
               isLoading={isCreating || matchmaking.isLoading}
+              isCancelling={isCancelling}
               timeControlLabel={getTimeControlLabel()}
             />
           )}
