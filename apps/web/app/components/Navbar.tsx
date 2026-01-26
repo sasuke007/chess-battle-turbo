@@ -7,10 +7,13 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import { usePWAInstall } from "../../lib/hooks";
+import { InstallAppPopover } from "./InstallAppPopover";
 
 export const Navbar = () => {
   const { isSignedIn } = useUser();
   const router = useRouter();
+  const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
 
   const handlePlayClick = () => {
     if (isSignedIn) {
@@ -57,6 +60,11 @@ export const Navbar = () => {
 
       {/* Right Side Actions */}
       <div className="flex items-center gap-3">
+        {/* Install App Popover - only show if can install and not already installed */}
+        {canInstall && !isInstalled && (
+          <InstallAppPopover isIOS={isIOS} onInstall={install} />
+        )}
+
         {/* Play Button */}
         <button
           onClick={handlePlayClick}

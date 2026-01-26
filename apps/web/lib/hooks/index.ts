@@ -7,3 +7,5 @@ export type { UseRequireAuthReturn } from './useRequireAuth';
 
 export { useChessSound } from './useChessSound';
 
+export { usePWAInstall } from './usePWAInstall';
+
