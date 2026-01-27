@@ -60,6 +60,8 @@ export interface MatchedPosition {
   whitePlayerName: string | null;
   blackPlayerName: string | null;
   tournamentName: string | null;
+  whiteLegend?: { profilePhotoUrl: string | null } | null;
+  blackLegend?: { profilePhotoUrl: string | null } | null;
 }
 
 export type TimeControlType = "bullet" | "blitz" | "rapid" | "daily";

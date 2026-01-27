@@ -69,4 +69,14 @@ and the last move played on the board should be slightly highlighted.
 
 while calling gemini api will also have to add information of the last move that was played, 
 
-so that the players playing this positon have some more context.
+so that the players playing this positon have some more context, about what was the last move played by opponent.
+
+Integrate with zustand to avoid , making calls to clerk api on every page and if it's calling clerk on every page, page loads in 1s not acceptable.
+
+When user selects, a legend we try our best to match him with that legend, and when he tries to play with a bot he always plays as the legend he has chosen.
+
+
+All the loading banners should be the same on all the pages.
+
+Resignation , offer draw should also be handled.
+

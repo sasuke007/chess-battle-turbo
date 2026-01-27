@@ -49,6 +49,12 @@ export async function selectPositionFromLegends(
       whitePlayerName: true,
       blackPlayerName: true,
       tournamentName: true,
+      whiteLegend: {
+        select: { profilePhotoUrl: true },
+      },
+      blackLegend: {
+        select: { profilePhotoUrl: true },
+      },
     },
   });
 
@@ -87,6 +93,12 @@ export async function getRandomChessPosition(): Promise<MatchedPosition | null> 
       whitePlayerName: true,
       blackPlayerName: true,
       tournamentName: true,
+      whiteLegend: {
+        select: { profilePhotoUrl: true },
+      },
+      blackLegend: {
+        select: { profilePhotoUrl: true },
+      },
     },
   });
 

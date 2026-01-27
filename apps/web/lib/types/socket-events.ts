@@ -25,6 +25,13 @@ export interface GameStartedPayload {
   blackPlayer: Player;
   isAIGame?: boolean;
   difficulty?: "easy" | "medium" | "hard" | "expert";
+  positionInfo?: {
+    whitePlayerName: string | null;
+    blackPlayerName: string | null;
+    tournamentName?: string | null;
+    whitePlayerImageUrl?: string | null;
+    blackPlayerImageUrl?: string | null;
+  };
 }
 
 export interface MoveMadePayload {

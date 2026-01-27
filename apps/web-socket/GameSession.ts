@@ -206,6 +206,7 @@ export class GameSession {
 
     // Emit game_started to both players
     const clockState = this.clockManager.getState();
+    const positionInfo = this.gameData.gameData?.positionInfo;
 
     const whitePayload: GameStartedPayload = {
       gameReferenceId: this.gameData.referenceId,
@@ -215,6 +216,7 @@ export class GameSession {
       blackTime: this.clockManager.getTimeInSeconds("b"),
       whitePlayer: this.whitePlayer.playerInfo,
       blackPlayer: this.blackPlayer.playerInfo,
+      positionInfo: positionInfo || undefined,
     };
 
     const blackPayload: GameStartedPayload = {
@@ -225,6 +227,7 @@ export class GameSession {
       blackTime: this.clockManager.getTimeInSeconds("b"),
       whitePlayer: this.whitePlayer.playerInfo,
       blackPlayer: this.blackPlayer.playerInfo,
+      positionInfo: positionInfo || undefined,
     };
 
     this.whitePlayer.socket.emit("game_started", whitePayload);
@@ -294,6 +297,7 @@ export class GameSession {
     console.log(`Starting clock for ${currentTurn === "w" ? "white" : "black"} (from FEN)`);
 
     // Emit game_started to the human player with AI game info
+    const positionInfo = this.gameData.gameData?.positionInfo;
     const payload: GameStartedPayload = {
       gameReferenceId: this.gameData.referenceId,
       yourColor: this.humanPlayerColor!,
@@ -304,6 +308,7 @@ export class GameSession {
       blackPlayer: this.blackPlayer!.playerInfo,
       isAIGame: true,
       difficulty: this.aiDifficulty,
+      positionInfo: positionInfo || undefined,
     };
 
     socket.emit("game_started", payload);
@@ -569,6 +574,7 @@ export class GameSession {
       }
 
       // Send current game state to reconnected player
+      const positionInfo = this.gameData.gameData?.positionInfo;
       socket.emit("game_started", {
         gameReferenceId: this.gameData.referenceId,
         yourColor:
@@ -578,6 +584,7 @@ export class GameSession {
         blackTime: this.clockManager.getTimeInSeconds("b"),
         whitePlayer: this.whitePlayer!.playerInfo,
         blackPlayer: this.blackPlayer!.playerInfo,
+        positionInfo: positionInfo || undefined,
       });
       console.log(`Sent game state to reconnected player`);
     } else {

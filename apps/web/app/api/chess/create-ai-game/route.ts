@@ -240,15 +240,15 @@ export async function POST(request: NextRequest) {
           playerReferenceId: user.referenceId, // Track the human player
           botReferenceId: botUser.referenceId,
           botName: "Chess Bot",
-          // Legend info if playing a legend's position
-          ...(selectedLegend && {
-            selectedLegend,
-            legendPosition: {
-              whitePlayer: chessPosition?.whitePlayerName,
-              blackPlayer: chessPosition?.blackPlayerName,
-              tournament: chessPosition?.tournamentName,
-            },
-          }),
+          selectedLegend: selectedLegend || null,
+          // Position info for legend display (same format as regular games)
+          positionInfo: chessPosition ? {
+            whitePlayerName: chessPosition.whitePlayerName ?? null,
+            blackPlayerName: chessPosition.blackPlayerName ?? null,
+            tournamentName: chessPosition.tournamentName ?? null,
+            whitePlayerImageUrl: chessPosition.whiteLegend?.profilePhotoUrl ?? null,
+            blackPlayerImageUrl: chessPosition.blackLegend?.profilePhotoUrl ?? null,
+          } : null,
         },
       },
     });

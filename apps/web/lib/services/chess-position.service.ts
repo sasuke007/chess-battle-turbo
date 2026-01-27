@@ -33,6 +33,12 @@ export async function getRandomChessPosition() {
       tournamentName: true,
       positionType: true,
       sourceType: true,
+      whiteLegend: {
+        select: { profilePhotoUrl: true },
+      },
+      blackLegend: {
+        select: { profilePhotoUrl: true },
+      },
     },
   });
 
@@ -108,6 +114,12 @@ export async function getRandomPositionByLegend(legendReferenceId: string) {
       tournamentName: true,
       positionType: true,
       sourceType: true,
+      whiteLegend: {
+        select: { profilePhotoUrl: true },
+      },
+      blackLegend: {
+        select: { profilePhotoUrl: true },
+      },
     },
   });
 

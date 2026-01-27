@@ -44,6 +44,13 @@ export interface GameData {
     playerReferenceId?: string;
     botReferenceId?: string;
     botName?: string;
+    positionInfo?: {
+      whitePlayerName: string | null;
+      blackPlayerName: string | null;
+      tournamentName?: string | null;
+      whitePlayerImageUrl?: string | null;
+      blackPlayerImageUrl?: string | null;
+    };
   };
   creator: PlayerInfo;
   opponent?: PlayerInfo;
@@ -110,6 +117,14 @@ export interface GameStartedPayload {
   // AI game fields (optional)
   isAIGame?: boolean;
   difficulty?: "easy" | "medium" | "hard" | "expert";
+  // Legend position info (optional)
+  positionInfo?: {
+    whitePlayerName: string | null;
+    blackPlayerName: string | null;
+    tournamentName?: string | null;
+    whitePlayerImageUrl?: string | null;
+    blackPlayerImageUrl?: string | null;
+  };
 }
 
 export interface MoveMadePayload {

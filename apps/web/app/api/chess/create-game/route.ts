@@ -44,6 +44,7 @@ async function createGameTransaction(
   request: CreateGameRequest,
   chessPositionId: bigint | null,
   startingFen: string,
+  positionInfo: { whitePlayerName: string | null; blackPlayerName: string | null; tournamentName: string | null; whitePlayerImageUrl: string | null; blackPlayerImageUrl: string | null } | null,
 ) {
   const amounts = calculateGameAmounts(request.stakeAmount);
   const expiresAt = calculateExpirationTime(1);
@@ -69,6 +70,7 @@ async function createGameTransaction(
           gameMode: request.gameMode,
           playAsLegend: request.playAsLegend,
           selectedLegend: request.selectedLegend,
+          positionInfo: positionInfo,
         },
       },
     });
@@ -124,7 +126,16 @@ export async function POST(request: NextRequest) {
     const chessPositionId = chessPosition?.id ?? null;
     const startingFen = chessPosition?.fen ?? DEFAULT_STARTING_FEN;
 
-    // 5. Execute transaction
+    // 5. Build position info for legend display
+    const positionInfo = chessPosition ? {
+      whitePlayerName: chessPosition.whitePlayerName ?? null,
+      blackPlayerName: chessPosition.blackPlayerName ?? null,
+      tournamentName: chessPosition.tournamentName ?? null,
+      whitePlayerImageUrl: chessPosition.whiteLegend?.profilePhotoUrl ?? null,
+      blackPlayerImageUrl: chessPosition.blackLegend?.profilePhotoUrl ?? null,
+    } : null;
+
+    // 6. Execute transaction
     const result = await createGameTransaction(
       user.id,
       user.name,
@@ -133,14 +144,15 @@ export async function POST(request: NextRequest) {
       validatedData,
       chessPositionId,
       startingFen,
+      positionInfo,
     );
 
-    // 6. Increment position play count if a position was used
+    // 7. Increment position play count if a position was used
     if (chessPositionId) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
-    // 7. Return success response
+    // 8. Return success response
     return NextResponse.json(
       {
         success: true,

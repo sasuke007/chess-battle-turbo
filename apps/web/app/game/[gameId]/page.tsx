@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef, use } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import ChessBoard from "../../components/ChessBoard";
 import { VictoryConfetti } from "../../components/GameEndEffects";
 import PromotionPopup from "../../components/PromotionPopup";
@@ -52,6 +53,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [botColor, setBotColor] = useState<Color | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const botMoveInProgressRef = useRef(false);
+  const [positionInfo, setPositionInfo] = useState<{
+    whitePlayerName: string | null;
+    blackPlayerName: string | null;
+    tournamentName?: string | null;
+    whitePlayerImageUrl?: string | null;
+    blackPlayerImageUrl?: string | null;
+  } | null>(null);
 
   const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
   const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
@@ -177,6 +185,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         isAIGameRef.current = true;
         setAIDifficulty(payload.difficulty || "medium");
         setBotColor(payload.yourColor === "w" ? "b" : "w");
+      }
+
+      if (payload.positionInfo) {
+        setPositionInfo(payload.positionInfo);
       }
 
       if (payload.fen) {
@@ -510,6 +522,25 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Center - Chess Board */}
             <div className="lg:col-span-6 order-1 lg:order-2">
+              {/* Tournament Name Banner */}
+              {positionInfo?.tournamentName && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex items-center justify-center gap-3 mb-6 px-2"
+                >
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                  <p
+                    style={{ fontFamily: "'Instrument Serif', serif" }}
+                    className="text-white/40 text-sm italic tracking-wide"
+                  >
+                    {positionInfo.tournamentName}
+                  </p>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                </motion.div>
+              )}
+
               {/* Opponent Clock & Info */}
               <div className="flex items-center justify-between mb-4 px-2">
                 <div className="flex items-center gap-3">
@@ -524,17 +555,48 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   <div>
                     <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
                       {myColor === "w" ? blackPlayer?.name || "Black" : whitePlayer?.name || "White"}
+                      {isAIGame && botColor && myColor !== botColor && (
+                        <span className="text-white/40"> (Bot)</span>
+                      )}
                     </p>
-                    {isAIGame && botColor && myColor !== botColor && (
-                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-xs">Bot</p>
-                    )}
                   </div>
                 </div>
-                <div className={cn(
-                  "px-4 py-2 font-mono text-xl",
-                  currentTurn !== myColor ? "bg-white text-black" : "bg-white/10 text-white"
-                )}>
-                  {formatTime(myColor === "w" ? blackTime : whiteTime)}
+                <div className="flex items-center gap-3">
+                  {positionInfo && (
+                    <div className="flex items-center gap-2">
+                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
+                        <span className="text-white/40">as </span>
+                        {myColor === "b"
+                          ? (positionInfo.whitePlayerName || "hoodie guy")
+                          : (positionInfo.blackPlayerName || "hoodie guy")
+                        }
+                      </p>
+                      <div className="w-8 h-8 bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden relative">
+                        {(myColor === "b" ? positionInfo.whitePlayerImageUrl : positionInfo.blackPlayerImageUrl) ? (
+                          <Image
+                            src={myColor === "b" ? positionInfo.whitePlayerImageUrl! : positionInfo.blackPlayerImageUrl!}
+                            alt="Legend"
+                            fill
+                            className="object-cover"
+                            sizes="32px"
+                          />
+                        ) : (
+                          <span className={cn(
+                            "text-sm",
+                            myColor === "b" ? "text-white" : "text-white/60"
+                          )}>
+                            {myColor === "b" ? "♔" : "♚"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className={cn(
+                    "px-4 py-2 font-mono text-xl",
+                    currentTurn !== myColor ? "bg-white text-black" : "bg-white/10 text-white"
+                  )}>
+                    {formatTime(myColor === "w" ? blackTime : whiteTime)}
+                  </div>
                 </div>
               </div>
 
@@ -581,15 +643,46 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   <div>
                     <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
                       {myColor === "w" ? whitePlayer?.name || "White" : blackPlayer?.name || "Black"}
+                      <span className="text-white/40"> (You)</span>
                     </p>
-                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-xs">You</p>
                   </div>
                 </div>
-                <div className={cn(
-                  "px-4 py-2 font-mono text-xl",
-                  currentTurn === myColor ? "bg-white text-black" : "bg-white/10 text-white"
-                )}>
-                  {formatTime(myColor === "w" ? whiteTime : blackTime)}
+                <div className="flex items-center gap-3">
+                  {positionInfo && (
+                    <div className="flex items-center gap-2">
+                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
+                        <span className="text-white/40">as </span>
+                        {myColor === "w"
+                          ? (positionInfo.whitePlayerName || "hoodie guy")
+                          : (positionInfo.blackPlayerName || "hoodie guy")
+                        }
+                      </p>
+                      <div className="w-8 h-8 bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden relative">
+                        {(myColor === "w" ? positionInfo.whitePlayerImageUrl : positionInfo.blackPlayerImageUrl) ? (
+                          <Image
+                            src={myColor === "w" ? positionInfo.whitePlayerImageUrl! : positionInfo.blackPlayerImageUrl!}
+                            alt="Legend"
+                            fill
+                            className="object-cover"
+                            sizes="32px"
+                          />
+                        ) : (
+                          <span className={cn(
+                            "text-sm",
+                            myColor === "w" ? "text-white" : "text-white/60"
+                          )}>
+                            {myColor === "w" ? "♔" : "♚"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className={cn(
+                    "px-4 py-2 font-mono text-xl",
+                    currentTurn === myColor ? "bg-white text-black" : "bg-white/10 text-white"
+                  )}>
+                    {formatTime(myColor === "w" ? whiteTime : blackTime)}
+                  </div>
                 </div>
               </div>
             </div>

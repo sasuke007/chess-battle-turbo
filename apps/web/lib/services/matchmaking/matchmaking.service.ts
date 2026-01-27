@@ -200,6 +200,13 @@ async function tryFindMatch(params: {
           player1Legend: params.legendReferenceId,
           player2Legend: opponent.legendReferenceId,
           matchedAt: new Date().toISOString(),
+          positionInfo: position ? {
+            whitePlayerName: position.whitePlayerName ?? null,
+            blackPlayerName: position.blackPlayerName ?? null,
+            tournamentName: position.tournamentName ?? null,
+            whitePlayerImageUrl: position.whiteLegend?.profilePhotoUrl ?? null,
+            blackPlayerImageUrl: position.blackLegend?.profilePhotoUrl ?? null,
+          } : null,
         },
       },
     });
