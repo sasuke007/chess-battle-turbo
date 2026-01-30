@@ -185,8 +185,7 @@ export class GameManager {
       return;
     }
 
-    // Just notify the other player
-    // (Implementation can be added to GameSession if needed)
+    gameSession.handleDrawDecline(socket);
     console.log(`Draw declined in game ${gameReferenceId}`);
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, use } from "react";
+import { useState, useCallback, useEffect, useRef, use, useMemo } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
@@ -8,10 +8,12 @@ import Image from "next/image";
 import ChessBoard from "../../components/ChessBoard";
 import { VictoryConfetti } from "../../components/GameEndEffects";
 import PromotionPopup from "../../components/PromotionPopup";
+import MoveNavigation from "../../components/MoveNavigation";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 import { useChessSound } from "@/lib/hooks/useChessSound";
 import { cn, formatTime } from "@/lib/utils";
+import { computePositionAtMove, getLastMoveForDisplay } from "@/lib/utils/chess-navigation";
 import { motion } from "motion/react";
 import type {
   Player,
@@ -22,6 +24,8 @@ import type {
   GameOverPayload,
   ErrorPayload,
 } from "@/lib/types/socket-events";
+
+const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
@@ -61,6 +65,15 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     blackPlayerImageUrl?: string | null;
   } | null>(null);
 
+  // Move navigation state
+  const [viewingMoveIndex, setViewingMoveIndex] = useState<number | null>(null);
+  const [startingFen, setStartingFen] = useState<string>(DEFAULT_STARTING_FEN);
+
+  // Game actions state
+  const [pendingDrawOffer, setPendingDrawOffer] = useState(false);
+  const [drawOffered, setDrawOffered] = useState(false);
+  const [showResignConfirm, setShowResignConfirm] = useState(false);
+
   const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
   const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
 
@@ -71,6 +84,20 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   });
 
   const { playSound, playSoundForMove, checkTenSecondWarning, toggleMute, isMuted } = useChessSound();
+
+  // Computed display position for move navigation
+  const displayPosition = useMemo(() => {
+    const historyPosition = computePositionAtMove(startingFen, moveHistory, viewingMoveIndex);
+    return historyPosition || game;
+  }, [viewingMoveIndex, startingFen, moveHistory, game]);
+
+  // Computed last move for highlighting based on viewing index
+  const lastMoveForDisplay = useMemo(() => {
+    return getLastMoveForDisplay(moveHistory, viewingMoveIndex);
+  }, [moveHistory, viewingMoveIndex]);
+
+  // Whether we're viewing history (not live)
+  const isViewingHistory = viewingMoveIndex !== null;
 
   const getLegalMovesForSquare = useCallback(
     (square: Square): Square[] => {
@@ -112,6 +139,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       if (gameOver || !gameStarted) return;
       if (myColor !== currentTurn) return;
 
+      // If viewing history and trying to interact, sync to live first
+      if (viewingMoveIndex !== null) {
+        setViewingMoveIndex(null);
+        // Don't process the click - just return to live
+        return;
+      }
+
       if (!selectedSquare) {
         const piece = game.get(square);
         if (piece && piece.color === myColor) {
@@ -148,8 +182,45 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setSelectedSquare(null);
       setLegalMoves([]);
     },
-    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove]
+    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex]
   );
+
+  // Game action handlers
+  const handleOfferDraw = useCallback(() => {
+    if (!socketRef.current || gameOver || isAIGame) return;
+    socketRef.current.emit("offer_draw", { gameReferenceId: gameId });
+    setDrawOffered(true);
+  }, [gameId, gameOver, isAIGame]);
+
+  const handleAcceptDraw = useCallback(() => {
+    if (!socketRef.current || gameOver) return;
+    socketRef.current.emit("accept_draw", { gameReferenceId: gameId });
+    setPendingDrawOffer(false);
+  }, [gameId, gameOver]);
+
+  const handleDeclineDraw = useCallback(() => {
+    if (!socketRef.current || gameOver) return;
+    socketRef.current.emit("decline_draw", { gameReferenceId: gameId });
+    setPendingDrawOffer(false);
+  }, [gameId, gameOver]);
+
+  const handleResign = useCallback(() => {
+    setShowResignConfirm(true);
+  }, []);
+
+  const confirmResign = useCallback(() => {
+    if (!socketRef.current || gameOver) return;
+    socketRef.current.emit("resign", { gameReferenceId: gameId });
+    setShowResignConfirm(false);
+  }, [gameId, gameOver]);
+
+  // Move navigation handler
+  const handleNavigate = useCallback((index: number | null) => {
+    setViewingMoveIndex(index);
+    // Clear selection when navigating
+    setSelectedSquare(null);
+    setLegalMoves([]);
+  }, []);
 
   useEffect(() => {
     if (!isReady || !gameId || !userReferenceId) return;
@@ -195,6 +266,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         const newGame = new Chess(payload.fen);
         setGame(newGame);
         setCurrentTurn(newGame.turn());
+        // Save starting FEN for move navigation
+        setStartingFen(payload.fen);
       }
 
       // Play game start sound
@@ -215,6 +288,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         san: payload.san,
         promotion: payload.promotion,
       } as Move]);
+
+      // Auto-sync to live position when a move is made
+      setViewingMoveIndex(null);
 
       // Play sound for the move using the SAN from payload
       if (!newGame.isGameOver()) {
@@ -263,6 +339,16 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     socketRef.current.on("opponent_reconnected", () => {
       playSound('notify');
       alert("Opponent reconnected!");
+    });
+
+    socketRef.current.on("draw_offered", () => {
+      setPendingDrawOffer(true);
+      playSound('notify');
+    });
+
+    socketRef.current.on("draw_declined", () => {
+      setDrawOffered(false);
+      playSound('notify');
     });
 
     socketRef.current.on("error", (payload: ErrorPayload) => {
@@ -341,16 +427,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   if (!isReady) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
-            Loading...
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 border border-white/20 border-t-white/60 rounded-full animate-spin mb-6" />
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-xs tracking-[0.2em] uppercase">
+            Loading
           </p>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -359,7 +441,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const isVictory = gameOver && gameResult?.includes("Victory");
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
       {/* Victory confetti effect */}
       <VictoryConfetti isActive={isVictory || false} />
 
@@ -370,6 +452,43 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         onSelect={handlePromotionSelect}
       />
 
+      {/* Resign Confirmation Modal */}
+      {showResignConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="border border-white/20 bg-black p-6 max-w-sm w-full"
+          >
+            <p
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="text-white text-xl mb-2"
+            >
+              Are you sure you want to resign?
+            </p>
+            <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm mb-6">
+              This will count as a loss.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmResign}
+                className="flex-1 py-2 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                Yes, Resign
+              </button>
+              <button
+                onClick={() => setShowResignConfirm(false)}
+                className="flex-1 py-2 border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Subtle grid background */}
       <div
         className="fixed inset-0 opacity-[0.015] pointer-events-none"
@@ -379,56 +498,37 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 pt-20 pb-8">
+      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pt-14 lg:pt-20 pb-0 lg:pb-8 h-[100dvh] lg:h-auto flex flex-col lg:block">
         {!gameStarted ? (
-          <div className="flex flex-col items-center justify-center min-h-[80vh]">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center"
-            >
-              <div className="w-16 h-16 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-6" />
-              <h1
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-3xl text-white mb-2"
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center">
+              {/* Minimal chess piece spinner */}
+              <div className="relative w-14 h-14 mb-6">
+                {/* Spinning ring */}
+                <div className="absolute inset-0 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                {/* Center piece */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xl text-white/50 animate-pulse">♟</span>
+                </div>
+              </div>
+
+              {/* Text */}
+              <p
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-white/40 text-xs tracking-[0.2em] uppercase"
               >
-                Waiting for opponent
-              </h1>
-              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40">
-                The game will start momentarily
+                Joining game
               </p>
-            </motion.div>
+            </div>
           </div>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8"
+            className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8"
           >
-            {/* Left - Game Info */}
-            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
-              {/* Sound Toggle - Mobile Only */}
-              <div className="lg:hidden border border-white/10 p-3 flex items-center justify-between">
-                <p
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-[10px] tracking-[0.3em] uppercase text-white/40"
-                >
-                  Sound
-                </p>
-                <button
-                  onClick={toggleMute}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-1 border transition-colors text-sm",
-                    isMuted
-                      ? "border-white/10 text-white/40"
-                      : "border-white/20 text-white"
-                  )}
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                >
-                  <span>{isMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A"}</span>
-                </button>
-              </div>
-
+            {/* Left - Game Info (hidden on mobile) */}
+            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1 hidden lg:block">
               {/* Current Turn */}
               <div className="border border-white/10 p-5">
                 <p
@@ -521,19 +621,19 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Center - Chess Board */}
-            <div className="lg:col-span-6 order-1 lg:order-2">
-              {/* Tournament Name Banner */}
+            <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block">
+              {/* Tournament Name Banner - compact on mobile */}
               {positionInfo?.tournamentName && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="flex items-center justify-center gap-3 mb-6 px-2"
+                  className="flex items-center justify-center gap-2 lg:gap-3 mb-2 lg:mb-6 px-2"
                 >
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                   <p
                     style={{ fontFamily: "'Instrument Serif', serif" }}
-                    className="text-white/40 text-sm italic tracking-wide"
+                    className="text-white/40 text-xs lg:text-sm italic tracking-wide"
                   >
                     {positionInfo.tournamentName}
                   </p>
@@ -541,8 +641,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </motion.div>
               )}
 
-              {/* Opponent Clock & Info */}
-              <div className="flex items-center justify-between mb-4 px-2">
+              {/* Opponent Clock & Info - compact on mobile */}
+              <div className="flex items-center justify-between mb-3 lg:mb-4 px-2">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 flex items-center justify-center",
@@ -600,23 +700,47 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </div>
               </div>
 
-              {/* Board - m-8 accounts for the -inset-8 outer frame */}
-              <div className="m-8">
+              {/* Incoming Draw Offer Banner - compact on mobile */}
+              {pendingDrawOffer && !gameOver && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-amber-500/20 border border-amber-500/40 p-2 lg:p-3 mx-2 mb-2 lg:mb-4"
+                >
+                  <div className="flex items-center justify-between gap-2 lg:gap-4">
+                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white text-xs lg:text-sm">
+                      Draw offer
+                    </p>
+                    <div className="flex gap-1 lg:gap-2">
+                      <button
+                        onClick={handleAcceptDraw}
+                        className="px-2 lg:px-3 py-1 text-xs lg:text-sm bg-white text-black hover:bg-white/90 transition-colors"
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={handleDeclineDraw}
+                        className="px-2 lg:px-3 py-1 text-xs lg:text-sm border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Board - minimal margins on mobile, centered via flex parent */}
+              <div className="mx-0 my-3 lg:m-8">
                 <ChessBoard
-                  board={game.board()}
-                  selectedSquare={selectedSquare}
-                  legalMoves={legalMoves}
+                  board={displayPosition.board()}
+                  selectedSquare={isViewingHistory ? null : selectedSquare}
+                  legalMoves={isViewingHistory ? [] : legalMoves}
                   onSquareClick={handleSquareClick}
                   playerColor={myColor}
                   showCoordinates={true}
-                  lastMove={
-                    moveHistory.length > 0 && moveHistory[moveHistory.length - 1]
-                      ? {
-                          from: moveHistory[moveHistory.length - 1]!.from,
-                          to: moveHistory[moveHistory.length - 1]!.to,
-                        }
-                      : null
-                  }
+                  lastMove={lastMoveForDisplay}
                   gameEndState={
                     gameOver
                       ? gameResult?.includes("Victory")
@@ -629,8 +753,45 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 />
               </div>
 
-              {/* Player Clock & Info */}
-              <div className="flex items-center justify-between mt-4 px-2">
+              {/* Move Navigation - centered */}
+              <div className="flex items-center justify-center mt-3 lg:mt-0 px-2 lg:px-0">
+                <MoveNavigation
+                  totalMoves={moveHistory.length}
+                  viewingMoveIndex={viewingMoveIndex}
+                  onNavigate={handleNavigate}
+                  onPlaySound={() => playSound('move')}
+                  disabled={!gameStarted}
+                />
+              </div>
+
+              {/* Mobile Game Actions - below navigation */}
+              {!isAIGame && !gameOver && (
+                <div className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2">
+                  <button
+                    onClick={handleOfferDraw}
+                    disabled={drawOffered}
+                    className={cn(
+                      "h-10 px-5 text-sm border transition-colors",
+                      drawOffered
+                        ? "border-white/10 text-white/30 cursor-not-allowed bg-white/5"
+                        : "border-white/20 text-white bg-white/5 hover:bg-white/15 active:bg-white/20"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    {drawOffered ? "Offered" : "Draw"}
+                  </button>
+                  <button
+                    onClick={handleResign}
+                    className="h-10 px-5 text-sm border border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Resign
+                  </button>
+                </div>
+              )}
+
+              {/* Player Clock & Info - compact on mobile */}
+              <div className="flex items-center justify-between mt-3 lg:mt-4 px-2">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 flex items-center justify-center",
@@ -711,6 +872,38 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   <span className="text-sm">{isMuted ? "Unmute" : "Mute"}</span>
                 </button>
               </div>
+
+              {/* Game Actions - Desktop */}
+              {!isAIGame && !gameOver && (
+                <div className="border border-white/10 p-5 space-y-3">
+                  <p
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-[10px] tracking-[0.3em] uppercase text-white/40"
+                  >
+                    Game Actions
+                  </p>
+                  <button
+                    onClick={handleOfferDraw}
+                    disabled={drawOffered}
+                    className={cn(
+                      "w-full py-2 border transition-colors",
+                      drawOffered
+                        ? "border-white/10 text-white/30 cursor-not-allowed"
+                        : "border-white/20 text-white/60 hover:border-white/40 hover:text-white"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    {drawOffered ? "Draw Offered" : "Offer Draw"}
+                  </button>
+                  <button
+                    onClick={handleResign}
+                    className="w-full py-2 border border-red-500/30 text-red-400/60 hover:border-red-500/50 hover:text-red-400 transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Resign
+                  </button>
+                </div>
+              )}
 
               {/* Decorative element */}
               <div className="border border-white/5 p-6 text-center">

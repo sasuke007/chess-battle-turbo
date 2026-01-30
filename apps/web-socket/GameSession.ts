@@ -470,6 +470,26 @@ export class GameSession {
   }
 
   /**
+   * Handle draw decline
+   */
+  public handleDrawDecline(socket: Socket): void {
+    if (this.gameEnded) {
+      return;
+    }
+
+    const player = this.getPlayerBySocket(socket);
+    if (!player) {
+      return;
+    }
+
+    // Notify the opponent who offered the draw that it was declined
+    const opponent = player.color === "w" ? this.blackPlayer : this.whitePlayer;
+    if (opponent) {
+      opponent.socket.emit("draw_declined", {});
+    }
+  }
+
+  /**
    * Handle player disconnection
    */
   public handleDisconnect(socket: Socket): void {
