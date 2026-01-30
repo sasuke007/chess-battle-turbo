@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /var/www/chess-websocket
+            cd /var/www/chess-websocket/chess-battle-turbo
             git pull origin main
             cd apps/web-socket
             pnpm install

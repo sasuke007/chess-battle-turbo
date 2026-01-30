@@ -39,13 +39,13 @@ Deploy the chess WebSocket server to a dedicated EC2 instance with Node.js and s
 ssh -i your-key.pem ubuntu@<ELASTIC-IP>
 
 # Clone the repository
-cd /var/www
 sudo mkdir -p /var/www
+cd /var/www/chess-websocket
 sudo chown -R $USER:$USER /var/www
-git clone https://github.com/sasuke007/chess-battle-turbo.git chess-websocket
+git clone https://github.com/sasuke007/chess-battle-turbo.git
 
 # Run setup script
-bash /var/www/chess-websocket/apps/web-socket/deploy/setup-server.sh
+bash /var/www/chess-websocket/chess-battle-turbo/apps/web-socket/deploy/setup-server.sh
 ```
 
 ### Step 4: Deploy Application
