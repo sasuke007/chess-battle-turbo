@@ -1,11 +1,10 @@
 # Chess WebSocket Server - AWS EC2 Deployment Guide
 
-Deploy the chess WebSocket server to a dedicated EC2 instance with Node.js, systemd, Nginx, and SSL.
+Deploy the chess WebSocket server to a dedicated EC2 instance with Node.js and systemd.
 
 ## Prerequisites
 
 - AWS Account
-- Domain name (for SSL certificate)
 - SSH key pair for EC2
 
 ## Quick Start
@@ -19,11 +18,10 @@ Deploy the chess WebSocket server to a dedicated EC2 instance with Node.js, syst
    - **Instance type**: `t3.micro` (free tier eligible)
    - **Key pair**: Create new or select existing
    - **Security Group**: Create with these inbound rules:
-     | Type  | Port | Source         |
-     |-------|------|----------------|
-     | SSH   | 22   | Your IP        |
-     | HTTP  | 80   | 0.0.0.0/0      |
-     | HTTPS | 443  | 0.0.0.0/0      |
+     | Type   | Port | Source         |
+     |--------|------|----------------|
+     | SSH    | 22   | Your IP        |
+     | Custom | 3002 | 0.0.0.0/0      |
    - **Storage**: 8GB gp3 (default)
 
 3. Launch instance
@@ -34,17 +32,7 @@ Deploy the chess WebSocket server to a dedicated EC2 instance with Node.js, syst
 2. Associate with your instance
 3. Note the IP address (e.g., `54.xxx.xxx.xxx`)
 
-### Step 3: Configure DNS
-
-Add an A record pointing your subdomain to the Elastic IP:
-
-| Type | Name | Value          | TTL  |
-|------|------|----------------|------|
-| A    | ws   | `<ELASTIC-IP>` | 300  |
-
-Wait for DNS propagation (5-15 minutes).
-
-### Step 4: Setup Server
+### Step 3: Setup Server
 
 ```bash
 # SSH into your instance
@@ -58,14 +46,14 @@ git clone https://github.com/sasuke007/chess-battle-turbo.git
 bash chess-battle-turbo/apps/web-socket/deploy/setup-server.sh
 ```
 
-### Step 5: Upload Application (from local machine)
+### Step 4: Upload Application (from local machine)
 
 ```bash
 cd apps/web-socket/deploy
 bash upload-to-server.sh <ELASTIC-IP> ~/.ssh/your-key.pem
 ```
 
-### Step 6: Deploy Application (on server)
+### Step 5: Deploy Application (on server)
 
 ```bash
 ssh -i your-key.pem ubuntu@<ELASTIC-IP>
@@ -84,32 +72,11 @@ pnpm run build
 sudo systemctl start chess-websocket
 ```
 
-### Step 7: Update Nginx Configuration
-
-```bash
-# Edit Nginx config
-sudo nano /etc/nginx/sites-available/chess-websocket
-
-# Replace 'ws.yourdomain.com' with your actual subdomain
-
-# Test and restart Nginx
-sudo nginx -t && sudo systemctl restart nginx
-```
-
-### Step 8: Install SSL Certificate
-
-```bash
-# Install SSL (after DNS propagation)
-sudo certbot --nginx -d ws.yourdomain.com
-
-# Follow prompts, select "redirect HTTP to HTTPS"
-```
-
-### Step 9: Verify Deployment
+### Step 6: Verify Deployment
 
 ```bash
 # Health check
-curl https://ws.yourdomain.com/health
+curl http://<ELASTIC-IP>:3002/health
 # Expected: {"status":"ok","message":"WebSocket server is running"}
 
 # Check service status
@@ -119,12 +86,12 @@ sudo systemctl status chess-websocket
 sudo journalctl -u chess-websocket -f
 ```
 
-### Step 10: Update Vercel Environment
+### Step 7: Update Vercel Environment
 
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
 2. Add:
    - **Name**: `NEXT_PUBLIC_WEBSOCKET_URL`
-   - **Value**: `wss://ws.yourdomain.com`
+   - **Value**: `ws://<ELASTIC-IP>:3002`
    - **Environment**: Production
 3. Redeploy your app
 
@@ -141,8 +108,6 @@ apps/web-socket/
 │   └── apiClient.ts         # API client
 ├── package.json             # Dependencies
 ├── tsconfig.production.json # Production TS config
-├── nginx/
-│   └── chess-websocket.conf # Nginx config template
 └── deploy/
     ├── README.md            # This file
     ├── setup-server.sh      # Server setup script
@@ -155,7 +120,7 @@ apps/web-socket/
 
 | Variable     | Description                        | Example                           |
 |--------------|------------------------------------|-----------------------------------|
-| `PORT`       | Server port (proxied by Nginx)     | `3002`                            |
+| `PORT`       | Server port                        | `3002`                            |
 | `NODE_ENV`   | Environment                        | `production`                      |
 | `WEB_APP_URL`| Your Next.js app URL (for API calls)| `https://your-app.vercel.app`    |
 
@@ -169,33 +134,14 @@ sudo systemctl stop chess-websocket     # Stop
 sudo systemctl restart chess-websocket  # Restart
 sudo journalctl -u chess-websocket -f   # View logs (follow)
 sudo journalctl -u chess-websocket -n 100  # View last 100 log lines
-
-# Nginx Commands
-sudo nginx -t                 # Test configuration
-sudo systemctl restart nginx  # Restart Nginx
-sudo systemctl status nginx   # Check status
-
-# SSL Commands
-sudo certbot renew --dry-run  # Test SSL renewal
-sudo certbot certificates     # List certificates
 ```
 
 ## Troubleshooting
 
 ### WebSocket connection fails
-- Check security group has port 443 open
-- Verify Nginx is running: `sudo systemctl status nginx`
+- Check security group has port 3002 open
 - Check service: `sudo systemctl status chess-websocket`
 - Check logs: `sudo journalctl -u chess-websocket -f`
-
-### Certbot fails
-- Ensure DNS is propagated: `dig ws.yourdomain.com`
-- Ensure port 80 is open in security group
-- Check domain resolves: `curl http://ws.yourdomain.com/health`
-
-### CORS errors
-- The server allows all origins by default
-- Check logs for specific errors
 
 ### Application crashes
 - Check logs: `sudo journalctl -u chess-websocket -n 100`
@@ -217,4 +163,3 @@ sudo certbot certificates     # List certificates
 2. Enable automatic security updates: `sudo apt install unattended-upgrades`
 3. Monitor logs regularly
 4. Set up CloudWatch alarms for instance health
-5. Consider using AWS WAF for additional protection
