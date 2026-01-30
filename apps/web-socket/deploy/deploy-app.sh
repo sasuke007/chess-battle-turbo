@@ -7,6 +7,7 @@
 
 set -e
 
+
 REPO_DIR="/var/www/chess-websocket"
 APP_DIR="$REPO_DIR/apps/web-socket"
 
