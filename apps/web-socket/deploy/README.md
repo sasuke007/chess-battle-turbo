@@ -38,45 +38,34 @@ Deploy the chess WebSocket server to a dedicated EC2 instance with Node.js and s
 # SSH into your instance
 ssh -i your-key.pem ubuntu@<ELASTIC-IP>
 
-# Download and run setup script
-curl -sL https://raw.githubusercontent.com/sasuke007/chess-battle-turbo/main/apps/web-socket/deploy/setup-server.sh | bash
+# Clone the repository
+cd /var/www
+sudo mkdir -p /var/www
+sudo chown -R $USER:$USER /var/www
+git clone https://github.com/sasuke007/chess-battle-turbo.git chess-websocket
 
-# Or clone the repo and run locally
-git clone https://github.com/sasuke007/chess-battle-turbo.git
-bash chess-battle-turbo/apps/web-socket/deploy/setup-server.sh
+# Run setup script
+bash /var/www/chess-websocket/apps/web-socket/deploy/setup-server.sh
 ```
 
-### Step 4: Upload Application (from local machine)
+### Step 4: Deploy Application
 
 ```bash
-cd apps/web-socket/deploy
-bash upload-to-server.sh <ELASTIC-IP> ~/.ssh/your-key.pem
-```
+cd /var/www/chess-websocket/apps/web-socket
 
-### Step 5: Deploy Application (on server)
-
-```bash
-ssh -i your-key.pem ubuntu@<ELASTIC-IP>
-
-# Update environment file
-cd /var/www/chess-websocket
-nano .env
-# Set WEB_APP_URL to your Vercel app URL
-
-# Run deployment
-bash deploy/deploy-app.sh
-
-# Or manually:
+# Install dependencies and build
 pnpm install
 pnpm run build
+
+# Start the service
 sudo systemctl start chess-websocket
 ```
 
-### Step 6: Verify Deployment
+### Step 5: Verify Deployment
 
 ```bash
 # Health check
-curl http://<ELASTIC-IP>:3002/health
+curl http://localhost:3002/health
 # Expected: {"status":"ok","message":"WebSocket server is running"}
 
 # Check service status
@@ -86,7 +75,7 @@ sudo systemctl status chess-websocket
 sudo journalctl -u chess-websocket -f
 ```
 
-### Step 7: Update Vercel Environment
+### Step 6: Update Vercel Environment
 
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
 2. Add:
@@ -95,26 +84,35 @@ sudo journalctl -u chess-websocket -f
    - **Environment**: Production
 3. Redeploy your app
 
-## File Structure
+---
 
+## CI/CD Auto-Deploy
+
+Once set up, pushing to `main` will auto-deploy. See `.github/workflows/deploy-websocket.yml`.
+
+**Required GitHub Secrets:**
+
+| Secret | Value |
+|--------|-------|
+| `EC2_SSH_KEY` | Your EC2 private key (`.pem` file contents) |
+| `EC2_HOST` | Your EC2 Elastic IP |
+| `EC2_USER` | `ubuntu` |
+
+---
+
+## Manual Deployment (after initial setup)
+
+```bash
+ssh -i your-key.pem ubuntu@<ELASTIC-IP>
+cd /var/www/chess-websocket
+git pull origin main
+cd apps/web-socket
+pnpm install
+pnpm run build
+sudo systemctl restart chess-websocket
 ```
-apps/web-socket/
-├── index.ts                 # Main server
-├── GameManager.ts           # Game session management
-├── GameSession.ts           # Individual game logic
-├── ClockManager.ts          # Chess clock
-├── types.ts                 # TypeScript types
-├── utils/
-│   └── apiClient.ts         # API client
-├── package.json             # Dependencies
-├── tsconfig.production.json # Production TS config
-└── deploy/
-    ├── README.md            # This file
-    ├── setup-server.sh      # Server setup script
-    ├── deploy-app.sh        # Application deployment script
-    ├── upload-to-server.sh  # Local upload script
-    └── package.production.json # Standalone package.json
-```
+
+---
 
 ## Environment Variables
 
@@ -122,19 +120,23 @@ apps/web-socket/
 |--------------|------------------------------------|-----------------------------------|
 | `PORT`       | Server port                        | `3002`                            |
 | `NODE_ENV`   | Environment                        | `production`                      |
-| `WEB_APP_URL`| Your Next.js app URL (for API calls)| `https://your-app.vercel.app`    |
+| `WEB_APP_URL`| Your Next.js app URL (for API calls)| `https://chess-battle-turbo-web.vercel.app` |
+
+---
 
 ## Useful Commands
 
 ```bash
-# Service Commands (systemd)
+# Service Commands
 sudo systemctl status chess-websocket   # Check status
 sudo systemctl start chess-websocket    # Start
 sudo systemctl stop chess-websocket     # Stop
 sudo systemctl restart chess-websocket  # Restart
 sudo journalctl -u chess-websocket -f   # View logs (follow)
-sudo journalctl -u chess-websocket -n 100  # View last 100 log lines
+sudo journalctl -u chess-websocket -n 100  # View last 100 lines
 ```
+
+---
 
 ## Troubleshooting
 
@@ -147,19 +149,3 @@ sudo journalctl -u chess-websocket -n 100  # View last 100 log lines
 - Check logs: `sudo journalctl -u chess-websocket -n 100`
 - Verify .env file has correct values
 - Ensure WEB_APP_URL is accessible from the server
-
-## Cost Estimate
-
-| Resource              | Monthly Cost       |
-|-----------------------|-------------------|
-| t3.micro (free tier)  | $0 - $8.50        |
-| t3.small              | ~$17              |
-| Elastic IP (attached) | $0                |
-| Data transfer         | ~$0.09/GB         |
-
-## Security Recommendations
-
-1. Restrict SSH access to your IP only
-2. Enable automatic security updates: `sudo apt install unattended-upgrades`
-3. Monitor logs regularly
-4. Set up CloudWatch alarms for instance health

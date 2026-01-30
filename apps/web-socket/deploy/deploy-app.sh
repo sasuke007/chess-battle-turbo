@@ -7,7 +7,8 @@
 
 set -e
 
-APP_DIR="/var/www/chess-websocket"
+REPO_DIR="/var/www/chess-websocket"
+APP_DIR="$REPO_DIR/apps/web-socket"
 
 # Colors
 GREEN='\033[0;32m'
@@ -30,7 +31,7 @@ cd $APP_DIR
 # =============================================================================
 if [ ! -f "package.json" ]; then
     print_error "package.json not found!"
-    echo "Upload application files first using upload-to-server.sh"
+    echo "Make sure repo is cloned at $REPO_DIR"
     exit 1
 fi
 
@@ -127,7 +128,4 @@ echo "  sudo systemctl status chess-websocket   # Check status"
 echo "  sudo systemctl restart chess-websocket  # Restart"
 echo "  sudo systemctl stop chess-websocket     # Stop"
 echo "  sudo journalctl -u chess-websocket -f   # View logs"
-echo ""
-echo "Next Steps (if not already done):"
-echo "1. Update Vercel environment variable NEXT_PUBLIC_WEBSOCKET_URL"
 echo ""
