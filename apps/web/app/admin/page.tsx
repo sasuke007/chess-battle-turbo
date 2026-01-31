@@ -1,0 +1,231 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Navbar } from "@/app/components/Navbar";
+import { Crown, ArrowRight } from "lucide-react";
+import { motion } from "motion/react";
+
+// Chess piece icon component for positions card
+function ChessPieceIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Knight piece simplified */}
+      <path d="M9 22h6" />
+      <path d="M7 22l1-6h8l1 6" />
+      <path d="M8 16V9a1 1 0 011-1h1l1-2h2l1 2h1a1 1 0 011 1v7" />
+      <path d="M10 6V4a2 2 0 114 0v2" />
+    </svg>
+  );
+}
+
+interface Stats {
+  legends: number;
+  positions: number;
+}
+
+interface FeatureCardProps {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  count: number;
+  countLabel: string;
+  isLoading: boolean;
+}
+
+function FeatureCard({
+  href,
+  icon,
+  title,
+  description,
+  count,
+  countLabel,
+  isLoading,
+}: FeatureCardProps) {
+  return (
+    <Link href={href}>
+      <motion.div
+        className={cn(
+          "group relative border border-white/10 p-8",
+          "hover:border-white/20 transition-all duration-300",
+          "cursor-pointer"
+        )}
+        whileHover={{ y: -4 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      >
+        {/* Icon container */}
+        <div className="w-14 h-14 border border-white/20 flex items-center justify-center mb-6">
+          {icon}
+        </div>
+
+        {/* Title */}
+        <h2
+          style={{ fontFamily: "'Instrument Serif', serif" }}
+          className="text-2xl text-white mb-2"
+        >
+          {title}
+        </h2>
+
+        {/* Description */}
+        <p
+          style={{ fontFamily: "'Geist', sans-serif" }}
+          className="text-white/40 text-sm mb-6"
+        >
+          {description}
+        </p>
+
+        {/* Footer with count + arrow */}
+        <div className="flex items-center justify-between">
+          {isLoading ? (
+            <span
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-white/30 text-xs tracking-wide"
+            >
+              Loading...
+            </span>
+          ) : (
+            <span
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-white/30 text-xs tracking-wide"
+            >
+              {count} {countLabel}
+            </span>
+          )}
+          <ArrowRight
+            className={cn(
+              "w-5 h-5 text-white/30",
+              "group-hover:text-white group-hover:translate-x-1",
+              "transition-all duration-300"
+            )}
+            strokeWidth={1.5}
+          />
+        </div>
+
+        {/* Hover gradient overlay */}
+        <div
+          className={cn(
+            "absolute inset-0 opacity-0 group-hover:opacity-100",
+            "bg-gradient-to-br from-white/5 to-transparent",
+            "transition-opacity duration-300 pointer-events-none"
+          )}
+        />
+      </motion.div>
+    </Link>
+  );
+}
+
+export default function AdminDashboard() {
+  const [stats, setStats] = useState<Stats>({ legends: 0, positions: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const [legendsRes, positionsRes] = await Promise.all([
+          fetch("/api/legends"),
+          fetch("/api/chess-positions"),
+        ]);
+
+        const legendsData = await legendsRes.json();
+        const positionsData = await positionsRes.json();
+
+        setStats({
+          legends: legendsData.data?.legends?.length || 0,
+          positions: positionsData.data?.positions?.length || 0,
+        });
+      } catch (error) {
+        console.error("Failed to fetch stats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-black pt-20 relative">
+        {/* Subtle grid background */}
+        <div
+          className="fixed inset-0 opacity-[0.015] pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+            backgroundSize: "60px 60px",
+          }}
+        />
+
+        <div className="relative max-w-6xl mx-auto px-4 py-8 z-10">
+          {/* Header */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-white/30 to-transparent" />
+              <span
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-white/50 text-[10px] tracking-[0.4em] uppercase"
+              >
+                Admin Panel
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-l from-white/30 to-transparent" />
+            </div>
+
+            <h1
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="text-4xl sm:text-5xl text-white mb-2 text-center"
+            >
+              Dashboard
+            </h1>
+            <p
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-white/40 text-sm text-center"
+            >
+              Manage your chess platform
+            </p>
+          </div>
+
+          {/* Separator */}
+          <div className="border-t border-white/10 mb-8" />
+
+          {/* Feature Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Legends Card */}
+            <FeatureCard
+              href="/admin/legends"
+              icon={<Crown className="w-6 h-6 text-white/60" strokeWidth={1.5} />}
+              title="Manage Legends"
+              description="Create and edit chess legends for the platform"
+              count={stats.legends}
+              countLabel="legends"
+              isLoading={isLoading}
+            />
+
+            {/* Positions Card */}
+            <FeatureCard
+              href="/admin/chess-positions"
+              icon={<ChessPieceIcon className="w-6 h-6 text-white/60" />}
+              title="Chess Positions"
+              description="Add and manage chess positions for battles"
+              count={stats.positions}
+              countLabel="positions"
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+
+        {/* Decorative corner elements */}
+        <div className="fixed top-20 left-6 w-12 h-12 border-l border-t border-white/10 pointer-events-none" />
+        <div className="fixed bottom-6 right-6 w-12 h-12 border-r border-b border-white/10 pointer-events-none" />
+      </div>
+    </>
+  );
+}

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/app/components/Navbar";
-import { Plus, Edit2, Save, X, Trash2, Crown } from "lucide-react";
+import { Plus, Edit2, Save, X, Trash2, Crown, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 
 interface Legend {
@@ -261,6 +262,17 @@ export default function LegendsAdmin() {
               )}
             </div>
           </div>
+
+          {/* Back Navigation */}
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 text-white/40 hover:text-white/60 transition-colors mb-8 group"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" strokeWidth={1.5} />
+            <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-sm">
+              Back to Dashboard
+            </span>
+          </Link>
 
           {/* Separator */}
           <div className="border-t border-white/10 mb-8" />

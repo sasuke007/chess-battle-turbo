@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/app/components/Navbar";
 import ChessBoard from "@/app/components/ChessBoard";
@@ -18,6 +19,7 @@ import {
   Search,
   ChevronDown,
   Star,
+  ArrowLeft,
 } from "lucide-react";
 
 // Types
@@ -844,6 +846,17 @@ export default function ChessPositionsAdmin() {
               )}
             </div>
           </div>
+
+          {/* Back Navigation */}
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 text-white/40 hover:text-white/60 transition-colors mb-8 group"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" strokeWidth={1.5} />
+            <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-sm">
+              Back to Dashboard
+            </span>
+          </Link>
 
           {/* Separator */}
           <div className="border-t border-white/10 mb-8" />
