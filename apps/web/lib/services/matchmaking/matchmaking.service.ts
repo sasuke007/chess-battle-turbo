@@ -4,6 +4,7 @@ import {
   CreateMatchRequestInput,
   CreateMatchRequestResult,
   MatchStatusResult,
+  CancelMatchRequestResult,
   getTimeControlType,
   TimeControlType,
 } from "./types";
@@ -360,12 +361,13 @@ export async function getMatchStatus(
 }
 
 /**
- * Cancels a matchmaking request
+ * Cancels a matchmaking request (idempotent)
+ * Returns success for already-processed entries without throwing
  */
 export async function cancelMatchRequest(
   queueReferenceId: string,
   userReferenceId: string
-): Promise<void> {
+): Promise<CancelMatchRequestResult> {
   const user = await prisma.user.findUnique({
     where: { referenceId: userReferenceId },
   });
@@ -379,21 +381,37 @@ export async function cancelMatchRequest(
   });
 
   if (!entry) {
-    throw new Error("Queue entry not found");
+    // Entry not found - treat as already cancelled (idempotent)
+    return { status: "already_cancelled" };
   }
 
   if (entry.userId !== user.id) {
     throw new Error("Unauthorized");
   }
 
-  if (entry.status !== "SEARCHING") {
-    throw new Error("Cannot cancel - already matched or expired");
+  // Handle terminal states idempotently
+  if (entry.status === "CANCELLED") {
+    return { status: "already_cancelled" };
   }
 
+  if (entry.status === "EXPIRED") {
+    return { status: "already_expired" };
+  }
+
+  if (entry.status === "MATCHED") {
+    return {
+      status: "already_matched",
+      matchedGameRef: entry.matchedGameRef || undefined,
+    };
+  }
+
+  // Entry is SEARCHING - cancel it
   await prisma.matchmakingQueue.update({
     where: { id: entry.id },
     data: { status: "CANCELLED" },
   });
+
+  return { status: "cancelled" };
 }
 
 /**

@@ -187,10 +187,21 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   // Game action handlers
   const handleOfferDraw = useCallback(() => {
-    if (!socketRef.current || gameOver || isAIGame) return;
+    if (!socketRef.current || gameOver) return;
     socketRef.current.emit("offer_draw", { gameReferenceId: gameId });
     setDrawOffered(true);
-  }, [gameId, gameOver, isAIGame]);
+  }, [gameId, gameOver]);
+
+  // Auto-decline draw for bot games (bots don't accept draws)
+  useEffect(() => {
+    if (isAIGame && drawOffered) {
+      const timer = setTimeout(() => {
+        setDrawOffered(false);
+        playSound('notify');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAIGame, drawOffered, playSound]);
 
   const handleAcceptDraw = useCallback(() => {
     if (!socketRef.current || gameOver) return;
@@ -765,7 +776,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
 
               {/* Mobile Game Actions - below navigation */}
-              {!isAIGame && !gameOver && (
+              {!gameOver && (
                 <div className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2">
                   <button
                     onClick={handleOfferDraw}
@@ -874,7 +885,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
 
               {/* Game Actions - Desktop */}
-              {!isAIGame && !gameOver && (
+              {!gameOver && (
                 <div className="border border-white/10 p-5 space-y-3">
                   <p
                     style={{ fontFamily: "'Geist', sans-serif" }}

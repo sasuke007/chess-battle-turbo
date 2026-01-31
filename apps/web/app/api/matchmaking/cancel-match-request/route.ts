@@ -12,14 +12,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = cancelMatchRequestSchema.parse(body);
 
-    await cancelMatchRequest(
+    const result = await cancelMatchRequest(
       validatedData.queueReferenceId,
       validatedData.userReferenceId
     );
 
+    // All results are successful (idempotent operation)
     return NextResponse.json({
       success: true,
       message: "Match request cancelled",
+      data: result,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -43,22 +45,10 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
-      if (error.message === "Queue entry not found") {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 404 }
-        );
-      }
       if (error.message === "Unauthorized") {
         return NextResponse.json(
           { success: false, error: error.message },
           { status: 403 }
-        );
-      }
-      if (error.message === "Cannot cancel - already matched or expired") {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 400 }
         );
       }
     }

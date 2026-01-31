@@ -34,6 +34,7 @@ function QueueContent() {
 
   const hasInitiatedRef = useRef(false);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const queueStateRef = useRef<QueueState>(queueState);
 
   const initialTimeSeconds = parseInt(searchParams.get("time") || "300", 10);
   const incrementSeconds = parseInt(searchParams.get("increment") || "5", 10);
@@ -114,6 +115,47 @@ function QueueContent() {
     };
   }, [isReady, userObject?.user?.referenceId, createMatchRequest]);
 
+  // Keep queueStateRef in sync with queueState
+  useEffect(() => {
+    queueStateRef.current = queueState;
+  }, [queueState]);
+
+  // Cleanup effect - handles browser close and navigation
+  useEffect(() => {
+    if (!queueReferenceId || !userObject?.user?.referenceId) return;
+    if (queueState === "matched") return; // Don't cancel if matched
+
+    const userReferenceId = userObject.user.referenceId;
+
+    const cancelData = new URLSearchParams({
+      queueReferenceId,
+      userReferenceId,
+    });
+
+    const handleUnload = () => {
+      navigator.sendBeacon("/api/matchmaking/cancel-beacon", cancelData);
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
+
+      // React unmount (in-app navigation) - use keepalive fetch
+      // Use ref to get current state at cleanup time
+      if (queueStateRef.current !== "matched") {
+        fetch("/api/matchmaking/cancel-match-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueReferenceId, userReferenceId }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+  }, [queueReferenceId, userObject?.user?.referenceId, queueState]);
+
   const handleMatchFound = useCallback(
     (gameRef: string, opponent: OpponentInfo) => {
       setQueueState("matched");
@@ -185,7 +227,17 @@ function QueueContent() {
     await createMatchRequest();
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    if (queueReferenceId && userObject?.user?.referenceId && queueState !== "matched") {
+      await fetch("/api/matchmaking/cancel-match-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          queueReferenceId,
+          userReferenceId: userObject.user.referenceId,
+        }),
+      }).catch(() => {});
+    }
     router.replace("/play");
   };
 

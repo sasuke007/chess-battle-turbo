@@ -72,3 +72,8 @@ export function getTimeControlType(seconds: number): TimeControlType {
   if (seconds <= 1800) return "rapid"; // 10-30 min
   return "daily"; // >= 1 day (86400+ seconds)
 }
+
+export interface CancelMatchRequestResult {
+  status: "cancelled" | "already_cancelled" | "already_expired" | "already_matched";
+  matchedGameRef?: string;
+}

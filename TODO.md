@@ -80,3 +80,7 @@ All the loading banners should be the same on all the pages.
 
 Resignation , offer draw should also be handled.
 
+What are baked in variable how are they different from runtime variables.
+
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
