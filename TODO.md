@@ -84,3 +84,7 @@ What are baked in variable how are they different from runtime variables.
 
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
+We can do something like whenever a user is trying to find a match, we can have a rough estimate of number of users online and we can show him a popup saying there are low online players right now , play with a bot.
+
+
+
