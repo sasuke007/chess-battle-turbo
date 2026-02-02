@@ -180,7 +180,7 @@ model ChessPosition {
   referenceId String @unique @default(cuid())
 
   // ===== REQUIRED FIELDS (Minimum data needed) =====
-  fen        String
+  fen        String @unique
   sideToMove String
 
   // ===== OPTIONAL CORE DATA =====

@@ -1,6 +1,14 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-export default clerkMiddleware()
+// Scraper routes use API key authentication instead of Clerk
+const isScraperRoute = createRouteMatcher(['/api/scraper(.*)'])
+
+export default clerkMiddleware(async (auth, req) => {
+  // Skip Clerk auth for scraper routes (they use X-API-Key header)
+  if (isScraperRoute(req)) {
+    return
+  }
+})
 
 export const config = {
   matcher: [

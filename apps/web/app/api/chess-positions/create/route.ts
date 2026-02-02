@@ -111,6 +111,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle Prisma errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // P2002: Unique constraint violation (duplicate FEN)
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          {
+            error: "Position already exists",
+            details: "A position with this FEN already exists in the database",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     console.error("Error creating chess position:", error);
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
     return NextResponse.json(
