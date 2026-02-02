@@ -191,6 +191,9 @@ export async function POST(request: NextRequest) {
         whiteLegendInfo,
         blackLegendInfo,
       };
+    }, {
+      maxWait: 10000,  // Max 10 seconds to acquire connection
+      timeout: 15000,  // Max 15 seconds to complete transaction
     });
 
     return NextResponse.json(
