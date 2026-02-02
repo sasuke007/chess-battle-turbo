@@ -75,12 +75,16 @@ export class ClockManager {
       this.intervalId = null;
     }
 
+    // Save and clear activeColor BEFORE final tick to prevent recursion
+    // (tick -> timeout -> stopClock -> tick -> ...)
+    const wasActive = this.activeColor;
+    this.activeColor = null;
+
     // Do a final tick to update time accurately
-    if (this.activeColor) {
-      this.tick();
+    if (wasActive) {
+      this.updateTimeForColor(wasActive);
     }
 
-    this.activeColor = null;
     console.log("Clock stopped");
   }
 
@@ -129,6 +133,20 @@ export class ClockManager {
     this.stopClock();
     this.onClockUpdate = null;
     this.onTimeout = null;
+  }
+
+  /**
+   * Update time for a specific color (used during stopClock to avoid recursion)
+   */
+  private updateTimeForColor(color: Color): void {
+    const now = Date.now();
+    const elapsed = now - this.lastTickTime;
+
+    if (color === "w") {
+      this.whiteTime = Math.max(0, this.whiteTime - elapsed);
+    } else {
+      this.blackTime = Math.max(0, this.blackTime - elapsed);
+    }
   }
 
   /**

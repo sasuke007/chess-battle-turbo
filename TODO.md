@@ -87,4 +87,13 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 We can do something like whenever a user is trying to find a match, we can have a rough estimate of number of users online and we can show him a popup saying there are low online players right now , play with a bot.
 
 
+give 30 seeconds to access position.
+
+show the original game line after game has ended. 
+
+Also we can show some sort of review of the game and till what point they played the original game position.
+
+
+
+
 

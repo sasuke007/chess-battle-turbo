@@ -190,6 +190,24 @@ export class GameManager {
   }
 
   /**
+   * Handle analysis phase completion acknowledgment from client
+   */
+  public handleAnalysisComplete(
+    socket: Socket,
+    gameReferenceId: string,
+    userReferenceId: string
+  ): void {
+    const gameSession = this.games.get(gameReferenceId);
+
+    if (!gameSession) {
+      socket.emit("error", { message: "Game not found" });
+      return;
+    }
+
+    gameSession.handleAnalysisComplete(userReferenceId);
+  }
+
+  /**
    * Handle socket disconnection
    */
   public handleDisconnect(socket: Socket): void {

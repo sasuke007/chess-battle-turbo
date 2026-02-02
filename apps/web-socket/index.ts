@@ -9,6 +9,7 @@ import {
   OfferDrawPayload,
   AcceptDrawPayload,
   DeclineDrawPayload,
+  AnalysisCompletePayload,
 } from "./types";
 
 const app = express();
@@ -130,6 +131,26 @@ io.on("connection", (socket) => {
       gameManager.handleDeclineDraw(socket, gameReferenceId);
     } catch (error) {
       console.error("Error in decline_draw handler:", error);
+    }
+  });
+
+  // Handle analysis phase completion (client countdown finished)
+  socket.on("analysis_complete", (payload: AnalysisCompletePayload & { userReferenceId?: string }) => {
+    try {
+      const { gameReferenceId, userReferenceId } = payload;
+      console.log(`analysis_complete event: game=${gameReferenceId}, user=${userReferenceId}`);
+
+      if (!userReferenceId) {
+        socket.emit("error", { message: "userReferenceId required for analysis_complete" });
+        return;
+      }
+
+      gameManager.handleAnalysisComplete(socket, gameReferenceId, userReferenceId);
+    } catch (error) {
+      console.error("Error in analysis_complete handler:", error);
+      socket.emit("error", {
+        message: error instanceof Error ? error.message : "Failed to handle analysis complete",
+      });
     }
   });
 

@@ -14,7 +14,7 @@ import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 import { useChessSound } from "@/lib/hooks/useChessSound";
 import { cn, formatTime } from "@/lib/utils";
 import { computePositionAtMove, getLastMoveForDisplay } from "@/lib/utils/chess-navigation";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import type {
   Player,
   GameStartedPayload,
@@ -23,6 +23,7 @@ import type {
   ClockUpdatePayload,
   GameOverPayload,
   ErrorPayload,
+  AnalysisPhaseStartedPayload,
 } from "@/lib/types/socket-events";
 
 const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -73,6 +74,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [pendingDrawOffer, setPendingDrawOffer] = useState(false);
   const [drawOffered, setDrawOffered] = useState(false);
   const [showResignConfirm, setShowResignConfirm] = useState(false);
+
+  // Analysis phase state
+  const [isAnalysisPhase, setIsAnalysisPhase] = useState(false);
+  const [analysisTimeRemaining, setAnalysisTimeRemaining] = useState(0);
+  const [totalAnalysisTime, setTotalAnalysisTime] = useState(0);
 
   const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
   const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
@@ -136,6 +142,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   const handleSquareClick = useCallback(
     (square: Square) => {
+      // Block moves during analysis phase
+      if (isAnalysisPhase) return;
+
       if (gameOver || !gameStarted) return;
       if (myColor !== currentTurn) return;
 
@@ -182,7 +191,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setSelectedSquare(null);
       setLegalMoves([]);
     },
-    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex]
+    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex, isAnalysisPhase]
   );
 
   // Game action handlers
@@ -253,7 +262,44 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       });
     });
 
+    // Analysis phase handlers
+    socketRef.current.on("analysis_phase_started", (payload: AnalysisPhaseStartedPayload) => {
+      setIsAnalysisPhase(true);
+      setAnalysisTimeRemaining(payload.analysisTimeSeconds);
+      setTotalAnalysisTime(payload.analysisTimeSeconds);
+
+      setMyColor(payload.yourColor);
+      myColorRef.current = payload.yourColor;
+      setWhiteTime(payload.whiteTime);
+      setBlackTime(payload.blackTime);
+      setWhitePlayer(payload.whitePlayer);
+      setBlackPlayer(payload.blackPlayer);
+
+      if (payload.fen) {
+        const newGame = new Chess(payload.fen);
+        setGame(newGame);
+        setCurrentTurn(newGame.turn());
+        setStartingFen(payload.fen);
+      }
+
+      if (payload.positionInfo) {
+        setPositionInfo(payload.positionInfo);
+      }
+
+      if (payload.isAIGame) {
+        setIsAIGame(true);
+        isAIGameRef.current = true;
+        setAIDifficulty(payload.difficulty || "medium");
+        setBotColor(payload.yourColor === "w" ? "b" : "w");
+      }
+
+      playSound('notify');
+    });
+
     socketRef.current.on("game_started", (payload: GameStartedPayload) => {
+      // End analysis phase when game actually starts
+      setIsAnalysisPhase(false);
+      setAnalysisTimeRemaining(0);
       setGameStarted(true);
       setMyColor(payload.yourColor);
       myColorRef.current = payload.yourColor;
@@ -435,6 +481,42 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     makeBotMove();
   }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId, game]);
 
+  // Client-side analysis countdown timer
+  // Runs locally and emits analysis_complete when countdown finishes
+  // Using a ref to track if we've already sent the ACK to avoid duplicates
+  const analysisAckSentRef = useRef(false);
+
+  useEffect(() => {
+    // Reset ACK sent flag when entering analysis phase
+    if (isAnalysisPhase && analysisTimeRemaining > 0) {
+      analysisAckSentRef.current = false;
+    }
+  }, [isAnalysisPhase, totalAnalysisTime]);
+
+  useEffect(() => {
+    if (!isAnalysisPhase || analysisTimeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setAnalysisTimeRemaining(prev => {
+        if (prev <= 1) {
+          // Send ACK to server when countdown finishes (only once)
+          if (!analysisAckSentRef.current && socketRef.current && userReferenceId) {
+            analysisAckSentRef.current = true;
+            socketRef.current.emit("analysis_complete", {
+              gameReferenceId: gameId,
+              userReferenceId,
+            });
+          }
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isAnalysisPhase, gameId, userReferenceId]);
+
   if (!isReady) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -500,6 +582,70 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         </div>
       )}
 
+      {/* Analysis Phase Banner - True overlay, doesn't affect layout */}
+      <AnimatePresence>
+        {isAnalysisPhase && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed top-2 left-2 right-2 lg:top-4 lg:left-4 lg:right-4 z-50 pointer-events-none"
+          >
+            {/* Compact banner with glass effect */}
+            <div className="mx-auto max-w-md lg:max-w-lg">
+              <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-2 lg:px-5 lg:py-3 shadow-2xl">
+                <div className="flex items-center justify-center gap-3 lg:gap-5">
+
+                  {/* Countdown number */}
+                  <motion.div
+                    key={analysisTimeRemaining}
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", damping: 15 }}
+                    className="relative"
+                  >
+                    <div className="absolute inset-0 blur-lg bg-amber-500/30 rounded-full" />
+                    <span
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="relative text-3xl lg:text-5xl font-normal text-amber-200/90 tabular-nums"
+                    >
+                      {analysisTimeRemaining}
+                    </span>
+                  </motion.div>
+
+                  {/* Divider */}
+                  <div className="w-px h-8 lg:h-10 bg-white/20" />
+
+                  {/* Text content */}
+                  <div className="text-left">
+                    <p
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-white text-sm lg:text-lg tracking-wide"
+                    >
+                      Analysis Time
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <div className={cn(
+                        "w-2.5 h-2.5 lg:w-3 lg:h-3",
+                        currentTurn === "w" ? "bg-white" : "bg-black border border-white/50"
+                      )} />
+                      <p
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-white/50 text-[8px] lg:text-[10px] uppercase tracking-[0.15em] lg:tracking-[0.2em]"
+                      >
+                        {currentTurn === "w" ? "White" : "Black"} to move
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Subtle grid background */}
       <div
         className="fixed inset-0 opacity-[0.015] pointer-events-none"
@@ -509,8 +655,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pt-14 lg:pt-20 pb-0 lg:pb-8 h-[100dvh] lg:h-auto flex flex-col lg:block">
-        {!gameStarted ? (
+      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-8 pt-14 lg:pt-20 h-[100dvh] lg:h-auto flex flex-col lg:block">
+        {!gameStarted && !isAnalysisPhase ? (
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex flex-col items-center">
               {/* Minimal chess piece spinner */}

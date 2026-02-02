@@ -85,3 +85,35 @@ export interface MakeMovePayload {
   to: Square;
   promotion?: "q" | "r" | "b" | "n";
 }
+
+// ============================================
+// ANALYSIS PHASE TYPES
+// ============================================
+
+export interface AnalysisPhaseStartedPayload {
+  gameReferenceId: string;
+  analysisTimeSeconds: number;
+  yourColor: Color;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+  whitePlayer: Player;
+  blackPlayer: Player;
+  isAIGame?: boolean;
+  difficulty?: "easy" | "medium" | "hard" | "expert";
+  positionInfo?: {
+    whitePlayerName: string | null;
+    blackPlayerName: string | null;
+    tournamentName?: string | null;
+    whitePlayerImageUrl?: string | null;
+    blackPlayerImageUrl?: string | null;
+  };
+}
+
+export interface AnalysisCountdownPayload {
+  secondsRemaining: number;
+}
+
+export interface AnalysisCompletePayload {
+  gameReferenceId: string;
+}

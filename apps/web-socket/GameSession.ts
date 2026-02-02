@@ -11,6 +11,7 @@ import {
   GameResult,
   GameEndMethod,
   ClockUpdatePayload,
+  AnalysisPhaseStartedPayload,
 } from "./types";
 import { persistMove, completeGame } from "./utils/apiClient";
 
@@ -39,6 +40,10 @@ export class GameSession {
   // Disconnect handling
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly DISCONNECT_GRACE_PERIOD = 30000; // 30 seconds
+
+  // Analysis phase
+  private isAnalysisPhase: boolean = false;
+  private analysisCompleteFrom: Set<string> = new Set();
 
   constructor(gameData: GameData) {
     this.gameData = gameData;
@@ -187,8 +192,6 @@ export class GameSession {
       throw new Error("Both players must be present to start game");
     }
 
-    this.gameStarted = true;
-
     // Randomly assign colors to players
     const creatorGetsWhite = Math.random() < 0.5;
     if (creatorGetsWhite) {
@@ -201,15 +204,17 @@ export class GameSession {
     this.whitePlayer.color = "w";
     this.blackPlayer.color = "b";
 
-    // Start white's clock
-    this.clockManager.startClock("w");
+    // Enter analysis phase instead of starting immediately
+    this.isAnalysisPhase = true;
+    this.analysisCompleteFrom.clear();
 
-    // Emit game_started to both players
-    const clockState = this.clockManager.getState();
+    const analysisTime = this.getAnalysisTime();
     const positionInfo = this.gameData.gameData?.positionInfo;
 
-    const whitePayload: GameStartedPayload = {
+    // Emit analysis_phase_started to both players
+    const whitePayload: AnalysisPhaseStartedPayload = {
       gameReferenceId: this.gameData.referenceId,
+      analysisTimeSeconds: analysisTime,
       yourColor: "w",
       fen: this.chess.fen(),
       whiteTime: this.clockManager.getTimeInSeconds("w"),
@@ -219,21 +224,15 @@ export class GameSession {
       positionInfo: positionInfo || undefined,
     };
 
-    const blackPayload: GameStartedPayload = {
-      gameReferenceId: this.gameData.referenceId,
+    const blackPayload: AnalysisPhaseStartedPayload = {
+      ...whitePayload,
       yourColor: "b",
-      fen: this.chess.fen(),
-      whiteTime: this.clockManager.getTimeInSeconds("w"),
-      blackTime: this.clockManager.getTimeInSeconds("b"),
-      whitePlayer: this.whitePlayer.playerInfo,
-      blackPlayer: this.blackPlayer.playerInfo,
-      positionInfo: positionInfo || undefined,
     };
 
-    this.whitePlayer.socket.emit("game_started", whitePayload);
-    this.blackPlayer.socket.emit("game_started", blackPayload);
+    this.whitePlayer.socket.emit("analysis_phase_started", whitePayload);
+    this.blackPlayer.socket.emit("analysis_phase_started", blackPayload);
 
-    console.log(`Game ${this.gameData.referenceId} started`);
+    console.log(`Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - waiting for client ACKs`);
   }
 
   /**
@@ -241,8 +240,6 @@ export class GameSession {
    * In AI games, the bot doesn't have a socket - moves are sent from the client
    */
   private async startAIGame(socket: Socket, userReferenceId: string): Promise<void> {
-    this.gameStarted = true;
-
     // Create bot player info
     const botPlayerInfo: PlayerInfo = {
       userReferenceId: this.gameData.gameData?.botReferenceId || "bot",
@@ -291,15 +288,17 @@ export class GameSession {
       this.opponentPlayer = humanPlayer;
     }
 
-    // Start the clock for whoever's turn it is according to the FEN
-    const currentTurn = this.chess.turn();
-    this.clockManager.startClock(currentTurn);
-    console.log(`Starting clock for ${currentTurn === "w" ? "white" : "black"} (from FEN)`);
+    // Enter analysis phase instead of starting immediately
+    this.isAnalysisPhase = true;
+    this.analysisCompleteFrom.clear();
 
-    // Emit game_started to the human player with AI game info
+    const analysisTime = this.getAnalysisTime();
     const positionInfo = this.gameData.gameData?.positionInfo;
-    const payload: GameStartedPayload = {
+
+    // Emit analysis_phase_started to the human player
+    const payload: AnalysisPhaseStartedPayload = {
       gameReferenceId: this.gameData.referenceId,
+      analysisTimeSeconds: analysisTime,
       yourColor: this.humanPlayerColor!,
       fen: this.chess.fen(),
       whiteTime: this.clockManager.getTimeInSeconds("w"),
@@ -311,8 +310,8 @@ export class GameSession {
       positionInfo: positionInfo || undefined,
     };
 
-    socket.emit("game_started", payload);
-    console.log(`AI Game ${this.gameData.referenceId} started - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}`);
+    socket.emit("analysis_phase_started", payload);
+    console.log(`AI Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}, waiting for client ACK`);
   }
 
   /**
@@ -326,6 +325,14 @@ export class GameSession {
   ): Promise<void> {
     if (this.gameEnded) {
       socket.emit("move_error", { message: "Game has ended" });
+      return;
+    }
+
+    // Block moves during analysis phase
+    if (this.isAnalysisPhase) {
+      socket.emit("move_error", {
+        message: "Analysis in progress. Please wait for the countdown to finish."
+      });
       return;
     }
 
@@ -622,6 +629,7 @@ export class GameSession {
     this.clockManager.destroy();
     this.disconnectTimers.forEach((timer) => clearTimeout(timer));
     this.disconnectTimers.clear();
+    this.analysisCompleteFrom.clear();
     console.log(`GameSession destroyed for game ${this.gameData.referenceId}`);
   }
 
@@ -650,6 +658,37 @@ export class GameSession {
     return this.gameData.referenceId;
   }
 
+  /**
+   * Handle analysis_complete acknowledgment from a player
+   * Called when client's countdown finishes
+   */
+  public handleAnalysisComplete(userReferenceId: string): void {
+    if (!this.isAnalysisPhase) {
+      console.log(`Ignoring analysis_complete from ${userReferenceId} - not in analysis phase`);
+      return;
+    }
+
+    this.analysisCompleteFrom.add(userReferenceId);
+    console.log(`Analysis complete ACK from ${userReferenceId} in game ${this.gameData.referenceId}`);
+
+    if (this.isAIGame) {
+      // AI game: start immediately when human player ACKs
+      console.log(`AI game - starting immediately after human ACK`);
+      this.endAnalysisPhaseForAI();
+    } else {
+      // PvP game: wait for both players to ACK
+      const hasWhite = this.analysisCompleteFrom.has(this.whitePlayer?.userReferenceId || '');
+      const hasBlack = this.analysisCompleteFrom.has(this.blackPlayer?.userReferenceId || '');
+
+      console.log(`PvP game - ACKs: white=${hasWhite}, black=${hasBlack}`);
+
+      if (hasWhite && hasBlack) {
+        console.log(`Both players ready - starting game`);
+        this.endAnalysisPhase();
+      }
+    }
+  }
+
   // ============================================
   // PRIVATE HELPER METHODS
   // ============================================
@@ -676,6 +715,85 @@ export class GameSession {
   private broadcastClockUpdate(whiteTime: number, blackTime: number): void {
     const payload: ClockUpdatePayload = { whiteTime, blackTime };
     this.broadcast("clock_update", payload);
+  }
+
+  /**
+   * Get analysis time based on game time control
+   * Bullet (<3min): 15s, Blitz (<10min): 20s, Rapid: 30s
+   */
+  private getAnalysisTime(): number {
+    const initialTime = this.gameData.initialTimeSeconds;
+    if (initialTime < 180) return 15;      // Bullet: 15s
+    else if (initialTime < 600) return 20; // Blitz: 20s
+    else return 30;                        // Rapid: 30s
+  }
+
+  /**
+   * End the analysis phase and start the actual game (PvP)
+   */
+  private endAnalysisPhase(): void {
+    this.isAnalysisPhase = false;
+    this.gameStarted = true;
+
+    // Start clock for whoever's turn (from FEN)
+    const currentTurn = this.chess.turn();
+    this.clockManager.startClock(currentTurn);
+
+    // Emit game_started to both players
+    const positionInfo = this.gameData.gameData?.positionInfo;
+
+    const whitePayload: GameStartedPayload = {
+      gameReferenceId: this.gameData.referenceId,
+      yourColor: "w",
+      fen: this.chess.fen(),
+      whiteTime: this.clockManager.getTimeInSeconds("w"),
+      blackTime: this.clockManager.getTimeInSeconds("b"),
+      whitePlayer: this.whitePlayer!.playerInfo,
+      blackPlayer: this.blackPlayer!.playerInfo,
+      positionInfo: positionInfo || undefined,
+    };
+
+    this.whitePlayer!.socket.emit("game_started", whitePayload);
+    this.blackPlayer!.socket.emit("game_started", { ...whitePayload, yourColor: "b" as const });
+
+    console.log(`Analysis phase ended, game ${this.gameData.referenceId} started - clock started for ${currentTurn === "w" ? "white" : "black"}`);
+  }
+
+  /**
+   * End the analysis phase for AI games
+   */
+  private endAnalysisPhaseForAI(): void {
+    this.isAnalysisPhase = false;
+    this.gameStarted = true;
+
+    // Start the clock for whoever's turn it is according to the FEN
+    const currentTurn = this.chess.turn();
+    this.clockManager.startClock(currentTurn);
+
+    // Get current socket from player reference (handles reconnection)
+    const humanPlayer = this.humanPlayerColor === "w" ? this.whitePlayer : this.blackPlayer;
+    if (!humanPlayer) {
+      console.error("No human player found when ending analysis phase");
+      return;
+    }
+
+    // Emit game_started to the human player with AI game info
+    const positionInfo = this.gameData.gameData?.positionInfo;
+    const payload: GameStartedPayload = {
+      gameReferenceId: this.gameData.referenceId,
+      yourColor: this.humanPlayerColor!,
+      fen: this.chess.fen(),
+      whiteTime: this.clockManager.getTimeInSeconds("w"),
+      blackTime: this.clockManager.getTimeInSeconds("b"),
+      whitePlayer: this.whitePlayer!.playerInfo,
+      blackPlayer: this.blackPlayer!.playerInfo,
+      isAIGame: true,
+      difficulty: this.aiDifficulty,
+      positionInfo: positionInfo || undefined,
+    };
+
+    humanPlayer.socket.emit("game_started", payload);
+    console.log(`AI Game ${this.gameData.referenceId} analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`);
   }
 
   private async handleTimeout(color: Color): Promise<void> {

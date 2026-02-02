@@ -214,3 +214,39 @@ export interface ClockConfig {
   initialTime: number; // seconds
   increment: number; // seconds
 }
+
+// ============================================
+// ANALYSIS PHASE TYPES
+// ============================================
+
+export interface AnalysisPhaseStartedPayload {
+  gameReferenceId: string;
+  analysisTimeSeconds: number;
+  yourColor: Color;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+  whitePlayer: PlayerInfo;
+  blackPlayer: PlayerInfo;
+  isAIGame?: boolean;
+  difficulty?: "easy" | "medium" | "hard" | "expert";
+  positionInfo?: {
+    whitePlayerName: string | null;
+    blackPlayerName: string | null;
+    tournamentName?: string | null;
+    whitePlayerImageUrl?: string | null;
+    blackPlayerImageUrl?: string | null;
+  };
+}
+
+export interface AnalysisCountdownPayload {
+  secondsRemaining: number;
+}
+
+// ============================================
+// CLIENT → SERVER: ANALYSIS COMPLETE
+// ============================================
+
+export interface AnalysisCompletePayload {
+  gameReferenceId: string;
+}
