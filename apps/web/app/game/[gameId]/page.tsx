@@ -6,7 +6,7 @@ import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ChessBoard from "../../components/ChessBoard";
-import { VictoryConfetti } from "../../components/GameEndEffects";
+import { VictoryConfetti, GameEndOverlay } from "../../components/GameEndEffects";
 import PromotionPopup from "../../components/PromotionPopup";
 import MoveNavigation from "../../components/MoveNavigation";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
@@ -79,6 +79,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [isAnalysisPhase, setIsAnalysisPhase] = useState(false);
   const [analysisTimeRemaining, setAnalysisTimeRemaining] = useState(0);
   const [totalAnalysisTime, setTotalAnalysisTime] = useState(0);
+
+  // Game end overlay state
+  const [showGameEndOverlay, setShowGameEndOverlay] = useState(false);
 
   const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
   const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
@@ -431,6 +434,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     }
   }, [gameOver, pendingPromotion]);
 
+  // Show game end overlay when game is over (only if position info exists for analysis)
+  useEffect(() => {
+    if (gameOver && positionInfo) {
+      setShowGameEndOverlay(true);
+    }
+  }, [gameOver, positionInfo]);
+
   useEffect(() => {
     if (!isAIGame || !gameStarted || gameOver || !botColor || currentTurn !== botColor) return;
     if (botMoveInProgressRef.current) return;
@@ -537,6 +547,23 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     <div className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
       {/* Victory confetti effect */}
       <VictoryConfetti isActive={isVictory || false} />
+
+      {/* Game End Overlay with Analysis Button */}
+      <GameEndOverlay
+        isActive={showGameEndOverlay}
+        result={
+          gameResult?.includes("Victory")
+            ? "victory"
+            : gameResult?.includes("Draw")
+            ? "draw"
+            : "defeat"
+        }
+        onAnalysisClick={() => {
+          setShowGameEndOverlay(false);
+          router.push(`/analysis/${gameId}`);
+        }}
+        onDismiss={() => setShowGameEndOverlay(false)}
+      />
 
       {/* Promotion popup */}
       <PromotionPopup
@@ -739,6 +766,51 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* Post-Game Actions */}
+              {gameOver && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="border border-white/10 p-5 space-y-3"
+                >
+                  <p
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-[10px] tracking-[0.3em] uppercase text-white/40"
+                  >
+                    What&apos;s Next?
+                  </p>
+                  {positionInfo && (
+                    <button
+                      onClick={() => router.push(`/analysis/${gameId}`)}
+                      className="w-full py-2.5 bg-white text-black hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                    >
+                      <span>Compare with Legend</span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => router.push("/play")}
+                    className="w-full py-2.5 border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Back to Play
+                  </button>
+                </motion.div>
               )}
 
               {/* Move History */}
@@ -945,6 +1017,45 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     Resign
                   </button>
                 </div>
+              )}
+
+              {/* Mobile Post-Game Actions */}
+              {gameOver && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2"
+                >
+                  {positionInfo && (
+                    <button
+                      onClick={() => router.push(`/analysis/${gameId}`)}
+                      className="h-10 px-4 text-sm bg-white text-black hover:bg-white/90 transition-colors flex items-center gap-1.5"
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                    >
+                      <span>Compare with Legend</span>
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => router.push("/play")}
+                    className="h-10 px-4 text-sm border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Back
+                  </button>
+                </motion.div>
               )}
 
               {/* Player Clock & Info - compact on mobile */}

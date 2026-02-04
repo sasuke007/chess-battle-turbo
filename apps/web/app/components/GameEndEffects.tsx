@@ -256,3 +256,131 @@ export const DrawOverlay = ({ isActive }: DrawOverlayProps) => {
     </AnimatePresence>
   );
 };
+
+// Game End Overlay with Analysis Button (for analysis page)
+interface GameEndOverlayProps {
+  isActive: boolean;
+  result: "victory" | "defeat" | "draw";
+  onAnalysisClick: () => void;
+  onDismiss: () => void;
+}
+
+export const GameEndOverlay = ({
+  isActive,
+  result,
+  onAnalysisClick,
+  onDismiss,
+}: GameEndOverlayProps) => {
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    if (isActive) {
+      // Show button after animation delay (2.5 seconds)
+      const timer = setTimeout(() => {
+        setShowButton(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowButton(false);
+    }
+  }, [isActive, result]);
+
+  const getResultText = () => {
+    switch (result) {
+      case "victory":
+        return "Victory";
+      case "defeat":
+        return "Defeat";
+      case "draw":
+        return "Draw";
+      default:
+        return "Game Over";
+    }
+  };
+
+  const getResultColor = () => {
+    switch (result) {
+      case "victory":
+        return "text-white";
+      case "defeat":
+        return "text-white/60";
+      case "draw":
+        return "text-white/80";
+      default:
+        return "text-white";
+    }
+  };
+
+  const handleDismiss = () => {
+    setShowButton(false);
+    onDismiss();
+  };
+
+  return (
+    <AnimatePresence>
+      {isActive && showButton && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-auto"
+          style={{
+            background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+          }}
+          onClick={handleDismiss}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="flex flex-col items-center gap-6 p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Result text */}
+            <div className="text-center">
+              <h2
+                className={`text-4xl md:text-5xl tracking-[0.15em] ${getResultColor()}`}
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+              >
+                {getResultText()}
+              </h2>
+            </div>
+
+            {/* Analysis button */}
+            <motion.button
+              onClick={onAnalysisClick}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="group relative px-8 py-3 border border-white/30 bg-white/5 hover:bg-white/10 hover:border-white/50 transition-all duration-300"
+            >
+              <span
+                className="text-sm uppercase tracking-[0.2em] text-white/80 group-hover:text-white"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                Compare with Legend
+              </span>
+              {/* Subtle corner accents */}
+              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/30 group-hover:border-white/50 transition-colors" />
+              <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/30 group-hover:border-white/50 transition-colors" />
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/30 group-hover:border-white/50 transition-colors" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/30 group-hover:border-white/50 transition-colors" />
+            </motion.button>
+
+            {/* Skip text */}
+            <p
+              className="text-white/30 text-xs"
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            >
+              Click anywhere to dismiss
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};

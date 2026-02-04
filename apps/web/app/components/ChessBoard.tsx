@@ -4,12 +4,14 @@ import { Chess, Color, PieceSymbol, Square } from "chess.js";
 import Image from "next/image";
 import { DefeatOverlay, DrawOverlay } from "./GameEndEffects";
 
+type PieceInfo = {
+  square: Square;
+  type: PieceSymbol;
+  color: Color;
+} | null;
+
 type ChessProps = {
-  board?: ({
-    square: Square;
-    type: PieceSymbol;
-    color: Color;
-  } | null)[][];
+  board?: PieceInfo[][];
   squareSize?: "sm" | "md" | "lg";
   selectedSquare?: Square | null;
   legalMoves?: Square[];
@@ -19,6 +21,11 @@ type ChessProps = {
   showCoordinates?: boolean;
   lastMove?: { from: Square; to: Square } | null;
   gameEndState?: "victory" | "defeat" | "draw" | null;
+  // Shadow pieces for analysis mode (legend's board)
+  shadowBoard?: PieceInfo[][];
+  shadowLastMove?: { from: Square; to: Square } | null;
+  // Faded mode for showing legend's board at normal size with reduced opacity
+  fadedPieces?: boolean;
 };
 
 const ChessBoard = ({
@@ -32,6 +39,9 @@ const ChessBoard = ({
   showCoordinates = true,
   lastMove = null,
   gameEndState = null,
+  shadowBoard,
+  shadowLastMove = null,
+  fadedPieces = false,
 }: ChessProps) => {
   // Size configurations
   const sizeConfig = {
@@ -45,6 +55,13 @@ const ChessBoard = ({
     playerColor === "b"
       ? [...board].reverse().map((row) => [...row].reverse())
       : board;
+
+  // Flip shadow board the same way
+  const displayShadowBoard = shadowBoard
+    ? playerColor === "b"
+      ? [...shadowBoard].reverse().map((row) => [...row].reverse())
+      : shadowBoard
+    : null;
 
   const files = playerColor === "b"
     ? ["h", "g", "f", "e", "d", "c", "b", "a"]
@@ -91,6 +108,18 @@ const ChessBoard = ({
     return (rowIndex + columnIndex) % 2 === 0;
   };
 
+  const isShadowLastMoveSquare = (rowIndex: number, columnIndex: number): boolean => {
+    if (!shadowLastMove) return false;
+    const notation = getSquareNotation(rowIndex, columnIndex);
+    return notation === shadowLastMove.from || notation === shadowLastMove.to;
+  };
+
+  // Get shadow piece at a given position
+  const getShadowPiece = (rowIndex: number, columnIndex: number): PieceInfo => {
+    if (!displayShadowBoard) return null;
+    return displayShadowBoard[rowIndex]?.[columnIndex] ?? null;
+  };
+
   return (
     <div className="flex items-center justify-center w-full select-none">
       {/* Board with outer frames */}
@@ -117,6 +146,21 @@ const ChessBoard = ({
                 const isLastMove = isLastMoveSquare(rowIndex, columnIndex);
                 const isLight = isLightSquare(rowIndex, columnIndex);
                 const hasPiece = square !== null;
+
+                // Shadow piece logic
+                const shadowPiece = getShadowPiece(rowIndex, columnIndex);
+                const hasShadowPiece = shadowPiece !== null;
+                const isShadowLastMove = isShadowLastMoveSquare(rowIndex, columnIndex);
+
+                // Check if shadow piece is on same square as main piece (overlap)
+                const hasOverlap = hasPiece && hasShadowPiece;
+
+                // Check if shadow piece is different from main piece
+                const shadowDiffers = hasShadowPiece && (
+                  !hasPiece ||
+                  shadowPiece.type !== square?.type ||
+                  shadowPiece.color !== square?.color
+                );
 
                 // Show file letter on bottom row (row 7)
                 const showFile = showCoordinates && rowIndex === 7;
@@ -181,6 +225,18 @@ const ChessBoard = ({
                       />
                     )}
 
+                    {/* Shadow last move highlight (legend's move) - faint sky blue */}
+                    {isShadowLastMove && !isLastMove && (
+                      <div
+                        className={cn(
+                          "absolute inset-0 z-0",
+                          isLight
+                            ? "bg-sky-400/30"
+                            : "bg-sky-500/25"
+                        )}
+                      />
+                    )}
+
                     {/* Selected square highlight */}
                     {isSelected && (
                       <div
@@ -222,7 +278,31 @@ const ChessBoard = ({
                       </div>
                     )}
 
-                    {/* Chess piece */}
+                    {/* Shadow piece (legend's piece) - rendered first so it's behind */}
+                    {shadowDiffers && shadowPiece && (
+                      <div
+                        className={cn(
+                          "absolute z-15 w-[70%] h-[70%]",
+                          "pointer-events-none",
+                          // Offset to top-right when overlapping with main piece
+                          hasOverlap
+                            ? "top-0 right-0 translate-x-[10%] -translate-y-[10%]"
+                            : "inset-0 m-auto"
+                        )}
+                        style={{ opacity: 0.6 }}
+                      >
+                        <Image
+                          src={`/chess-icons/${shadowPiece.color}${shadowPiece.type}.png`}
+                          alt={`Legend: ${shadowPiece.color === "w" ? "White" : "Black"} ${shadowPiece.type}`}
+                          width={100}
+                          height={100}
+                          className="w-full h-full object-contain"
+                          draggable={false}
+                        />
+                      </div>
+                    )}
+
+                    {/* Chess piece (user's piece) */}
                     {square !== null && (
                       <div
                         className={cn(
@@ -231,6 +311,7 @@ const ChessBoard = ({
                           isInteractive && "hover:scale-105",
                           isSelected && "scale-105"
                         )}
+                        style={fadedPieces ? { opacity: 0.8 } : undefined}
                       >
                         <Image
                           src={`/chess-icons/${square.color}${square.type}.png`}

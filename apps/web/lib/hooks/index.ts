@@ -9,3 +9,6 @@ export { useChessSound } from './useChessSound';
 
 export { usePWAInstall } from './usePWAInstall';
 
+export { useAnalysisBoard } from './useAnalysisBoard';
+export type { PieceInfo, BoardState, DivergenceInfo } from './useAnalysisBoard';
+
