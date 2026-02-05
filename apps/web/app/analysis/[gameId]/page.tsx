@@ -154,7 +154,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-8 lg:px-4 pb-12 lg:pb-12 pt-20 lg:pt-20 flex flex-col">
+      <div className="relative max-w-7xl mx-auto px-8 md:px-12 lg:px-4 pb-12 md:pb-20 lg:pb-12 pt-20 md:pt-24 lg:pt-20 flex flex-col">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -302,11 +302,11 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {hasLegendMoves && (
-              <div className="flex items-center justify-center gap-1 mb-10 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-2 md:gap-3 mb-10 md:mb-14 px-2 lg:hidden">
                 <button
                   onClick={() => setActiveTab("legend-moves")}
                   className={cn(
-                    "px-4 py-2 text-xs tracking-wide border transition-colors",
+                    "px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "legend-moves"
                       ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -318,7 +318,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <button
                   onClick={() => setActiveTab("your-moves")}
                   className={cn(
-                    "px-4 py-2 text-xs tracking-wide border transition-colors",
+                    "px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "your-moves"
                       ? "border-white/40 text-white bg-white/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -330,7 +330,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <button
                   onClick={() => setActiveTab("comparison")}
                   className={cn(
-                    "px-4 py-2 text-xs tracking-wide border transition-colors",
+                    "px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "comparison"
                       ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -343,7 +343,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             )}
 
             {/* Board */}
-            <div className="mx-0 mt-0 mb-3 lg:mt-6 lg:mb-4 lg:mx-0">
+            <div className="mx-0 md:mx-8 mt-0 mb-3 md:mb-6 lg:mt-6 lg:mb-4 lg:mx-0">
               <ChessBoard
                 board={activeTab === "legend-moves" ? legendBoard : userBoard}
                 shadowBoard={activeTab === "comparison" ? legendBoard : undefined}
@@ -359,14 +359,14 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Navigation Controls */}
-            <div className="flex flex-row items-center gap-2 mt-10 lg:mt-6 px-2 lg:px-0 justify-center">
+            <div className="flex flex-row items-center gap-2 md:gap-3 mt-10 md:mt-14 lg:mt-6 px-2 lg:px-0 justify-center">
               {/* Navigation Buttons */}
-              <div className="flex items-center gap-1 lg:gap-1">
+              <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
                 <button
                   onClick={goToFirst}
                   disabled={isAtStart}
                   className={cn(
-                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtStart
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -382,7 +382,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-white/70"
+                    className="text-white/70 md:scale-110 lg:scale-100"
                   >
                     <polyline points="11 17 6 12 11 7" />
                     <polyline points="18 17 13 12 18 7" />
@@ -392,7 +392,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onClick={goBack}
                   disabled={isAtStart}
                   className={cn(
-                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtStart
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -408,7 +408,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-white/70"
+                    className="text-white/70 md:scale-110 lg:scale-100"
                   >
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
@@ -417,7 +417,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onClick={goForward}
                   disabled={isAtEnd}
                   className={cn(
-                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtEnd
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -433,7 +433,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-white/70"
+                    className="text-white/70 md:scale-110 lg:scale-100"
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
@@ -442,7 +442,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onClick={goToLast}
                   disabled={isAtEnd}
                   className={cn(
-                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtEnd
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -458,7 +458,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-white/70"
+                    className="text-white/70 md:scale-110 lg:scale-100"
                   >
                     <polyline points="13 17 18 12 13 7" />
                     <polyline points="6 17 11 12 6 7" />
@@ -467,20 +467,20 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
 
               {/* Separator */}
-              <div className="w-px h-8 lg:h-6 bg-white/10 mx-1" />
+              <div className="w-px h-8 md:h-10 lg:h-6 bg-white/10 mx-1 md:mx-2" />
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-1 lg:gap-1">
+              <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
                 <button
                   onClick={toggleFlip}
-                  className="h-10 lg:h-9 px-4 lg:px-3 text-sm lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
+                  className="h-10 md:h-12 lg:h-9 px-4 md:px-6 lg:px-3 text-sm md:text-base lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Flip
                 </button>
                 <button
                   onClick={() => router.push("/play")}
-                  className="h-10 lg:h-9 px-4 lg:px-3 text-sm lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
+                  className="h-10 md:h-12 lg:h-9 px-4 md:px-6 lg:px-3 text-sm md:text-base lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Back
@@ -489,8 +489,8 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Legend Key (Mobile) */}
-            <div className="lg:hidden mt-1 px-4">
-              <div className="flex items-center justify-center gap-6 py-3 border-t border-white/10">
+            <div className="lg:hidden mt-4 md:mt-8 px-4 md:px-8">
+              <div className="flex items-center justify-center gap-6 md:gap-10 py-3 md:py-5 border-t border-white/10">
                 {activeTab === "your-moves" && (
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 bg-white/90 border border-white/40 flex items-center justify-center">
