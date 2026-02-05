@@ -548,7 +548,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const isVictory = gameOver && gameResult?.includes("Victory");
 
   return (
-    <div className="lg:min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
+    <div className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
       {/* Victory confetti effect */}
       <VictoryConfetti isActive={isVictory || false} />
 

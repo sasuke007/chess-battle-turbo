@@ -141,7 +141,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const hasLegendMoves = data.legendMoves.length > 0;
 
   return (
-    <div className="lg:min-h-screen bg-black text-white overflow-auto">
+    <div className="min-h-screen bg-black text-white overflow-auto">
       {/* Navbar */}
       <Navbar />
 
