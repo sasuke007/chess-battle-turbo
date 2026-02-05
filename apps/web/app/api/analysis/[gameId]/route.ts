@@ -9,6 +9,7 @@ interface AnalysisData {
   userMoves: Move[];
   userColor: "w" | "b";
   gameResult: string | null;
+  userGameOutcome: "win" | "loss" | "draw" | null;
 
   // Legend info
   legendMoves: Move[];
@@ -17,6 +18,60 @@ interface AnalysisData {
   blackPlayerName: string | null;
   tournamentName: string | null;
   legendPgn: string | null;
+  legendGameResult: "white_won" | "black_won" | "draw" | null;
+}
+
+/**
+ * Parse result from gameMetadata JSON.
+ * Supports various formats: "1-0", "white_won", "white", etc.
+ */
+function parseResultFromMetadata(
+  gameMetadata: Record<string, unknown> | null
+): "white_won" | "black_won" | "draw" | null {
+  if (!gameMetadata) return null;
+
+  const result = gameMetadata.result as string | undefined;
+  if (!result) return null;
+
+  const normalized = result.toLowerCase().trim();
+
+  // Handle standard notation
+  if (normalized === "1-0" || normalized === "white_won" || normalized === "white") {
+    return "white_won";
+  }
+  if (normalized === "0-1" || normalized === "black_won" || normalized === "black") {
+    return "black_won";
+  }
+  if (normalized === "1/2-1/2" || normalized === "draw" || normalized === "0.5-0.5") {
+    return "draw";
+  }
+
+  return null;
+}
+
+/**
+ * Determine user's game outcome based on game result and their role.
+ */
+function getUserGameOutcome(
+  gameResult: string | null,
+  isCreator: boolean
+): "win" | "loss" | "draw" | null {
+  if (!gameResult) return null;
+
+  if (gameResult === "DRAW") return "draw";
+
+  const creatorWon = gameResult === "CREATOR_WON" || gameResult === "OPPONENT_TIMEOUT";
+  const opponentWon = gameResult === "OPPONENT_WON" || gameResult === "CREATOR_TIMEOUT";
+
+  if (isCreator) {
+    if (creatorWon) return "win";
+    if (opponentWon) return "loss";
+  } else {
+    if (opponentWon) return "win";
+    if (creatorWon) return "loss";
+  }
+
+  return null;
 }
 
 /**
@@ -65,6 +120,8 @@ export async function GET(
 ) {
   try {
     const { gameId } = await params;
+    const { searchParams } = new URL(request.url);
+    const userReferenceId = searchParams.get("userReferenceId");
 
     // 1. Find the game with its chess position
     const game = await prisma.game.findUnique({
@@ -79,6 +136,16 @@ export async function GET(
         chessPositionId: true,
       },
     });
+
+    // Look up user if userReferenceId provided
+    let currentUserId: bigint | null = null;
+    if (userReferenceId) {
+      const user = await prisma.user.findUnique({
+        where: { referenceId: userReferenceId },
+        select: { id: true },
+      });
+      currentUserId = user?.id ?? null;
+    }
 
     if (!game) {
       return NextResponse.json(
@@ -109,6 +176,8 @@ export async function GET(
     let tournamentName: string | null = null;
     let legendPgn: string | null = null;
 
+    let positionGameMetadata: Record<string, unknown> | null = null;
+
     if (game.chessPositionId) {
       const chessPosition = await prisma.chessPosition.findUnique({
         where: { id: game.chessPositionId },
@@ -119,6 +188,7 @@ export async function GET(
           blackPlayerName: true,
           tournamentName: true,
           fen: true,
+          gameMetadata: true,
         },
       });
 
@@ -128,6 +198,7 @@ export async function GET(
         tournamentName = chessPosition.tournamentName;
         legendPgn = chessPosition.pgn;
         moveNumberStart = chessPosition.moveNumber || 1;
+        positionGameMetadata = chessPosition.gameMetadata as Record<string, unknown> | null;
 
         if (chessPosition.pgn) {
           legendMoves = parsePgnFromMoveNumber(
@@ -144,19 +215,31 @@ export async function GET(
       tournamentName = gameData.positionInfo.tournamentName || null;
     }
 
-    // 4. Build response
+    // 4. Determine user game outcome
+    let userGameOutcome: "win" | "loss" | "draw" | null = null;
+    if (currentUserId && game.result) {
+      const isCreator = currentUserId === game.creatorId;
+      userGameOutcome = getUserGameOutcome(game.result, isCreator);
+    }
+
+    // 5. Extract legend game result from gameMetadata
+    const legendGameResult = parseResultFromMetadata(positionGameMetadata);
+
+    // 6. Build response
     const analysisData: AnalysisData = {
       gameReferenceId: game.referenceId,
       startingFen: game.startingFen,
       userMoves,
       userColor,
       gameResult: game.result,
+      userGameOutcome,
       legendMoves,
       moveNumberStart,
       whitePlayerName,
       blackPlayerName,
       tournamentName,
       legendPgn,
+      legendGameResult,
     };
 
     return NextResponse.json({

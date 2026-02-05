@@ -5,7 +5,9 @@ import { Move, Color } from "chess.js";
 import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import AnalysisMoveList from "../../components/AnalysisMoveList";
+import { Navbar } from "../../components/Navbar";
 import { useAnalysisBoard } from "@/lib/hooks/useAnalysisBoard";
+import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 
@@ -15,17 +17,21 @@ interface AnalysisData {
   userMoves: Move[];
   userColor: "w" | "b";
   gameResult: string | null;
+  userGameOutcome: "win" | "loss" | "draw" | null;
   legendMoves: Move[];
   moveNumberStart: number;
   whitePlayerName: string | null;
   blackPlayerName: string | null;
   tournamentName: string | null;
   legendPgn: string | null;
+  legendGameResult: "white_won" | "black_won" | "draw" | null;
 }
 
 const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
   const { gameId } = use(params);
+  const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
+  const userReferenceId = userObject?.user?.referenceId;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,9 +39,14 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   // Fetch analysis data
   useEffect(() => {
+    if (!isReady) return;
+
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/analysis/${gameId}`);
+        const url = userReferenceId
+          ? `/api/analysis/${gameId}?userReferenceId=${userReferenceId}`
+          : `/api/analysis/${gameId}`;
+        const response = await fetch(url);
         const result = await response.json();
 
         if (!result.success) {
@@ -53,7 +64,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     };
 
     fetchData();
-  }, [gameId]);
+  }, [gameId, isReady, userReferenceId]);
 
   // Initialize analysis board hook
   const analysisBoard = useAnalysisBoard({
@@ -89,7 +100,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const startingSide =
     data?.startingFen?.split(" ")[1] === "b" ? "b" : "w";
 
-  if (loading) {
+  if (!isReady || loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center">
@@ -131,6 +142,9 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
+      {/* Navbar */}
+      <Navbar />
+
       {/* Subtle grid background */}
       <div
         className="fixed inset-0 opacity-[0.015] pointer-events-none"
@@ -180,59 +194,115 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
           {/* Center - Chess Board */}
           <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block">
-            {/* Header with Legend Names */}
+            {/* Compact Header */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-center mb-4 lg:mb-6 px-2"
+              className="mb-3 lg:mb-2 px-2"
             >
-              {/* Legend vs Legend */}
-              <h1
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-white text-lg lg:text-2xl tracking-wide"
-              >
-                {data.whitePlayerName || "White"}{" "}
-                <span className="text-white/40">vs</span>{" "}
-                {data.blackPlayerName || "Black"}
-              </h1>
-
-              {/* Tournament & Starting Move */}
-              <div className="flex items-center justify-center gap-2 mt-1">
+              {/* Single-line compact header */}
+              <div className="flex items-center justify-center gap-2 lg:gap-3 flex-wrap">
+                {/* Tournament name */}
                 {data.tournamentName && (
                   <>
-                    <p
+                    <span
                       style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/40 text-xs"
+                      className="text-white/25 text-[10px] lg:text-xs"
                     >
                       {data.tournamentName}
-                    </p>
-                    <span className="text-white/20">•</span>
+                    </span>
+                    {(data.whitePlayerName || data.blackPlayerName) && (
+                      <span className="text-white/20">·</span>
+                    )}
                   </>
                 )}
-                <p
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-white/40 text-xs"
-                >
-                  From move {data.moveNumberStart}
-                </p>
-                {data.gameResult && (
-                  <>
-                    <span className="text-white/20">•</span>
-                    <p
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/40 text-xs"
+
+                {/* Legend players + result */}
+                {(data.whitePlayerName || data.blackPlayerName) && (
+                  <div className="flex items-center gap-1.5 lg:gap-2">
+                    <span
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-sky-300/60 text-sm lg:text-base"
                     >
-                      {data.gameResult.replace(/_/g, " ")}
-                    </p>
-                  </>
+                      {data.whitePlayerName || "White"}
+                    </span>
+                    {data.legendGameResult && (
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-sky-400/70 text-xs lg:text-sm font-medium"
+                      >
+                        {data.legendGameResult === "white_won" && "1–0"}
+                        {data.legendGameResult === "black_won" && "0–1"}
+                        {data.legendGameResult === "draw" && "½–½"}
+                      </span>
+                    )}
+                    {!data.legendGameResult && (
+                      <span className="text-white/20 text-xs">vs</span>
+                    )}
+                    <span
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-sky-300/60 text-sm lg:text-base"
+                    >
+                      {data.blackPlayerName || "Black"}
+                    </span>
+                  </div>
                 )}
+
+                {/* Separator */}
+                {(data.whitePlayerName || data.blackPlayerName || data.tournamentName) && data.userGameOutcome && (
+                  <span className="text-white/15 hidden sm:inline">|</span>
+                )}
+
+                {/* Your result (compact) */}
+                {data.userGameOutcome && (
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-white/40 text-[10px] lg:text-xs uppercase tracking-wider"
+                    >
+                      You
+                    </span>
+                    <span
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className={cn(
+                        "text-xs lg:text-sm font-medium px-1.5 py-0.5",
+                        data.userGameOutcome === "win" && "text-amber-400 bg-amber-400/10",
+                        data.userGameOutcome === "loss" && "text-white/50 bg-white/5",
+                        data.userGameOutcome === "draw" && "text-white/50 bg-white/5"
+                      )}
+                    >
+                      {data.userGameOutcome === "win" && "Won"}
+                      {data.userGameOutcome === "loss" && "Lost"}
+                      {data.userGameOutcome === "draw" && "Drew"}
+                    </span>
+                    <span
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-white/30 text-[10px] lg:text-xs"
+                    >
+                      as {data.userColor === "w" ? "White" : "Black"}
+                    </span>
+                  </div>
+                )}
+
+                {/* Separator */}
+                {(data.whitePlayerName || data.blackPlayerName || data.tournamentName || data.userGameOutcome) && (
+                  <span className="text-white/15 hidden sm:inline">|</span>
+                )}
+
+                {/* Move info (integrated) */}
+                <span
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-white/30 text-[10px] lg:text-xs"
+                >
+                  from move {data.moveNumberStart}
+                </span>
               </div>
             </motion.div>
 
-            {/* Tabs */}
+            {/* Tabs - Mobile Only */}
             {hasLegendMoves && (
-              <div className="flex items-center justify-center gap-1 mb-3 px-2">
+              <div className="flex items-center justify-center gap-1 mb-3 px-2 lg:hidden">
                 <button
                   onClick={() => setActiveTab("legend-moves")}
                   className={cn(
@@ -272,21 +342,18 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
             )}
 
-            {/* Move Counter */}
-            <div className="flex items-center justify-center gap-4 mb-3 px-2">
-              <p
+            {/* Move Counter - Minimal */}
+            <div className="flex items-center justify-center mb-2 px-2">
+              <span
                 style={{ fontFamily: "'Geist', sans-serif" }}
-                className="text-white/50 text-sm"
+                className="text-white/40 text-xs font-mono tabular-nums"
               >
-                Move{" "}
-                <span className="text-white font-mono">
-                  {plyIndex} / {maxPly}
-                </span>
-              </p>
+                {plyIndex}<span className="text-white/20">/</span>{maxPly}
+              </span>
             </div>
 
             {/* Board */}
-            <div className="mx-0 my-3 lg:m-8">
+            <div className="mx-0 my-3 lg:my-4 lg:mx-0">
               <ChessBoard
                 board={activeTab === "legend-moves" ? legendBoard : userBoard}
                 shadowBoard={activeTab === "comparison" ? legendBoard : undefined}
@@ -301,14 +368,14 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Navigation Controls */}
-            <div className="flex flex-col items-center gap-3 mt-3 lg:mt-0 px-2 lg:px-0">
+            <div className="flex flex-col lg:flex-row items-center gap-3 lg:gap-2 mt-3 lg:mt-4 px-2 lg:px-0 lg:justify-center">
               {/* Navigation Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 lg:gap-1">
                 <button
                   onClick={goToFirst}
                   disabled={isAtStart}
                   className={cn(
-                    "w-11 h-11 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtStart
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -334,7 +401,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onClick={goBack}
                   disabled={isAtStart}
                   className={cn(
-                    "w-11 h-11 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtStart
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -359,7 +426,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onClick={goForward}
                   disabled={isAtEnd}
                   className={cn(
-                    "w-11 h-11 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtEnd
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -384,7 +451,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onClick={goToLast}
                   disabled={isAtEnd}
                   className={cn(
-                    "w-11 h-11 flex items-center justify-center border transition-colors",
+                    "w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                     isAtEnd
                       ? "opacity-30 cursor-not-allowed border-white/10"
                       : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -408,18 +475,21 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </button>
               </div>
 
+              {/* Separator - Desktop only */}
+              <div className="hidden lg:block w-px h-6 bg-white/10 mx-1" />
+
               {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 lg:gap-1">
                 <button
                   onClick={toggleFlip}
-                  className="h-10 px-4 text-sm border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
+                  className="h-10 lg:h-9 px-4 lg:px-3 text-sm lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
-                  Flip Board
+                  Flip
                 </button>
                 <button
                   onClick={() => router.push("/play")}
-                  className="h-10 px-4 text-sm border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
+                  className="h-10 lg:h-9 px-4 lg:px-3 text-sm lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Back
@@ -494,6 +564,56 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
           {/* Right - Legend Key & Info (hidden on mobile) */}
           <div className="lg:col-span-3 order-3 hidden lg:block space-y-4">
+            {/* View Mode Tabs - Desktop */}
+            {hasLegendMoves && (
+              <div className="border border-white/10 p-4">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                >
+                  View Mode
+                </p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setActiveTab("legend-moves")}
+                    className={cn(
+                      "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
+                      activeTab === "legend-moves"
+                        ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
+                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Legend&apos;s Moves
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("your-moves")}
+                    className={cn(
+                      "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
+                      activeTab === "your-moves"
+                        ? "border-white/40 text-white bg-white/10"
+                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Your Moves
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("comparison")}
+                    className={cn(
+                      "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
+                      activeTab === "comparison"
+                        ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Comparison
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Legend Key - Comparison Mode */}
             {hasLegendMoves && activeTab === "comparison" && (
               <div className="border border-white/10 p-5">

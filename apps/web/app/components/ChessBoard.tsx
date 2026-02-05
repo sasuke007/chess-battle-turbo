@@ -124,9 +124,8 @@ const ChessBoard = ({
     <div className="flex items-center justify-center w-full select-none">
       {/* Board with outer frames */}
       <div className="relative">
-        {/* Outer decorative frames */}
+        {/* Outer decorative frame */}
         <div className="absolute -inset-4 border border-white/10" />
-        <div className="absolute -inset-8 border border-white/5" />
 
         {/* Main board container */}
         <div className={cn(

@@ -435,9 +435,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   }, [gameOver, pendingPromotion]);
 
   // Show game end overlay when game is over (only if position info exists for analysis)
+  // Delayed by 5 seconds to let players see the final position
   useEffect(() => {
     if (gameOver && positionInfo) {
-      setShowGameEndOverlay(true);
+      const timer = setTimeout(() => {
+        setShowGameEndOverlay(true);
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [gameOver, positionInfo]);
 
@@ -562,6 +566,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           setShowGameEndOverlay(false);
           router.push(`/analysis/${gameId}`);
         }}
+        onBackClick={() => {
+          setShowGameEndOverlay(false);
+          router.push("/play");
+        }}
         onDismiss={() => setShowGameEndOverlay(false)}
       />
 
@@ -682,7 +690,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-8 pt-14 lg:pt-20 h-[100dvh] lg:h-auto flex flex-col lg:block">
+      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:pt-4 h-[100dvh] lg:h-auto flex flex-col lg:block">
         {!gameStarted && !isAnalysisPhase ? (
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex flex-col items-center">
@@ -785,22 +793,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   {positionInfo && (
                     <button
                       onClick={() => router.push(`/analysis/${gameId}`)}
-                      className="w-full py-2.5 bg-white text-black hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-2.5 bg-white text-black hover:bg-white/90 transition-colors"
                       style={{ fontFamily: "'Geist', sans-serif" }}
                     >
-                      <span>Compare with Legend</span>
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
+                      Compare
                     </button>
                   )}
                   <button
@@ -808,7 +804,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     className="w-full py-2.5 border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                   >
-                    Back to Play
+                    Back
                   </button>
                 </motion.div>
               )}
@@ -850,14 +846,14 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Center - Chess Board */}
-            <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block">
+            <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-2xl mx-auto w-full">
               {/* Tournament Name Banner - compact on mobile */}
               {positionInfo?.tournamentName && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="flex items-center justify-center gap-2 lg:gap-3 mb-2 lg:mb-6 px-2"
+                  className="flex items-center justify-center gap-2 lg:gap-3 mb-1 lg:mb-2 px-2"
                 >
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                   <p
@@ -871,7 +867,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Opponent Clock & Info - compact on mobile */}
-              <div className="flex items-center justify-between mb-3 lg:mb-4 px-2">
+              <div className="flex items-center justify-between mb-2 lg:mb-10 px-2">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 flex items-center justify-center",
@@ -961,7 +957,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Board - minimal margins on mobile, centered via flex parent */}
-              <div className="mx-0 my-3 lg:m-8">
+              <div className="mx-0 my-1 lg:my-6">
                 <ChessBoard
                   board={displayPosition.board()}
                   selectedSquare={isViewingHistory ? null : selectedSquare}
@@ -982,8 +978,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 />
               </div>
 
-              {/* Move Navigation - centered */}
-              <div className="flex items-center justify-center mt-3 lg:mt-0 px-2 lg:px-0">
+              {/* Move Navigation - mobile only, desktop version is in right sidebar */}
+              <div className="flex items-center justify-center mt-2 px-2 lg:hidden">
                 <MoveNavigation
                   totalMoves={moveHistory.length}
                   viewingMoveIndex={viewingMoveIndex}
@@ -995,7 +991,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Mobile Game Actions - below navigation */}
               {!gameOver && (
-                <div className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2">
+                <div className="lg:hidden flex items-center justify-center gap-2 mt-2 px-2">
                   <button
                     onClick={handleOfferDraw}
                     disabled={drawOffered}
@@ -1025,32 +1021,20 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2"
+                  className="lg:hidden flex items-center justify-center gap-2 mt-2 px-2"
                 >
                   {positionInfo && (
                     <button
                       onClick={() => router.push(`/analysis/${gameId}`)}
-                      className="h-10 px-4 text-sm bg-white text-black hover:bg-white/90 transition-colors flex items-center gap-1.5"
+                      className="h-10 px-5 text-sm bg-white text-black hover:bg-white/90 transition-colors"
                       style={{ fontFamily: "'Geist', sans-serif" }}
                     >
-                      <span>Compare with Legend</span>
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
+                      Compare
                     </button>
                   )}
                   <button
                     onClick={() => router.push("/play")}
-                    className="h-10 px-4 text-sm border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
+                    className="h-10 px-5 text-sm border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                   >
                     Back
@@ -1059,7 +1043,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Player Clock & Info - compact on mobile */}
-              <div className="flex items-center justify-between mt-3 lg:mt-4 px-2">
+              <div className="flex items-center justify-between mt-2 lg:mt-10 px-2">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 flex items-center justify-center",
@@ -1118,6 +1102,23 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Right - Controls and info */}
             <div className="lg:col-span-3 order-3 hidden lg:block space-y-4">
+              {/* Move Navigation - Desktop */}
+              <div className="border border-white/10 p-5">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                >
+                  Navigation
+                </p>
+                <MoveNavigation
+                  totalMoves={moveHistory.length}
+                  viewingMoveIndex={viewingMoveIndex}
+                  onNavigate={handleNavigate}
+                  onPlaySound={() => playSound('move')}
+                  disabled={!gameStarted}
+                />
+              </div>
+
               {/* Sound Controls */}
               <div className="border border-white/10 p-5">
                 <p

@@ -262,6 +262,7 @@ interface GameEndOverlayProps {
   isActive: boolean;
   result: "victory" | "defeat" | "draw";
   onAnalysisClick: () => void;
+  onBackClick?: () => void;
   onDismiss: () => void;
 }
 
@@ -269,6 +270,7 @@ export const GameEndOverlay = ({
   isActive,
   result,
   onAnalysisClick,
+  onBackClick,
   onDismiss,
 }: GameEndOverlayProps) => {
   const [showButton, setShowButton] = useState(false);
@@ -350,26 +352,36 @@ export const GameEndOverlay = ({
               </h2>
             </div>
 
-            {/* Analysis button */}
-            <motion.button
-              onClick={onAnalysisClick}
+            {/* Action buttons */}
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.3 }}
-              className="group relative px-8 py-3 border border-white/30 bg-white/5 hover:bg-white/10 hover:border-white/50 transition-all duration-300"
+              className="flex items-center gap-3"
             >
-              <span
-                className="text-sm uppercase tracking-[0.2em] text-white/80 group-hover:text-white"
-                style={{ fontFamily: "'Geist', sans-serif" }}
+              <button
+                onClick={onAnalysisClick}
+                className="group relative px-8 py-3 bg-white text-black hover:bg-white/90 transition-all duration-300"
               >
-                Compare with Legend
-              </span>
-              {/* Subtle corner accents */}
-              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/30 group-hover:border-white/50 transition-colors" />
-              <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/30 group-hover:border-white/50 transition-colors" />
-              <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/30 group-hover:border-white/50 transition-colors" />
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/30 group-hover:border-white/50 transition-colors" />
-            </motion.button>
+                <span
+                  className="text-sm uppercase tracking-[0.2em]"
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  Compare
+                </span>
+              </button>
+              <button
+                onClick={onBackClick || onDismiss}
+                className="group relative px-8 py-3 border border-white/30 bg-white/5 hover:bg-white/10 hover:border-white/50 transition-all duration-300"
+              >
+                <span
+                  className="text-sm uppercase tracking-[0.2em] text-white/80 group-hover:text-white"
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  Back
+                </span>
+              </button>
+            </motion.div>
 
             {/* Skip text */}
             <p
