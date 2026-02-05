@@ -193,7 +193,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           </div>
 
           {/* Center - Chess Board */}
-          <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block">
+          <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-between lg:justify-start lg:block">
             {/* Compact Header */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -302,7 +302,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {hasLegendMoves && (
-              <div className="flex items-center justify-center gap-1 mb-5 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-1 mb-10 px-2 lg:hidden">
                 <button
                   onClick={() => setActiveTab("legend-moves")}
                   className={cn(
@@ -359,7 +359,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Navigation Controls */}
-            <div className="flex flex-row items-center gap-2 mt-2 lg:mt-6 px-2 lg:px-0 justify-center">
+            <div className="flex flex-row items-center gap-2 mt-10 lg:mt-6 px-2 lg:px-0 justify-center">
               {/* Navigation Buttons */}
               <div className="flex items-center gap-1 lg:gap-1">
                 <button
