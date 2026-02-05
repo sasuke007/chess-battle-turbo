@@ -17,9 +17,22 @@ declare global {
   }
 }
 
+// Global state to capture the event before React mounts
+let deferredPromptGlobal: BeforeInstallPromptEvent | null = null;
+let promptCapturedEarly = false;
+
+// Capture the event immediately (runs when this module loads)
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPromptGlobal = e as BeforeInstallPromptEvent;
+    promptCapturedEarly = true;
+  });
+}
+
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+    useState<BeforeInstallPromptEvent | null>(deferredPromptGlobal);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
@@ -48,9 +61,15 @@ export function usePWAInstall() {
     setIsInstalled(checkInstalled());
     setIsIOS(checkIOS());
 
-    // Listen for the beforeinstallprompt event (Chrome/Android/Desktop)
+    // If event was captured early (before React mounted), use it now
+    if (promptCapturedEarly && deferredPromptGlobal) {
+      setDeferredPrompt(deferredPromptGlobal);
+    }
+
+    // Also listen for future events (e.g., if user dismisses and comes back)
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
+      deferredPromptGlobal = e;
       setDeferredPrompt(e);
     };
 
@@ -58,6 +77,7 @@ export function usePWAInstall() {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
+      deferredPromptGlobal = null;
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -81,6 +101,7 @@ export function usePWAInstall() {
 
       if (outcome === "accepted") {
         setDeferredPrompt(null);
+        deferredPromptGlobal = null;
         return true;
       }
       return false;
