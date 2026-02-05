@@ -224,7 +224,7 @@ export default function Play() {
         />
 
         {/* Left Side - Controls */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
+        <div className="flex-1 flex items-start justify-center pt-0 sm:pt-2 lg:pt-6 px-4 sm:px-6 lg:px-12 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -232,47 +232,25 @@ export default function Play() {
             className="w-full max-w-md"
           >
             {/* Header */}
-            <div className="mb-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-3 mb-4"
-              >
-                <div className="h-px flex-1 bg-gradient-to-r from-white/30 to-transparent" />
-                <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/50 text-[10px] tracking-[0.4em] uppercase">
-                  New Game
-                </span>
-                <div className="h-px flex-1 bg-gradient-to-l from-white/30 to-transparent" />
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8 }}
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-5xl lg:text-6xl text-white leading-[1.05] tracking-tight text-center"
-              >
-                Your Move
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                style={{ fontFamily: "'Geist', sans-serif" }}
-                className="text-white/40 text-sm text-center mt-3 tracking-wide"
-              >
-                Choose how you want to play
-              </motion.p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-3 mb-4 lg:mb-6"
+            >
+              <div className="h-px flex-1 bg-gradient-to-r from-white/30 to-transparent" />
+              <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/50 text-[10px] tracking-[0.4em] uppercase">
+                New Game
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-l from-white/30 to-transparent" />
+            </motion.div>
 
             {/* Game Mode Cards */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="space-y-2 mb-8"
+              className="space-y-1.5 mb-5 lg:mb-8"
             >
               {gameModes.map((mode, index) => {
                 const Icon = mode.icon;
@@ -304,10 +282,10 @@ export default function Play() {
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     />
 
-                    <div className="relative p-5 flex items-center gap-4">
+                    <div className="relative p-4 lg:p-5 flex items-center gap-4">
                       {/* Icon */}
                       <div className={cn(
-                        "w-10 h-10 flex items-center justify-center transition-colors duration-300",
+                        "w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center transition-colors duration-300",
                         "border",
                         isSelected
                           ? "border-black/20 bg-black/5"
@@ -349,7 +327,7 @@ export default function Play() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
                 className={cn(
-                  "mb-8 border overflow-hidden transition-all duration-500",
+                  "mb-5 lg:mb-8 border overflow-hidden transition-all duration-500",
                   playAsLegend
                     ? "border-white bg-white/5"
                     : "border-white/10"
@@ -361,11 +339,11 @@ export default function Play() {
                     setPlayAsLegend(!playAsLegend);
                     if (playAsLegend) setSelectedHero(null);
                   }}
-                  className="w-full p-5 flex items-center justify-between group"
+                  className="w-full p-4 lg:p-5 flex items-center justify-between group"
                 >
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "w-10 h-10 border flex items-center justify-center transition-all duration-300",
+                      "w-9 h-9 lg:w-10 lg:h-10 border flex items-center justify-center transition-all duration-300",
                       playAsLegend ? "border-white bg-white" : "border-white/20"
                     )}>
                       <Crown className={cn(
@@ -429,7 +407,7 @@ export default function Play() {
                             </p>
                           </div>
                         ) : (
-                          <div className="pt-4 grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+                          <div className="pt-4 grid grid-cols-2 gap-2 max-h-40 lg:max-h-48 overflow-y-auto custom-scrollbar">
                             {legends.map((legend, index) => (
                               <motion.button
                                 key={legend.id}
@@ -497,9 +475,9 @@ export default function Play() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 }}
-              className="mb-8"
+              className="mb-5 lg:mb-8"
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-2 lg:mb-3">
                 <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-[10px] tracking-[0.3em] uppercase">
                   Time Control
                 </span>
@@ -548,30 +526,6 @@ export default function Play() {
                 )}
               </div>
             </motion.button>
-
-            {/* Online Status */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2 }}
-              className="mt-8 flex items-center justify-center"
-            >
-              <div className="flex items-center gap-6 text-white/30">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
-                  </span>
-                  <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-[11px] tracking-wide">
-                    12,453 online
-                  </span>
-                </div>
-                <div className="w-px h-3 bg-white/20" />
-                <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-[11px] tracking-wide">
-                  847 games
-                </span>
-              </div>
-            </motion.div>
           </motion.div>
         </div>
 
@@ -590,24 +544,6 @@ export default function Play() {
             <div className="m-8">
               <ChessBoard isInteractive={false} showCoordinates={true} />
             </div>
-
-            {/* Caption */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2 }}
-              className="mt-12 text-center"
-            >
-              <p
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-white/30 text-sm italic"
-              >
-                &ldquo;In chess, as in life, forethought wins.&rdquo;
-              </p>
-              <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/20 text-[10px] tracking-[0.2em] uppercase mt-2">
-                Charles Buxton
-              </p>
-            </motion.div>
           </motion.div>
         </div>
 
