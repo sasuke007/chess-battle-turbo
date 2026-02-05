@@ -99,13 +99,20 @@ export function useBotMove(options: UseBotMoveOptions): UseBotMoveReturn {
 
         // Find matching legal move (handle promotion format differences)
         // Stockfish returns moves in UCI format: "e2e4" or "e7e8q" (with promotion)
-        const matchingMove = legalMoves.find((move) => {
-          const moveFrom = move.slice(0, 2);
-          const moveTo = move.slice(2, 4);
-          const bestFrom = bestMove.slice(0, 2);
-          const bestTo = bestMove.slice(2, 4);
-          return moveFrom === bestFrom && moveTo === bestTo;
-        });
+
+        // First try exact match (handles promotions correctly)
+        let matchingMove = legalMoves.find((move) => move === bestMove);
+
+        // Fallback: match by squares only (for non-promotion moves where formats might differ)
+        if (!matchingMove) {
+          matchingMove = legalMoves.find((move) => {
+            const moveFrom = move.slice(0, 2);
+            const moveTo = move.slice(2, 4);
+            const bestFrom = bestMove.slice(0, 2);
+            const bestTo = bestMove.slice(2, 4);
+            return moveFrom === bestFrom && moveTo === bestTo;
+          });
+        }
 
         if (matchingMove) {
           return matchingMove;

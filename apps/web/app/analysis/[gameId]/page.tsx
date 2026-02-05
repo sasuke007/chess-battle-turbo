@@ -141,7 +141,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const hasLegendMoves = data.legendMoves.length > 0;
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
+    <div className="min-h-screen bg-black text-white overflow-auto">
       {/* Navbar */}
       <Navbar />
 
@@ -154,15 +154,15 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-8 pt-14 lg:pt-20 h-[100dvh] lg:h-auto flex flex-col lg:block">
+      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-8 lg:pb-12 pt-14 lg:pt-20 flex flex-col">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8"
+          className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8 min-h-0"
         >
           {/* Left - Move List (hidden on mobile) */}
           <div className="lg:col-span-3 order-2 lg:order-1 hidden lg:flex lg:flex-col">
-            <div className="border border-white/10 flex-1 flex flex-col overflow-hidden">
+            <div className="border border-white/10 flex flex-col max-h-[70vh] overflow-hidden">
               <div className="p-4 border-b border-white/10">
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}
@@ -199,10 +199,10 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="mb-3 lg:mb-2 px-2"
+              className="mb-1 lg:mb-1 px-2"
             >
               {/* Single-line compact header */}
-              <div className="flex items-center justify-center gap-2 lg:gap-3 flex-wrap">
+              <div className="flex items-center justify-center gap-x-1.5 gap-y-0.5 lg:gap-x-2 lg:gap-y-0.5 flex-wrap">
                 {/* Tournament name */}
                 {data.tournamentName && (
                   <>
@@ -302,7 +302,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {hasLegendMoves && (
-              <div className="flex items-center justify-center gap-1 mb-3 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-1 mb-1.5 px-2 lg:hidden">
                 <button
                   onClick={() => setActiveTab("legend-moves")}
                   className={cn(
@@ -342,18 +342,8 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
             )}
 
-            {/* Move Counter - Minimal */}
-            <div className="flex items-center justify-center mb-2 px-2">
-              <span
-                style={{ fontFamily: "'Geist', sans-serif" }}
-                className="text-white/40 text-xs font-mono tabular-nums"
-              >
-                {plyIndex}<span className="text-white/20">/</span>{maxPly}
-              </span>
-            </div>
-
             {/* Board */}
-            <div className="mx-0 my-3 lg:my-4 lg:mx-0">
+            <div className="mx-0 mt-6 mb-4 lg:mt-6 lg:mb-4 lg:mx-0">
               <ChessBoard
                 board={activeTab === "legend-moves" ? legendBoard : userBoard}
                 shadowBoard={activeTab === "comparison" ? legendBoard : undefined}
@@ -364,11 +354,12 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 isInteractive={false}
                 gameEndState={null}
                 fadedPieces={activeTab === "legend-moves"}
+                squareSize="md"
               />
             </div>
 
             {/* Navigation Controls */}
-            <div className="flex flex-col lg:flex-row items-center gap-3 lg:gap-2 mt-3 lg:mt-4 px-2 lg:px-0 lg:justify-center">
+            <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-2 mt-6 lg:mt-6 px-2 lg:px-0 lg:justify-center">
               {/* Navigation Buttons */}
               <div className="flex items-center gap-1 lg:gap-1">
                 <button
@@ -498,7 +489,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Legend Key (Mobile) */}
-            <div className="lg:hidden mt-4 px-4">
+            <div className="lg:hidden mt-2 px-4">
               <div className="flex items-center justify-center gap-6 py-3 border-t border-white/10">
                 {activeTab === "your-moves" && (
                   <div className="flex items-center gap-2">
@@ -563,7 +554,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           </div>
 
           {/* Right - Legend Key & Info (hidden on mobile) */}
-          <div className="lg:col-span-3 order-3 hidden lg:block space-y-4">
+          <div className="lg:col-span-3 order-3 hidden lg:flex lg:flex-col max-h-[70vh] overflow-y-auto space-y-4">
             {/* View Mode Tabs - Desktop */}
             {hasLegendMoves && (
               <div className="border border-white/10 p-4">
@@ -767,29 +758,6 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
             )}
 
-            {/* Keyboard Shortcuts */}
-            <div className="border border-white/5 p-5">
-              <p
-                style={{ fontFamily: "'Geist', sans-serif" }}
-                className="text-[10px] tracking-[0.3em] uppercase text-white/30 mb-3"
-              >
-                Keyboard Shortcuts
-              </p>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-white/40">
-                  <span>← →</span>
-                  <span>Navigate moves</span>
-                </div>
-                <div className="flex justify-between text-white/40">
-                  <span>↑ / Home</span>
-                  <span>First move</span>
-                </div>
-                <div className="flex justify-between text-white/40">
-                  <span>↓ / End</span>
-                  <span>Last move</span>
-                </div>
-              </div>
-            </div>
           </div>
         </motion.div>
       </div>

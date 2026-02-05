@@ -617,7 +617,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         </div>
       )}
 
-      {/* Analysis Phase Banner - True overlay, doesn't affect layout */}
+      {/* Analysis Phase Banner - Mobile only overlay */}
       <AnimatePresence>
         {isAnalysisPhase && (
           <motion.div
@@ -625,12 +625,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, transition: { duration: 0.3 } }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-2 left-2 right-2 lg:top-4 lg:left-4 lg:right-4 z-50 pointer-events-none"
+            className="fixed top-2 left-2 right-2 z-50 pointer-events-none lg:hidden"
           >
             {/* Compact banner with glass effect */}
-            <div className="mx-auto max-w-md lg:max-w-lg">
-              <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-2 lg:px-5 lg:py-3 shadow-2xl">
-                <div className="flex items-center justify-center gap-3 lg:gap-5">
+            <div className="mx-auto max-w-md">
+              <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-2 shadow-2xl">
+                <div className="flex items-center justify-center gap-3">
 
                   {/* Countdown number */}
                   <motion.div
@@ -643,31 +643,31 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     <div className="absolute inset-0 blur-lg bg-amber-500/30 rounded-full" />
                     <span
                       style={{ fontFamily: "'Instrument Serif', serif" }}
-                      className="relative text-3xl lg:text-5xl font-normal text-amber-200/90 tabular-nums"
+                      className="relative text-3xl font-normal text-amber-200/90 tabular-nums"
                     >
                       {analysisTimeRemaining}
                     </span>
                   </motion.div>
 
                   {/* Divider */}
-                  <div className="w-px h-8 lg:h-10 bg-white/20" />
+                  <div className="w-px h-8 bg-white/20" />
 
                   {/* Text content */}
                   <div className="text-left">
                     <p
                       style={{ fontFamily: "'Instrument Serif', serif" }}
-                      className="text-white text-sm lg:text-lg tracking-wide"
+                      className="text-white text-sm tracking-wide"
                     >
                       Analysis Time
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <div className={cn(
-                        "w-2.5 h-2.5 lg:w-3 lg:h-3",
+                        "w-2.5 h-2.5",
                         currentTurn === "w" ? "bg-white" : "bg-black border border-white/50"
                       )} />
                       <p
                         style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/50 text-[8px] lg:text-[10px] uppercase tracking-[0.15em] lg:tracking-[0.2em]"
+                        className="text-white/50 text-[8px] uppercase tracking-[0.15em]"
                       >
                         {currentTurn === "w" ? "White" : "Black"} to move
                       </p>
@@ -721,6 +721,84 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           >
             {/* Left - Game Info (hidden on mobile) */}
             <div className="lg:col-span-3 space-y-4 order-2 lg:order-1 hidden lg:block">
+              {/* Analysis Phase - Desktop sidebar version */}
+              <AnimatePresence>
+                {isAnalysisPhase && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+                    className="border border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent p-5"
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <p
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-[10px] tracking-[0.3em] uppercase text-amber-400/60"
+                      >
+                        Analysis Phase
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <div className={cn(
+                          "w-2.5 h-2.5",
+                          currentTurn === "w" ? "bg-white" : "bg-black border border-white/40"
+                        )} />
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-white/40 text-[9px] uppercase tracking-wider"
+                        >
+                          {currentTurn === "w" ? "White" : "Black"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Countdown - prominent display */}
+                    <div className="flex items-center justify-center py-4">
+                      <motion.div
+                        key={analysisTimeRemaining}
+                        initial={{ scale: 1.05, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", damping: 20 }}
+                        className="relative"
+                      >
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 blur-2xl bg-amber-500/20 rounded-full scale-150" />
+                        <span
+                          style={{ fontFamily: "'Instrument Serif', serif" }}
+                          className="relative text-6xl font-normal text-amber-200 tabular-nums"
+                        >
+                          {analysisTimeRemaining}
+                        </span>
+                      </motion.div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-4">
+                      <div className="h-1 bg-white/5 overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-amber-500/60 to-amber-400/40"
+                          initial={{ width: "100%" }}
+                          animate={{
+                            width: totalAnalysisTime > 0
+                              ? `${(analysisTimeRemaining / totalAnalysisTime) * 100}%`
+                              : "0%"
+                          }}
+                          transition={{ duration: 0.3, ease: "linear" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Hint text */}
+                    <p
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-white/30 text-[10px] text-center mt-3 tracking-wide"
+                    >
+                      Study the position before playing
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Current Turn */}
               <div className="border border-white/10 p-5">
                 <p
@@ -847,13 +925,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Center - Chess Board */}
             <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-2xl mx-auto w-full">
-              {/* Tournament Name Banner - compact on mobile */}
+              {/* Tournament Name Banner - compact */}
               {positionInfo?.tournamentName && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="flex items-center justify-center gap-2 lg:gap-3 mb-1 lg:mb-2 px-2"
+                  className="flex items-center justify-center gap-2 lg:gap-3 mb-1 px-2"
                 >
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                   <p
@@ -866,8 +944,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </motion.div>
               )}
 
-              {/* Opponent Clock & Info - compact on mobile */}
-              <div className="flex items-center justify-between mb-2 lg:mb-10 px-2">
+              {/* Opponent Clock & Info */}
+              <div className="flex items-center justify-between mb-2 lg:mb-5 px-2">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 flex items-center justify-center",
@@ -956,8 +1034,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </motion.div>
               )}
 
-              {/* Board - minimal margins on mobile, centered via flex parent */}
-              <div className="mx-0 my-1 lg:my-6">
+              {/* Board - minimal margins on mobile, tighter on desktop */}
+              <div className="mx-0 my-1 lg:my-2">
                 <ChessBoard
                   board={displayPosition.board()}
                   selectedSquare={isViewingHistory ? null : selectedSquare}
@@ -1042,8 +1120,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </motion.div>
               )}
 
-              {/* Player Clock & Info - compact on mobile */}
-              <div className="flex items-center justify-between mt-2 lg:mt-10 px-2">
+              {/* Player Clock & Info */}
+              <div className="flex items-center justify-between mt-2 lg:mt-5 px-2">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 flex items-center justify-center",
