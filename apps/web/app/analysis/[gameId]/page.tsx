@@ -154,7 +154,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-8 lg:pb-12 pt-14 lg:pt-20 flex flex-col">
+      <div className="relative max-w-7xl mx-auto px-4 lg:px-4 pb-4 lg:pb-12 pt-20 lg:pt-20 flex flex-col">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -302,7 +302,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {hasLegendMoves && (
-              <div className="flex items-center justify-center gap-1 mb-1.5 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-1 mb-5 px-2 lg:hidden">
                 <button
                   onClick={() => setActiveTab("legend-moves")}
                   className={cn(
@@ -343,7 +343,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             )}
 
             {/* Board */}
-            <div className="mx-0 mt-6 mb-4 lg:mt-6 lg:mb-4 lg:mx-0">
+            <div className="mx-0 mt-0 mb-3 lg:mt-6 lg:mb-4 lg:mx-0">
               <ChessBoard
                 board={activeTab === "legend-moves" ? legendBoard : userBoard}
                 shadowBoard={activeTab === "comparison" ? legendBoard : undefined}
@@ -359,7 +359,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Navigation Controls */}
-            <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-2 mt-6 lg:mt-6 px-2 lg:px-0 lg:justify-center">
+            <div className="flex flex-row items-center gap-2 mt-2 lg:mt-6 px-2 lg:px-0 justify-center">
               {/* Navigation Buttons */}
               <div className="flex items-center gap-1 lg:gap-1">
                 <button
@@ -466,8 +466,8 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </button>
               </div>
 
-              {/* Separator - Desktop only */}
-              <div className="hidden lg:block w-px h-6 bg-white/10 mx-1" />
+              {/* Separator */}
+              <div className="w-px h-8 lg:h-6 bg-white/10 mx-1" />
 
               {/* Action Buttons */}
               <div className="flex items-center gap-1 lg:gap-1">
@@ -489,7 +489,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Legend Key (Mobile) */}
-            <div className="lg:hidden mt-2 px-4">
+            <div className="lg:hidden mt-1 px-4">
               <div className="flex items-center justify-center gap-6 py-3 border-t border-white/10">
                 {activeTab === "your-moves" && (
                   <div className="flex items-center gap-2">

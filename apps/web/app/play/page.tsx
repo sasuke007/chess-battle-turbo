@@ -336,14 +336,6 @@ export default function Play() {
                           {mode.subtitle}
                         </p>
                       </div>
-
-                      {/* Arrow indicator */}
-                      <ArrowRight className={cn(
-                        "w-4 h-4 transition-all duration-300",
-                        isSelected || isHovered
-                          ? "text-black opacity-100 translate-x-0"
-                          : "text-white opacity-0 -translate-x-2"
-                      )} />
                     </div>
                   </motion.button>
                 );

@@ -91,9 +91,7 @@ give 30 seeconds to access position.
 
 show the original game line after game has ended. 
 
-Also we can show some sort of review of the game and till what point they played the original game position.
-
-
+Also we can show some sort of review of the game and till what point they player play same moves as the legend.
 
 
 
