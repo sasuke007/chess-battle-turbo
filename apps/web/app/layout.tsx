@@ -668,7 +668,7 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-neutral-900`}
+          className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-black`}
         >
           <UserSync />
           {children}
