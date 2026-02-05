@@ -154,7 +154,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 lg:px-4 pb-4 lg:pb-12 pt-20 lg:pt-20 flex flex-col">
+      <div className="relative max-w-7xl mx-auto px-8 lg:px-4 pb-12 lg:pb-12 pt-20 lg:pt-20 flex flex-col">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
