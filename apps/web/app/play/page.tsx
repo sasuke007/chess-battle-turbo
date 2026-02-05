@@ -224,7 +224,7 @@ export default function Play() {
         />
 
         {/* Left Side - Controls */}
-        <div className="flex-1 flex items-center lg:items-start justify-center pt-4 sm:pt-2 lg:pt-6 px-6 sm:px-8 lg:px-12 pb-8 lg:pb-0 relative z-10">
+        <div className="flex-1 flex items-start justify-center pt-4 sm:pt-2 lg:pt-6 px-6 sm:px-8 lg:px-12 pb-8 lg:pb-0 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
