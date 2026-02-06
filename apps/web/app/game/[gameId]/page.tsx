@@ -402,8 +402,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("move_error", (payload: MoveErrorPayload) => {
+      const hadPendingMove = pendingOptimisticMoveRef.current;
+
       // If server sent back the correct board, rollback the optimistic move
-      if (payload.fen && pendingOptimisticMoveRef.current) {
+      if (payload.fen && hadPendingMove) {
         const correctedGame = new Chess(payload.fen);
         setGame(correctedGame);
         setCurrentTurn(correctedGame.turn());
@@ -412,9 +414,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       }
       pendingOptimisticMoveRef.current = false;
 
-      playSound('illegal');
-      if (!isAIGameRef.current) {
-        alert(payload.message || "Invalid move");
+      // Only play error sound / show alert when the player actually had a pending move
+      if (hadPendingMove) {
+        playSound('illegal');
+        if (!isAIGameRef.current) {
+          alert(payload.message || "Invalid move");
+        }
       }
     });
 
