@@ -42,7 +42,9 @@ export default function OnboardingPage() {
 
       router.push("/");
     } catch (err) {
-      console.error("Onboarding error:", err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Onboarding error:", err);
+      }
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setLoading(false);
     }

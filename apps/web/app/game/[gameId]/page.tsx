@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef, use, useMemo } from "react";
 import { Chess, Square, Move, Color } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import ChessBoard from "../../components/ChessBoard";
 import { VictoryConfetti, GameEndOverlay } from "../../components/GameEndEffects";
 import PromotionPopup from "../../components/PromotionPopup";
@@ -12,9 +11,12 @@ import MoveNavigation from "../../components/MoveNavigation";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 import { useChessSound } from "@/lib/hooks/useChessSound";
-import { cn, formatTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { computePositionAtMove, getLastMoveForDisplay } from "@/lib/utils/chess-navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
+import { PlayerInfoCard } from "./PlayerInfoCard";
+import { GameActionButtons } from "./GameActionButtons";
+import { AnalysisPhaseBannerMobile, AnalysisPhaseBannerDesktop } from "./AnalysisPhaseBanner";
 import type {
   Player,
   GameStartedPayload,
@@ -27,6 +29,12 @@ import type {
 } from "@/lib/types/socket-events";
 
 const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+// Static background grid style — never changes
+const backgroundGridStyle = {
+  backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
+  backgroundSize: '60px 60px',
+} as const;
 
 const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const router = useRouter();
@@ -41,6 +49,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [currentTurn, setCurrentTurn] = useState<"w" | "b">("w");
 
   const socketRef = useRef<Socket | null>(null);
+  const pendingOptimisticMoveRef = useRef(false);
   const [myColor, setMyColor] = useState<Color | null>(null);
   const myColorRef = useRef<Color | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -128,11 +137,27 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const handlePromotionSelect = useCallback(
     (piece: "q" | "r" | "b" | "n") => {
       if (!pendingPromotion || !socketRef.current) return;
+      const { from, to } = pendingPromotion;
 
+      // Apply move locally first for instant feedback
+      const tempGame = new Chess(game.fen());
+      try {
+        const move = tempGame.move({ from, to, promotion: piece });
+        setGame(tempGame);
+        setCurrentTurn(tempGame.turn());
+        setMoveHistory(prev => [...prev, move]);
+        setViewingMoveIndex(null);
+        if (!tempGame.isGameOver()) {
+          playSoundForMove(move.san);
+        }
+      } catch { /* Shouldn't happen — we already validated legal moves */ }
+
+      // Send to server (authoritative)
+      pendingOptimisticMoveRef.current = true;
       socketRef.current.emit("make_move", {
         gameReferenceId: gameId,
-        from: pendingPromotion.from,
-        to: pendingPromotion.to,
+        from,
+        to,
         promotion: piece,
       });
 
@@ -140,7 +165,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setSelectedSquare(null);
       setLegalMoves([]);
     },
-    [pendingPromotion, gameId]
+    [pendingPromotion, gameId, game, playSoundForMove]
   );
 
   const handleSquareClick = useCallback(
@@ -182,19 +207,32 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         return;
       }
 
-      if (socketRef.current) {
-        socketRef.current.emit("make_move", {
-          gameReferenceId: gameId,
-          from,
-          to,
-          promotion: "q",
-        });
-      }
+      // Apply move locally first for instant feedback
+      const tempGame = new Chess(game.fen());
+      try {
+        const move = tempGame.move({ from, to, promotion: "q" });
+        setGame(tempGame);
+        setCurrentTurn(tempGame.turn());
+        setMoveHistory(prev => [...prev, move]);
+        setViewingMoveIndex(null);
+        if (!tempGame.isGameOver()) {
+          playSoundForMove(move.san);
+        }
+      } catch { /* Shouldn't happen — we already validated legal moves */ }
+
+      // Send to server (authoritative)
+      pendingOptimisticMoveRef.current = true;
+      socketRef.current?.emit("make_move", {
+        gameReferenceId: gameId,
+        from,
+        to,
+        promotion: "q",
+      });
 
       setSelectedSquare(null);
       setLegalMoves([]);
     },
-    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex, isAnalysisPhase]
+    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex, isAnalysisPhase, playSoundForMove]
   );
 
   // Game action handlers
@@ -335,30 +373,45 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("move_made", (payload: MoveMadePayload) => {
+      const wasOurMove = pendingOptimisticMoveRef.current;
+      pendingOptimisticMoveRef.current = false;
+
+      // Always sync to server truth
       const newGame = new Chess(payload.fen);
       setGame(newGame);
       setCurrentTurn(payload.turn);
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
-
-      // Update move history by adding the new move
-      setMoveHistory(prev => [...prev, {
-        from: payload.from,
-        to: payload.to,
-        san: payload.san,
-        promotion: payload.promotion,
-      } as Move]);
-
-      // Auto-sync to live position when a move is made
       setViewingMoveIndex(null);
 
-      // Play sound for the move using the SAN from payload
-      if (!newGame.isGameOver()) {
-        playSoundForMove(payload.san);
+      if (wasOurMove) {
+        // Board already updated optimistically — replace last history entry with server-confirmed version
+        setMoveHistory(prev => [
+          ...prev.slice(0, -1),
+          { from: payload.from, to: payload.to, san: payload.san, promotion: payload.promotion } as Move,
+        ]);
+      } else {
+        // Opponent's move — add to history and play sound
+        setMoveHistory(prev => [...prev, {
+          from: payload.from, to: payload.to, san: payload.san, promotion: payload.promotion,
+        } as Move]);
+        if (!newGame.isGameOver()) {
+          playSoundForMove(payload.san);
+        }
       }
     });
 
     socketRef.current.on("move_error", (payload: MoveErrorPayload) => {
+      // If server sent back the correct board, rollback the optimistic move
+      if (payload.fen && pendingOptimisticMoveRef.current) {
+        const correctedGame = new Chess(payload.fen);
+        setGame(correctedGame);
+        setCurrentTurn(correctedGame.turn());
+        // Remove the optimistic move from history
+        setMoveHistory(prev => prev.slice(0, -1));
+      }
+      pendingOptimisticMoveRef.current = false;
+
       playSound('illegal');
       if (!isAIGameRef.current) {
         alert(payload.message || "Invalid move");
@@ -477,7 +530,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           });
         }
       } catch (error) {
-        console.error("Error computing bot move:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error computing bot move:", error);
+        }
         if (legalMoves.length > 0 && socketRef.current) {
           const fallbackMove = legalMoves[0]!;
           socketRef.current.emit("make_move", {
@@ -618,76 +673,17 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       )}
 
       {/* Analysis Phase Banner - Mobile only overlay */}
-      <AnimatePresence>
-        {isAnalysisPhase && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, transition: { duration: 0.3 } }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-2 left-2 right-2 z-50 pointer-events-none lg:hidden"
-          >
-            {/* Compact banner with glass effect */}
-            <div className="mx-auto max-w-md">
-              <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-2 shadow-2xl">
-                <div className="flex items-center justify-center gap-3">
-
-                  {/* Countdown number */}
-                  <motion.div
-                    key={analysisTimeRemaining}
-                    initial={{ scale: 1.1, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", damping: 15 }}
-                    className="relative"
-                  >
-                    <div className="absolute inset-0 blur-lg bg-amber-500/30 rounded-full" />
-                    <span
-                      style={{ fontFamily: "'Instrument Serif', serif" }}
-                      className="relative text-3xl font-normal text-amber-200/90 tabular-nums"
-                    >
-                      {analysisTimeRemaining}
-                    </span>
-                  </motion.div>
-
-                  {/* Divider */}
-                  <div className="w-px h-8 bg-white/20" />
-
-                  {/* Text content */}
-                  <div className="text-left">
-                    <p
-                      style={{ fontFamily: "'Instrument Serif', serif" }}
-                      className="text-white text-sm tracking-wide"
-                    >
-                      Analysis Time
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <div className={cn(
-                        "w-2.5 h-2.5",
-                        currentTurn === "w" ? "bg-white" : "bg-black border border-white/50"
-                      )} />
-                      <p
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/50 text-[8px] uppercase tracking-[0.15em]"
-                      >
-                        {currentTurn === "w" ? "White" : "Black"} to move
-                      </p>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnalysisPhaseBannerMobile
+        isAnalysisPhase={isAnalysisPhase}
+        analysisTimeRemaining={analysisTimeRemaining}
+        totalAnalysisTime={totalAnalysisTime}
+        currentTurn={currentTurn}
+      />
 
       {/* Subtle grid background */}
       <div
         className="fixed inset-0 opacity-[0.015] pointer-events-none"
-        style={{
-          backgroundImage: `linear-gradient(90deg, white 1px, transparent 1px), linear-gradient(white 1px, transparent 1px)`,
-          backgroundSize: '60px 60px',
-        }}
+        style={backgroundGridStyle}
       />
 
       <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:pt-4 h-[100dvh] lg:h-auto flex flex-col lg:block">
@@ -720,87 +716,17 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8"
           >
             {/* Left - Game Info (hidden on mobile) */}
-            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1 hidden lg:block">
+            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1 hidden lg:flex lg:flex-col lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden">
               {/* Analysis Phase - Desktop sidebar version */}
-              <AnimatePresence>
-                {isAnalysisPhase && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-                    className="border border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent p-5"
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <p
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-[10px] tracking-[0.3em] uppercase text-amber-400/60"
-                      >
-                        Analysis Phase
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <div className={cn(
-                          "w-2.5 h-2.5",
-                          currentTurn === "w" ? "bg-white" : "bg-black border border-white/40"
-                        )} />
-                        <span
-                          style={{ fontFamily: "'Geist', sans-serif" }}
-                          className="text-white/40 text-[9px] uppercase tracking-wider"
-                        >
-                          {currentTurn === "w" ? "White" : "Black"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Countdown - prominent display */}
-                    <div className="flex items-center justify-center py-4">
-                      <motion.div
-                        key={analysisTimeRemaining}
-                        initial={{ scale: 1.05, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", damping: 20 }}
-                        className="relative"
-                      >
-                        {/* Glow effect */}
-                        <div className="absolute inset-0 blur-2xl bg-amber-500/20 rounded-full scale-150" />
-                        <span
-                          style={{ fontFamily: "'Instrument Serif', serif" }}
-                          className="relative text-6xl font-normal text-amber-200 tabular-nums"
-                        >
-                          {analysisTimeRemaining}
-                        </span>
-                      </motion.div>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="mt-4">
-                      <div className="h-1 bg-white/5 overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-amber-500/60 to-amber-400/40"
-                          initial={{ width: "100%" }}
-                          animate={{
-                            width: totalAnalysisTime > 0
-                              ? `${(analysisTimeRemaining / totalAnalysisTime) * 100}%`
-                              : "0%"
-                          }}
-                          transition={{ duration: 0.3, ease: "linear" }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Hint text */}
-                    <p
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/30 text-[10px] text-center mt-3 tracking-wide"
-                    >
-                      Study the position before playing
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <AnalysisPhaseBannerDesktop
+                isAnalysisPhase={isAnalysisPhase}
+                analysisTimeRemaining={analysisTimeRemaining}
+                totalAnalysisTime={totalAnalysisTime}
+                currentTurn={currentTurn}
+              />
 
               {/* Current Turn */}
-              <div className="border border-white/10 p-5">
+              <div className="border border-white/10 p-5 shrink-0">
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}
                   className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
@@ -888,14 +814,14 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Move History */}
-              <div className="border border-white/10 p-5">
+              <div className="border border-white/10 p-5 min-h-0 flex-1 flex flex-col">
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3 shrink-0"
                 >
                   Moves
                 </p>
-                <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-1">
+                <div className="overflow-y-auto custom-scrollbar space-y-1 min-h-0">
                   {moveHistory.length === 0 ? (
                     <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/30 text-sm">
                       No moves yet
@@ -945,63 +871,18 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Opponent Clock & Info */}
-              <div className="flex items-center justify-between mb-2 lg:mb-5 px-2">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-8 h-8 flex items-center justify-center",
-                    myColor === "w" ? "bg-black border border-white/30" : "bg-white"
-                  )}>
-                    <span className={myColor === "w" ? "text-white" : "text-black"}>
-                      {myColor === "w" ? "♚" : "♔"}
-                    </span>
-                  </div>
-                  <div>
-                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
-                      {myColor === "w" ? blackPlayer?.name || "Black" : whitePlayer?.name || "White"}
-                      {isAIGame && botColor && myColor !== botColor && (
-                        <span className="text-white/40"> (Bot)</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {positionInfo && (
-                    <div className="flex items-center gap-2">
-                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
-                        <span className="text-white/40">as </span>
-                        {myColor === "b"
-                          ? (positionInfo.whitePlayerName || "hoodie guy")
-                          : (positionInfo.blackPlayerName || "hoodie guy")
-                        }
-                      </p>
-                      <div className="w-8 h-8 bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden relative">
-                        {(myColor === "b" ? positionInfo.whitePlayerImageUrl : positionInfo.blackPlayerImageUrl) ? (
-                          <Image
-                            src={myColor === "b" ? positionInfo.whitePlayerImageUrl! : positionInfo.blackPlayerImageUrl!}
-                            alt="Legend"
-                            fill
-                            className="object-cover"
-                            sizes="32px"
-                          />
-                        ) : (
-                          <span className={cn(
-                            "text-sm",
-                            myColor === "b" ? "text-white" : "text-white/60"
-                          )}>
-                            {myColor === "b" ? "♔" : "♚"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  <div className={cn(
-                    "px-4 py-2 font-mono text-xl",
-                    currentTurn !== myColor ? "bg-white text-black" : "bg-white/10 text-white"
-                  )}>
-                    {formatTime(myColor === "w" ? blackTime : whiteTime)}
-                  </div>
-                </div>
-              </div>
+              <PlayerInfoCard
+                isOpponent={true}
+                myColor={myColor}
+                whitePlayer={whitePlayer}
+                blackPlayer={blackPlayer}
+                whiteTime={whiteTime}
+                blackTime={blackTime}
+                currentTurn={currentTurn}
+                isAIGame={isAIGame}
+                botColor={botColor}
+                positionInfo={positionInfo}
+              />
 
               {/* Incoming Draw Offer Banner - compact on mobile */}
               {pendingDrawOffer && !gameOver && (
@@ -1069,28 +950,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Mobile Game Actions - below navigation */}
               {!gameOver && (
-                <div className="lg:hidden flex items-center justify-center gap-2 mt-2 px-2">
-                  <button
-                    onClick={handleOfferDraw}
-                    disabled={drawOffered}
-                    className={cn(
-                      "h-10 px-5 text-sm border transition-colors",
-                      drawOffered
-                        ? "border-white/10 text-white/30 cursor-not-allowed bg-white/5"
-                        : "border-white/20 text-white bg-white/5 hover:bg-white/15 active:bg-white/20"
-                    )}
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    {drawOffered ? "Offered" : "Draw"}
-                  </button>
-                  <button
-                    onClick={handleResign}
-                    className="h-10 px-5 text-sm border border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 transition-colors"
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    Resign
-                  </button>
-                </div>
+                <GameActionButtons
+                  variant="mobile"
+                  drawOffered={drawOffered}
+                  onOfferDraw={handleOfferDraw}
+                  onResign={handleResign}
+                />
               )}
 
               {/* Mobile Post-Game Actions */}
@@ -1121,61 +986,18 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Player Clock & Info */}
-              <div className="flex items-center justify-between mt-2 lg:mt-5 px-2">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-8 h-8 flex items-center justify-center",
-                    myColor === "w" ? "bg-white" : "bg-black border border-white/30"
-                  )}>
-                    <span className={myColor === "w" ? "text-black" : "text-white"}>
-                      {myColor === "w" ? "♔" : "♚"}
-                    </span>
-                  </div>
-                  <div>
-                    <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
-                      {myColor === "w" ? whitePlayer?.name || "White" : blackPlayer?.name || "Black"}
-                      <span className="text-white/40"> (You)</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {positionInfo && (
-                    <div className="flex items-center gap-2">
-                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
-                        <span className="text-white/40">as </span>
-                        {myColor === "w"
-                          ? (positionInfo.whitePlayerName || "hoodie guy")
-                          : (positionInfo.blackPlayerName || "hoodie guy")
-                        }
-                      </p>
-                      <div className="w-8 h-8 bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden relative">
-                        {(myColor === "w" ? positionInfo.whitePlayerImageUrl : positionInfo.blackPlayerImageUrl) ? (
-                          <Image
-                            src={myColor === "w" ? positionInfo.whitePlayerImageUrl! : positionInfo.blackPlayerImageUrl!}
-                            alt="Legend"
-                            fill
-                            className="object-cover"
-                            sizes="32px"
-                          />
-                        ) : (
-                          <span className={cn(
-                            "text-sm",
-                            myColor === "w" ? "text-white" : "text-white/60"
-                          )}>
-                            {myColor === "w" ? "♔" : "♚"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  <div className={cn(
-                    "px-4 py-2 font-mono text-xl",
-                    currentTurn === myColor ? "bg-white text-black" : "bg-white/10 text-white"
-                  )}>
-                    {formatTime(myColor === "w" ? whiteTime : blackTime)}
-                  </div>
-                </div>
-              </div>
+              <PlayerInfoCard
+                isOpponent={false}
+                myColor={myColor}
+                whitePlayer={whitePlayer}
+                blackPlayer={blackPlayer}
+                whiteTime={whiteTime}
+                blackTime={blackTime}
+                currentTurn={currentTurn}
+                isAIGame={isAIGame}
+                botColor={botColor}
+                positionInfo={positionInfo}
+              />
             </div>
 
             {/* Right - Controls and info */}
@@ -1222,34 +1044,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Game Actions - Desktop */}
               {!gameOver && (
-                <div className="border border-white/10 p-5 space-y-3">
-                  <p
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-[10px] tracking-[0.3em] uppercase text-white/40"
-                  >
-                    Game Actions
-                  </p>
-                  <button
-                    onClick={handleOfferDraw}
-                    disabled={drawOffered}
-                    className={cn(
-                      "w-full py-2 border transition-colors",
-                      drawOffered
-                        ? "border-white/10 text-white/30 cursor-not-allowed"
-                        : "border-white/20 text-white/60 hover:border-white/40 hover:text-white"
-                    )}
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    {drawOffered ? "Draw Offered" : "Offer Draw"}
-                  </button>
-                  <button
-                    onClick={handleResign}
-                    className="w-full py-2 border border-red-500/30 text-red-400/60 hover:border-red-500/50 hover:text-red-400 transition-colors"
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    Resign
-                  </button>
-                </div>
+                <GameActionButtons
+                  variant="desktop"
+                  drawOffered={drawOffered}
+                  onOfferDraw={handleOfferDraw}
+                  onResign={handleResign}
+                />
               )}
 
               {/* Decorative element */}

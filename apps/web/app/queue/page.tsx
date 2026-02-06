@@ -93,7 +93,9 @@ function QueueContent() {
         setQueueState("searching");
       }
     } catch (error) {
-      console.error("Error creating match request:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error creating match request:", error);
+      }
       setErrorMessage(error instanceof Error ? error.message : "Failed to create match request");
       setQueueState("error");
     } finally {
@@ -179,7 +181,9 @@ function QueueContent() {
           }),
         });
       } catch (error) {
-        console.error("Error cancelling queue entry on timeout:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error cancelling queue entry on timeout:", error);
+        }
       }
     }
 
@@ -188,7 +192,9 @@ function QueueContent() {
   }, [userObject?.user?.referenceId, queueReferenceId]);
 
   const handleError = useCallback((error: string) => {
-    console.error("Matchmaking error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Matchmaking error:", error);
+    }
   }, []);
 
   const matchmaking = useMatchmaking({
@@ -212,7 +218,9 @@ function QueueContent() {
           }),
         });
       } catch (error) {
-        console.error("Error cancelling:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error cancelling:", error);
+        }
       }
     }
     router.replace("/play");
@@ -265,7 +273,9 @@ function QueueContent() {
 
       router.replace(`/game/${data.data.game.referenceId}`);
     } catch (error) {
-      console.error("Error creating AI game:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error creating AI game:", error);
+      }
       setErrorMessage(error instanceof Error ? error.message : "Failed to create AI game");
       setQueueState("error");
     } finally {

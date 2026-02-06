@@ -201,102 +201,95 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               transition={{ delay: 0.1 }}
               className="mb-1 lg:mb-1 px-2"
             >
-              {/* Single-line compact header */}
-              <div className="flex items-center justify-center gap-x-1.5 gap-y-0.5 lg:gap-x-2 lg:gap-y-0.5 flex-wrap">
-                {/* Tournament name */}
-                {data.tournamentName && (
-                  <>
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/25 text-[10px] lg:text-xs"
-                    >
-                      {data.tournamentName}
-                    </span>
-                    {(data.whitePlayerName || data.blackPlayerName) && (
-                      <span className="text-white/20">·</span>
-                    )}
-                  </>
-                )}
-
-                {/* Legend players + result */}
-                {(data.whitePlayerName || data.blackPlayerName) && (
-                  <div className="flex items-center gap-1.5 lg:gap-2">
-                    <span
-                      style={{ fontFamily: "'Instrument Serif', serif" }}
-                      className="text-sky-300/60 text-sm lg:text-base"
-                    >
-                      {data.whitePlayerName || "White"}
-                    </span>
-                    {data.legendGameResult && (
+              {/* Two-line header */}
+              <div className="flex flex-col items-center gap-0.5">
+                {/* Line 1: Tournament + Players */}
+                <div className="flex items-center justify-center gap-1.5 lg:gap-2 flex-wrap">
+                  {data.tournamentName && (
+                    <>
                       <span
                         style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-sky-400/70 text-xs lg:text-sm font-medium"
+                        className="text-white/25 text-[10px] lg:text-xs"
                       >
-                        {data.legendGameResult === "white_won" && "1–0"}
-                        {data.legendGameResult === "black_won" && "0–1"}
-                        {data.legendGameResult === "draw" && "½–½"}
+                        {data.tournamentName}
                       </span>
-                    )}
-                    {!data.legendGameResult && (
-                      <span className="text-white/20 text-xs">vs</span>
-                    )}
-                    <span
-                      style={{ fontFamily: "'Instrument Serif', serif" }}
-                      className="text-sky-300/60 text-sm lg:text-base"
-                    >
-                      {data.blackPlayerName || "Black"}
-                    </span>
-                  </div>
-                )}
-
-                {/* Separator */}
-                {(data.whitePlayerName || data.blackPlayerName || data.tournamentName) && data.userGameOutcome && (
-                  <span className="text-white/15 hidden sm:inline">|</span>
-                )}
-
-                {/* Your result (compact) */}
-                {data.userGameOutcome && (
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/40 text-[10px] lg:text-xs uppercase tracking-wider"
-                    >
-                      You
-                    </span>
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className={cn(
-                        "text-xs lg:text-sm font-medium px-1.5 py-0.5",
-                        data.userGameOutcome === "win" && "text-amber-400 bg-amber-400/10",
-                        data.userGameOutcome === "loss" && "text-white/50 bg-white/5",
-                        data.userGameOutcome === "draw" && "text-white/50 bg-white/5"
+                      {(data.whitePlayerName || data.blackPlayerName) && (
+                        <span className="text-white/20">·</span>
                       )}
-                    >
-                      {data.userGameOutcome === "win" && "Won"}
-                      {data.userGameOutcome === "loss" && "Lost"}
-                      {data.userGameOutcome === "draw" && "Drew"}
-                    </span>
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/30 text-[10px] lg:text-xs"
-                    >
-                      as {data.userColor === "w" ? "White" : "Black"}
-                    </span>
-                  </div>
-                )}
+                    </>
+                  )}
+                  {(data.whitePlayerName || data.blackPlayerName) && (
+                    <div className="flex items-center gap-1.5 lg:gap-2">
+                      <span
+                        style={{ fontFamily: "'Instrument Serif', serif" }}
+                        className="text-sky-300/60 text-sm lg:text-base"
+                      >
+                        {data.whitePlayerName || "White"}
+                      </span>
+                      {data.legendGameResult && (
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-sky-400/70 text-xs lg:text-sm font-medium"
+                        >
+                          {data.legendGameResult === "white_won" && "1–0"}
+                          {data.legendGameResult === "black_won" && "0–1"}
+                          {data.legendGameResult === "draw" && "½–½"}
+                        </span>
+                      )}
+                      {!data.legendGameResult && (
+                        <span className="text-white/20 text-xs">vs</span>
+                      )}
+                      <span
+                        style={{ fontFamily: "'Instrument Serif', serif" }}
+                        className="text-sky-300/60 text-sm lg:text-base"
+                      >
+                        {data.blackPlayerName || "Black"}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Separator */}
-                {(data.whitePlayerName || data.blackPlayerName || data.tournamentName || data.userGameOutcome) && (
-                  <span className="text-white/15 hidden sm:inline">|</span>
-                )}
-
-                {/* Move info (integrated) */}
-                <span
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-white/30 text-[10px] lg:text-xs"
-                >
-                  from move {data.moveNumberStart}
-                </span>
+                {/* Line 2: Your result + move info */}
+                <div className="flex items-center justify-center gap-1.5 lg:gap-2">
+                  {data.userGameOutcome && (
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-white/40 text-[10px] lg:text-xs uppercase tracking-wider"
+                      >
+                        You
+                      </span>
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className={cn(
+                          "text-xs lg:text-sm font-medium px-1.5 py-0.5",
+                          data.userGameOutcome === "win" && "text-amber-400 bg-amber-400/10",
+                          data.userGameOutcome === "loss" && "text-white/50 bg-white/5",
+                          data.userGameOutcome === "draw" && "text-white/50 bg-white/5"
+                        )}
+                      >
+                        {data.userGameOutcome === "win" && "Won"}
+                        {data.userGameOutcome === "loss" && "Lost"}
+                        {data.userGameOutcome === "draw" && "Drew"}
+                      </span>
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-white/30 text-[10px] lg:text-xs"
+                      >
+                        as {data.userColor === "w" ? "White" : "Black"}
+                      </span>
+                    </div>
+                  )}
+                  {data.userGameOutcome && (
+                    <span className="text-white/15">·</span>
+                  )}
+                  <span
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-white/30 text-[10px] lg:text-xs"
+                  >
+                    from move {data.moveNumberStart}
+                  </span>
+                </div>
               </div>
             </motion.div>
 

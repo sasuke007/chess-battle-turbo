@@ -102,7 +102,9 @@ export function useMatchmaking(
           setStatus(newStatus);
         }
       } catch (error) {
-        console.error("Error polling match status:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error polling match status:", error);
+        }
         // Don't stop polling on network error - try again next interval
       }
     };
@@ -133,7 +135,9 @@ export function useMatchmaking(
       // The cancel API will be called from the queue page with the full data
       setStatus("CANCELLED");
     } catch (error) {
-      console.error("Error cancelling match request:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error cancelling match request:", error);
+      }
       onErrorRef.current(
         error instanceof Error ? error.message : "Failed to cancel"
       );

@@ -10,6 +10,17 @@ type PieceInfo = {
   color: Color;
 } | null;
 
+// Static size configuration — never depends on props/state
+const sizeConfig = {
+  sm: "w-8 h-8 sm:w-9 sm:h-9",
+  md: "w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14",
+  lg: "w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16",
+} as const;
+
+// Static arrays for square notation conversion
+const fileArr = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
+const rankArr = ["8", "7", "6", "5", "4", "3", "2", "1"] as const;
+
 type ChessProps = {
   board?: PieceInfo[][];
   squareSize?: "sm" | "md" | "lg";
@@ -43,13 +54,6 @@ const ChessBoard = ({
   shadowLastMove = null,
   fadedPieces = false,
 }: ChessProps) => {
-  // Size configurations
-  const sizeConfig = {
-    sm: "w-8 h-8 sm:w-9 sm:h-9",
-    md: "w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14",
-    lg: "w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16",
-  };
-
   // Flip the board if player is black
   const displayBoard =
     playerColor === "b"
@@ -76,9 +80,6 @@ const ChessBoard = ({
     rowIndex: number,
     columnIndex: number
   ): Square => {
-    const fileArr = ["a", "b", "c", "d", "e", "f", "g", "h"];
-    const rankArr = ["8", "7", "6", "5", "4", "3", "2", "1"];
-
     let adjustedRow = rowIndex;
     let adjustedCol = columnIndex;
 

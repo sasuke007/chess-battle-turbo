@@ -59,7 +59,9 @@ export function useRequireAuth(): UseRequireAuthReturn {
         router.push("/sign-in");
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error fetching user data:", error);
+      }
       router.push("/sign-in");
     } finally {
       isFetchingRef.current = false;
@@ -112,7 +114,9 @@ export function useRequireAuth(): UseRequireAuthReturn {
         }
       })
       .catch((error) => {
-        console.error("Error fetching user data:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error fetching user data:", error);
+        }
         router.push("/sign-in");
       })
       .finally(() => {

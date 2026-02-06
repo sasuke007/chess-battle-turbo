@@ -47,6 +47,7 @@ export interface MoveMadePayload {
 
 export interface MoveErrorPayload {
   message: string;
+  fen?: string;
 }
 
 export interface ClockUpdatePayload {

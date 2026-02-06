@@ -119,10 +119,14 @@ export function useBotMove(options: UseBotMoveOptions): UseBotMoveReturn {
         }
 
         // Fallback if no exact match (shouldn't happen with valid FEN)
-        console.warn("Stockfish move not found in legal moves, using first legal move");
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Stockfish move not found in legal moves, using first legal move");
+        }
         return legalMoves[0]!;
       } catch (error) {
-        console.error("Stockfish error, using first legal move:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Stockfish error, using first legal move:", error);
+        }
         return legalMoves[0]!;
       } finally {
         setIsThinking(false);

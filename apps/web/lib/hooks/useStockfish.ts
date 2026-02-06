@@ -28,7 +28,9 @@ export function useStockfish(): UseStockfishReturn {
     // Only run on client
     if (typeof window === "undefined") return;
 
-    console.log("[Stockfish] Initializing Web Worker...");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Stockfish] Initializing Web Worker...");
+    }
 
     // Use pure JavaScript version (no WASM) for better compatibility
     const worker = new Worker("/workers/stockfish-pure.js");
@@ -38,13 +40,17 @@ export function useStockfish(): UseStockfishReturn {
       const line = event.data as string;
 
       // Log important messages for debugging
-      if (line.includes("uciok") || line.includes("bestmove") || line.includes("error")) {
-        console.log("[Stockfish]", line);
+      if (process.env.NODE_ENV === 'development') {
+        if (line.includes("uciok") || line.includes("bestmove") || line.includes("error")) {
+          console.log("[Stockfish]", line);
+        }
       }
 
       // Engine ready
       if (line === "uciok") {
-        console.log("[Stockfish] Engine ready!");
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[Stockfish] Engine ready!");
+        }
         setIsReady(true);
       }
 
@@ -52,7 +58,9 @@ export function useStockfish(): UseStockfishReturn {
       if (line.startsWith("bestmove")) {
         const parts = line.split(" ");
         const move = parts[1]; // "bestmove e2e4 ponder e7e5" → "e2e4"
-        console.log("[Stockfish] Best move:", move);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[Stockfish] Best move:", move);
+        }
 
         // Clear timeout since we got a response
         if (timeoutRef.current) {
@@ -70,7 +78,9 @@ export function useStockfish(): UseStockfishReturn {
     };
 
     worker.onerror = (error) => {
-      console.error("[Stockfish] Worker error:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("[Stockfish] Worker error:", error);
+      }
 
       // Clear timeout on error
       if (timeoutRef.current) {
@@ -90,7 +100,9 @@ export function useStockfish(): UseStockfishReturn {
     worker.postMessage("uci");
 
     return () => {
-      console.log("[Stockfish] Terminating worker");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[Stockfish] Terminating worker");
+      }
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -102,13 +114,17 @@ export function useStockfish(): UseStockfishReturn {
     (fen: string, depth: number): Promise<string> => {
       return new Promise((resolve, reject) => {
         if (!workerRef.current) {
-          console.error("[Stockfish] Worker not initialized");
+          if (process.env.NODE_ENV === 'development') {
+            console.error("[Stockfish] Worker not initialized");
+          }
           reject(new Error("Stockfish worker not initialized"));
           return;
         }
 
         if (!isReady) {
-          console.warn("[Stockfish] Engine not ready yet, rejecting request");
+          if (process.env.NODE_ENV === 'development') {
+            console.warn("[Stockfish] Engine not ready yet, rejecting request");
+          }
           reject(new Error("Stockfish not ready"));
           return;
         }
@@ -124,7 +140,9 @@ export function useStockfish(): UseStockfishReturn {
 
         // Set timeout to prevent hanging
         timeoutRef.current = setTimeout(() => {
-          console.error("[Stockfish] Timeout - no response in", STOCKFISH_TIMEOUT_MS, "ms");
+          if (process.env.NODE_ENV === 'development') {
+            console.error("[Stockfish] Timeout - no response in", STOCKFISH_TIMEOUT_MS, "ms");
+          }
           if (rejectRef.current) {
             rejectRef.current(new Error("Stockfish timeout"));
             resolveRef.current = null;
@@ -137,8 +155,10 @@ export function useStockfish(): UseStockfishReturn {
         }, STOCKFISH_TIMEOUT_MS);
 
         const worker = workerRef.current;
-        console.log(`[Stockfish] Searching: depth=${depth}`);
-        console.log(`[Stockfish] FEN: ${fen}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Stockfish] Searching: depth=${depth}`);
+          console.log(`[Stockfish] FEN: ${fen}`);
+        }
 
         // Send UCI commands
         worker.postMessage("ucinewgame");
@@ -151,7 +171,9 @@ export function useStockfish(): UseStockfishReturn {
   );
 
   const stopSearch = useCallback(() => {
-    console.log("[Stockfish] Stopping search");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Stockfish] Stopping search");
+    }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;

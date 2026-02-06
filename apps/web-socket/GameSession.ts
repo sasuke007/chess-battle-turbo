@@ -324,20 +324,21 @@ export class GameSession {
     promotion?: "q" | "r" | "b" | "n"
   ): Promise<void> {
     if (this.gameEnded) {
-      socket.emit("move_error", { message: "Game has ended" });
+      socket.emit("move_error", { message: "Game has ended", fen: this.chess.fen() });
       return;
     }
 
     // Block moves during analysis phase
     if (this.isAnalysisPhase) {
       socket.emit("move_error", {
-        message: "Analysis in progress. Please wait for the countdown to finish."
+        message: "Analysis in progress. Please wait for the countdown to finish.",
+        fen: this.chess.fen(),
       });
       return;
     }
 
     if (!this.gameStarted) {
-      socket.emit("move_error", { message: "Game has not started yet" });
+      socket.emit("move_error", { message: "Game has not started yet", fen: this.chess.fen() });
       return;
     }
 
@@ -346,7 +347,7 @@ export class GameSession {
     const player = this.getPlayerBySocket(socket);
 
     if (!player) {
-      socket.emit("move_error", { message: "You are not in this game" });
+      socket.emit("move_error", { message: "You are not in this game", fen: this.chess.fen() });
       return;
     }
 
@@ -357,7 +358,7 @@ export class GameSession {
       // (they send their own moves AND the bot's moves computed client-side)
       const isHumanPlayer = player.color === this.humanPlayerColor;
       if (!isHumanPlayer) {
-        socket.emit("move_error", { message: "You are not in this game" });
+        socket.emit("move_error", { message: "You are not in this game", fen: this.chess.fen() });
         return;
       }
       // Allow the move regardless of whose turn it is
@@ -365,7 +366,7 @@ export class GameSession {
     } else {
       // Regular game: strict turn checking
       if (player.color !== currentTurn) {
-        socket.emit("move_error", { message: "It's not your turn" });
+        socket.emit("move_error", { message: "It's not your turn", fen: this.chess.fen() });
         return;
       }
     }
@@ -375,7 +376,7 @@ export class GameSession {
     try {
       move = this.chess.move({ from, to, promotion: promotion || "q" });
     } catch (error) {
-      socket.emit("move_error", { message: "Invalid move" });
+      socket.emit("move_error", { message: "Invalid move", fen: this.chess.fen() });
       return;
     }
 

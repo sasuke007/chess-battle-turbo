@@ -11,6 +11,42 @@ import { Navbar } from "@/app/components/Navbar";
 import { Users, Zap, Crown, Bot, ArrowRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
+// Static game mode definitions — never change at runtime
+const gameModes = [
+  {
+    id: "quick" as const,
+    title: "Quick Match",
+    subtitle: "Find an opponent instantly",
+    icon: Zap,
+  },
+  {
+    id: "friend" as const,
+    title: "Challenge Friend",
+    subtitle: "Share a private invitation",
+    icon: Users,
+  },
+  {
+    id: "ai" as const,
+    title: "Play the Machine",
+    subtitle: "Test your skills against AI",
+    icon: Bot,
+  },
+];
+
+// Static gradient styles for background decorations
+const diagonalGradientStyle = {
+  background: `linear-gradient(135deg,
+    rgba(255,255,255,0.03) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255,255,255,0.02) 100%
+  )`,
+} as const;
+
+const noiseTextureStyle = {
+  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+} as const;
+
 export default function Play() {
   const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
@@ -48,7 +84,9 @@ export default function Play() {
           setLegends(data.data.legends);
         }
       } catch (error) {
-        console.error("Failed to fetch legends:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Failed to fetch legends:", error);
+        }
       } finally {
         setLegendsLoading(false);
       }
@@ -103,7 +141,9 @@ export default function Play() {
 
         router.push(`/game/${data.data.game.referenceId}`);
       } catch (error) {
-        console.error("Error creating AI game:", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error creating AI game:", error);
+        }
         alert(error instanceof Error ? error.message : "Failed to create AI game");
         setIsCreatingGame(false);
       }
@@ -138,32 +178,13 @@ export default function Play() {
       alert("Game link copied to clipboard! Share it with your friend.");
       router.push(`/game/${gameRef}`);
     } catch (error) {
-      console.error("Error creating game:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error creating game:", error);
+      }
       alert(error instanceof Error ? error.message : "Failed to create game");
       setIsCreatingGame(false);
     }
   };
-
-  const gameModes = [
-    {
-      id: "quick" as const,
-      title: "Quick Match",
-      subtitle: "Find an opponent instantly",
-      icon: Zap,
-    },
-    {
-      id: "friend" as const,
-      title: "Challenge Friend",
-      subtitle: "Share a private invitation",
-      icon: Users,
-    },
-    {
-      id: "ai" as const,
-      title: "Play the Machine",
-      subtitle: "Test your skills against AI",
-      icon: Bot,
-    },
-  ];
 
   if (!isReady) {
     return (
@@ -205,22 +226,13 @@ export default function Play() {
         {/* Dramatic diagonal gradient */}
         <div
           className="absolute inset-0 opacity-60"
-          style={{
-            background: `linear-gradient(135deg,
-              rgba(255,255,255,0.03) 0%,
-              transparent 40%,
-              transparent 60%,
-              rgba(255,255,255,0.02) 100%
-            )`,
-          }}
+          style={diagonalGradientStyle}
         />
 
         {/* Subtle noise texture overlay */}
         <div
           className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
+          style={noiseTextureStyle}
         />
 
         {/* Left Side - Controls */}
