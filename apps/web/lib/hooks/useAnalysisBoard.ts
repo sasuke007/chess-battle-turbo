@@ -68,10 +68,6 @@ interface UseAnalysisBoardReturn {
   userLastMove: { from: Square; to: Square } | null;
   legendLastMove: { from: Square; to: Square } | null;
 
-  // Comparison mode
-  showComparison: boolean;
-  setShowComparison: (show: boolean) => void;
-
   // Board flip
   isFlipped: boolean;
   toggleFlip: () => void;
@@ -145,7 +141,6 @@ export function useAnalysisBoard({
 }: UseAnalysisBoardProps): UseAnalysisBoardReturn {
   // State
   const [plyIndex, setPlyIndex] = useState(0);
-  const [showComparison, setShowComparison] = useState(true);
   const [isFlipped, setIsFlipped] = useState(userColor === "b");
 
   // Sync isFlipped when userColor changes (e.g. after data loads)
@@ -342,8 +337,6 @@ export function useAnalysisBoard({
     currentDivergence,
     userLastMove,
     legendLastMove,
-    showComparison,
-    setShowComparison,
     isFlipped,
     toggleFlip,
     gameStartPly,

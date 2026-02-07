@@ -66,8 +66,8 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     fetchData();
   }, [gameId, isReady, userReferenceId]);
 
-  // Tab state: "your-moves" | "comparison" | "legend-moves"
-  const [activeTab, setActiveTab] = useState<"your-moves" | "comparison" | "legend-moves">("legend-moves");
+  // Tab state: "your-moves" | "legend-moves"
+  const [activeTab, setActiveTab] = useState<"your-moves" | "legend-moves">("legend-moves");
 
   // Initialize analysis board hook
   const analysisBoard = useAnalysisBoard({
@@ -328,18 +328,6 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 >
                   Your Moves
                 </button>
-                <button
-                  onClick={() => setActiveTab("comparison")}
-                  className={cn(
-                    "px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
-                    activeTab === "comparison"
-                      ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
-                      : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
-                  )}
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                >
-                  Comparison
-                </button>
               </div>
             )}
 
@@ -347,11 +335,9 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             <div className="mx-0 md:mx-8 mt-0 mb-3 md:mb-6 lg:mt-6 lg:mb-4 lg:mx-0">
               <ChessBoard
                 board={activeTab === "legend-moves" ? legendBoard : userBoard}
-                shadowBoard={activeTab === "comparison" ? legendBoard : undefined}
                 playerColor={isFlipped ? "b" : "w"}
                 showCoordinates={true}
                 lastMove={activeTab === "legend-moves" ? legendLastMove : userLastMove}
-                shadowLastMove={activeTab === "comparison" ? legendLastMove : null}
                 isInteractive={false}
                 gameEndState={null}
                 fadedPieces={activeTab === "legend-moves"}
@@ -505,35 +491,6 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     </span>
                   </div>
                 )}
-                {activeTab === "comparison" && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 bg-white/90 border border-white/40 flex items-center justify-center">
-                        <span className="text-xs">♟</span>
-                      </div>
-                      <span
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/60 text-xs"
-                      >
-                        Your Move
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-5 h-5 bg-white/30 border border-white/20 flex items-center justify-center"
-                        style={{ opacity: 0.6 }}
-                      >
-                        <span className="text-xs">♟</span>
-                      </div>
-                      <span
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/60 text-xs"
-                      >
-                        Legend
-                      </span>
-                    </div>
-                  </>
-                )}
                 {activeTab === "legend-moves" && (
                   <div className="flex items-center gap-2">
                     <div
@@ -590,73 +547,6 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   >
                     Your Moves
                   </button>
-                  <button
-                    onClick={() => setActiveTab("comparison")}
-                    className={cn(
-                      "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
-                      activeTab === "comparison"
-                        ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
-                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
-                    )}
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    Comparison
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Legend Key - Comparison Mode */}
-            {hasLegendMoves && activeTab === "comparison" && (
-              <div className="border border-white/10 p-5">
-                <p
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4"
-                >
-                  Legend Key
-                </p>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white/5 border border-white/20 flex items-center justify-center">
-                      <span className="text-white text-lg">♟</span>
-                    </div>
-                    <div>
-                      <p
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white text-sm"
-                      >
-                        Your Move
-                      </p>
-                      <p
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/40 text-xs"
-                      >
-                        Solid pieces
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 bg-white/5 border border-white/20 flex items-center justify-center"
-                      style={{ opacity: 0.6 }}
-                    >
-                      <span className="text-white text-lg">♟</span>
-                    </div>
-                    <div>
-                      <p
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/60 text-sm"
-                      >
-                        Legend&apos;s Move
-                      </p>
-                      <p
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/40 text-xs"
-                      >
-                        Faded overlay
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
