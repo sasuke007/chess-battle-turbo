@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       }
 
       user = await prisma.$transaction(async (tx) => {
-        // Create user (marked as onboarded immediately)
+        // Create user (onboarded: false — will be set true after onboarding or skip)
         const newUser = await tx.user.create({
           data: {
             googleId: userId,
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
             code: userCode,
             profilePictureUrl,
             isActive: true,
-            onboarded: true,
+            onboarded: false,
           },
         });
 
@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
     // Note: We only send referenceIds to the client, never internal database IDs
     const userResponse = {
       referenceId: user?.referenceId,
+      onboarded: user?.onboarded,
       code: user?.code,
       email: user?.email,
       name: user?.name,

@@ -144,6 +144,14 @@ model ChessComProfile {
   referenceId      String   @unique @default(cuid())
   userId           BigInt   @unique
   chessComHandle   String   @unique
+  displayName      String?
+  avatar           String?
+  title            String?
+  country          String?
+  status           String?
+  followers        Int?
+  isStreamer       Boolean  @default(false)
+  joined           DateTime?
   rapidRating      Int?
   rapidBestRating  Int?
   rapidWins        Int?

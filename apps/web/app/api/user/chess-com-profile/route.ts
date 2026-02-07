@@ -2,37 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import {
+  fetchChessComProfile,
+  fetchChessComStats,
+  extractCountryCode,
+} from "@/lib/chess-com";
 
 const chessComProfileSchema = z.object({
   chessComHandle: z.string().min(1, "Chess.com username is required").max(50),
 });
-
-/**
- * Fetch chess.com stats from their public API
- */
-async function fetchChessComStats(handle: string) {
-  try {
-    const response = await fetch(`https://api.chess.com/pub/player/${handle}/stats`, {
-      headers: {
-        'User-Agent': 'ChessBattle/1.0',
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Chess.com user not found. Please check the username and try again.");
-      }
-      throw new Error(`Failed to fetch chess.com data: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("Failed to connect to chess.com API");
-  }
-}
 
 /**
  * POST /api/user/chess-com-profile
@@ -40,7 +18,6 @@ async function fetchChessComStats(handle: string) {
  */
 export async function POST(req: NextRequest) {
   try {
-    // Get authenticated user
     const { userId } = await auth();
 
     if (!userId) {
@@ -50,12 +27,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse and validate request body
     const body = await req.json();
     const validatedData = chessComProfileSchema.parse(body);
     const chessComHandle = validatedData.chessComHandle.toLowerCase().trim();
 
-    // Find user in database
     const user = await prisma.user.findUnique({
       where: { googleId: userId },
       include: { chessComProfile: true },
@@ -68,68 +43,94 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch stats from chess.com
-    console.log(`Fetching chess.com stats for: ${chessComHandle}`);
-    const chessComData = await fetchChessComStats(chessComHandle);
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Fetching chess.com data for: ${chessComHandle}`);
+    }
 
-    // Extract ratings and stats
-    const rapidData = chessComData.chess_rapid;
-    const blitzData = chessComData.chess_blitz;
-    const bulletData = chessComData.chess_bullet;
-    const dailyData = chessComData.chess_daily;
+    const [profileData, statsData] = await Promise.all([
+      fetchChessComProfile(chessComHandle),
+      fetchChessComStats(chessComHandle),
+    ]);
 
-    // Prepare profile data
-    const profileData = {
+    const rapidData = statsData.chess_rapid;
+    const blitzData = statsData.chess_blitz;
+    const bulletData = statsData.chess_bullet;
+    const dailyData = statsData.chess_daily;
+
+    const profilePayload = {
       chessComHandle,
-      
+
+      // Profile fields
+      displayName: profileData.name ?? null,
+      avatar: profileData.avatar ?? null,
+      title: profileData.title ?? null,
+      country: extractCountryCode(profileData.country ?? null),
+      status: profileData.status ?? null,
+      followers: profileData.followers ?? null,
+      isStreamer: profileData.is_streamer ?? false,
+      joined: profileData.joined
+        ? new Date(profileData.joined * 1000)
+        : null,
+
       // Rapid stats
-      rapidRating: rapidData?.last?.rating,
-      rapidBestRating: rapidData?.best?.rating,
-      rapidWins: rapidData?.record?.win,
-      rapidLosses: rapidData?.record?.loss,
-      rapidDraws: rapidData?.record?.draw,
-      
+      rapidRating: rapidData?.last?.rating ?? null,
+      rapidBestRating: rapidData?.best?.rating ?? null,
+      rapidWins: rapidData?.record?.win ?? null,
+      rapidLosses: rapidData?.record?.loss ?? null,
+      rapidDraws: rapidData?.record?.draw ?? null,
+
       // Blitz stats
-      blitzRating: blitzData?.last?.rating,
-      blitzBestRating: blitzData?.best?.rating,
-      blitzWins: blitzData?.record?.win,
-      blitzLosses: blitzData?.record?.loss,
-      blitzDraws: blitzData?.record?.draw,
-      
+      blitzRating: blitzData?.last?.rating ?? null,
+      blitzBestRating: blitzData?.best?.rating ?? null,
+      blitzWins: blitzData?.record?.win ?? null,
+      blitzLosses: blitzData?.record?.loss ?? null,
+      blitzDraws: blitzData?.record?.draw ?? null,
+
       // Bullet stats
-      bulletRating: bulletData?.last?.rating,
-      bulletBestRating: bulletData?.best?.rating,
-      bulletWins: bulletData?.record?.win,
-      bulletLosses: bulletData?.record?.loss,
-      bulletDraws: bulletData?.record?.draw,
-      
+      bulletRating: bulletData?.last?.rating ?? null,
+      bulletBestRating: bulletData?.best?.rating ?? null,
+      bulletWins: bulletData?.record?.win ?? null,
+      bulletLosses: bulletData?.record?.loss ?? null,
+      bulletDraws: bulletData?.record?.draw ?? null,
+
       // Daily stats
-      dailyRating: dailyData?.last?.rating,
-      dailyBestRating: dailyData?.best?.rating,
-      dailyWins: dailyData?.record?.win,
-      dailyLosses: dailyData?.record?.loss,
-      dailyDraws: dailyData?.record?.draw,
-      
+      dailyRating: dailyData?.last?.rating ?? null,
+      dailyBestRating: dailyData?.best?.rating ?? null,
+      dailyWins: dailyData?.record?.win ?? null,
+      dailyLosses: dailyData?.record?.loss ?? null,
+      dailyDraws: dailyData?.record?.draw ?? null,
+
       lastSyncedAt: new Date(),
     };
 
-    // Upsert chess.com profile (create or update)
-    const result = await prisma.chessComProfile.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        ...profileData,
-      },
-      update: profileData,
+    const isNewProfile = !user.chessComProfile;
+
+    // Upsert chess.com profile and mark user as onboarded in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const chessComProfile = await tx.chessComProfile.upsert({
+        where: { userId: user.id },
+        create: { userId: user.id, ...profilePayload },
+        update: profilePayload,
+      });
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { onboarded: true },
+      });
+
+      return chessComProfile;
     });
 
-    const isNewProfile = !user.chessComProfile;
-    console.log(`Chess.com profile ${isNewProfile ? 'created' : 'updated'} for user ${user.referenceId}`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `Chess.com profile ${isNewProfile ? "created" : "updated"} for user ${user.referenceId}`
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: `Chess.com profile ${isNewProfile ? 'connected' : 'updated'} successfully`,
+        message: `Chess.com profile ${isNewProfile ? "connected" : "updated"} successfully`,
         profile: {
           referenceId: result.referenceId,
           chessComHandle: result.chessComHandle,
@@ -140,9 +141,10 @@ export async function POST(req: NextRequest) {
       { status: isNewProfile ? 201 : 200 }
     );
   } catch (error) {
-    console.error("Error saving chess.com profile:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error saving chess.com profile:", error);
+    }
 
-    // Handle Zod validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
@@ -156,12 +158,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Handle custom errors
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json(
@@ -170,4 +168,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

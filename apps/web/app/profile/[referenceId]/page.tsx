@@ -2,13 +2,16 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
 import { ProfileHero } from "./ProfileHero";
 import { StatsOverview } from "./StatsOverview";
 import { GameHistory } from "./GameHistory";
 import { ChessComRatings } from "./ChessComRatings";
+import { ChessComConnectModal } from "./ChessComConnectModal";
 
 interface ProfileUser {
   referenceId: string;
@@ -70,35 +73,58 @@ const ProfilePage = ({
 }) => {
   const router = useRouter();
   const { referenceId } = use(params);
+  const { user: clerkUser } = useUser();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileData | null>(null);
+  const [currentUserRefId, setCurrentUserRefId] = useState<string | null>(null);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+
+  // Detect if viewing own profile
+  useEffect(() => {
+    if (!clerkUser?.emailAddresses[0]?.emailAddress) return;
+    const email = clerkUser.emailAddresses[0].emailAddress;
+
+    fetch(`/api/user/email/${encodeURIComponent(email)}`)
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data?.user?.referenceId) {
+          setCurrentUserRefId(result.data.user.referenceId);
+        }
+      })
+      .catch(() => {});
+  }, [clerkUser]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch(`/api/profile/${referenceId}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        setError(result.error || "Profile not found");
+        return;
+      }
+
+      setData(result.data);
+    } catch {
+      setError("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch(`/api/profile/${referenceId}`);
-        const result = await response.json();
-
-        if (!result.success) {
-          setError(result.error || "Profile not found");
-          return;
-        }
-
-        setData(result.data);
-      } catch (err) {
-        setError("Failed to load profile");
-        if (process.env.NODE_ENV === "development") {
-          console.error("Profile fetch error:", err);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
   }, [referenceId]);
+
+  const isOwnProfile = currentUserRefId === referenceId;
+
+  const handleConnectSuccess = () => {
+    setShowConnectModal(false);
+    // Re-fetch profile data to show the new chess.com ratings
+    fetchProfile();
+  };
 
   if (loading) {
     return (
@@ -167,6 +193,54 @@ const ProfilePage = ({
           {/* Hero / Identity Card */}
           <ProfileHero user={data.user} />
 
+          {/* Chess.com warning banner for own profile */}
+          {isOwnProfile && !data.chessComProfile && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="border border-dashed border-white/20 bg-white/[0.02] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6"
+            >
+              <div className="flex items-center gap-4 flex-1">
+                <span className="text-white/15 text-3xl flex-shrink-0">♟</span>
+                <div>
+                  <p
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-white/70 text-sm font-medium"
+                  >
+                    Connect your chess.com account
+                  </p>
+                  <p
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-white/30 text-xs mt-0.5"
+                  >
+                    Display your ratings and stats on your profile
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowConnectModal(true)}
+                className={cn(
+                  "group relative flex items-center gap-2 px-5 py-2.5",
+                  "bg-white text-black",
+                  "transition-all duration-300 overflow-hidden",
+                  "flex-shrink-0"
+                )}
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                <span className="relative z-10 text-sm font-medium group-hover:text-white transition-colors duration-300">
+                  Connect
+                </span>
+                <ArrowRight
+                  className="w-3.5 h-3.5 relative z-10 group-hover:text-white transition-colors duration-300"
+                  strokeWidth={1.5}
+                />
+              </button>
+            </motion.div>
+          )}
+
           {/* Stats Overview */}
           <StatsOverview stats={data.stats} />
 
@@ -182,6 +256,13 @@ const ProfilePage = ({
           </div>
         </motion.div>
       </div>
+
+      {/* Connect modal */}
+      <ChessComConnectModal
+        isOpen={showConnectModal}
+        onClose={() => setShowConnectModal(false)}
+        onSuccess={handleConnectSuccess}
+      />
     </div>
   );
 };
