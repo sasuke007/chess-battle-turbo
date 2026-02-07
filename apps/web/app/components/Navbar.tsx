@@ -141,17 +141,17 @@ export const Navbar = () => {
               className={cn(
                 "group relative overflow-hidden",
                 "bg-white text-black",
-                "h-9 px-5",
+                "h-9 px-3 sm:px-5",
                 "text-sm font-medium tracking-wide",
                 "transition-all duration-300",
-                "hidden sm:flex items-center"
+                "flex items-center"
               )}
               style={{ fontFamily: "'Geist', sans-serif" }}
             >
               <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
               <span className="relative flex items-center gap-1.5 text-black group-hover:text-white transition-colors duration-300">
                 <User className="w-3.5 h-3.5" />
-                Profile
+                <span className="hidden sm:inline">Profile</span>
               </span>
             </Link>
           )}
