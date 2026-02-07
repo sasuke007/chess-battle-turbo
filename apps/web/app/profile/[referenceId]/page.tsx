@@ -10,7 +10,6 @@ import { Navbar } from "../../components/Navbar";
 import { ProfileHero } from "./ProfileHero";
 import { StatsOverview } from "./StatsOverview";
 import { GameHistory } from "./GameHistory";
-import { ChessComRatings } from "./ChessComRatings";
 import { ChessComConnectModal } from "./ChessComConnectModal";
 
 interface ProfileUser {
@@ -190,8 +189,8 @@ const ProfilePage = ({
           animate={{ opacity: 1 }}
           className="space-y-6 sm:space-y-8"
         >
-          {/* Hero / Identity Card */}
-          <ProfileHero user={data.user} />
+          {/* Hero / Identity Card with integrated chess.com ratings */}
+          <ProfileHero user={data.user} chessComProfile={data.chessComProfile} />
 
           {/* Chess.com warning banner for own profile */}
           {isOwnProfile && !data.chessComProfile && (
@@ -244,16 +243,8 @@ const ProfilePage = ({
           {/* Stats Overview */}
           <StatsOverview stats={data.stats} />
 
-          {/* Game History + Chess.com Ratings */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            <div className={cn(!data.chessComProfile && "lg:col-span-2")}>
-              <GameHistory games={data.games} />
-            </div>
-
-            {data.chessComProfile && (
-              <ChessComRatings profile={data.chessComProfile} />
-            )}
-          </div>
+          {/* Game History */}
+          <GameHistory games={data.games} />
         </motion.div>
       </div>
 
