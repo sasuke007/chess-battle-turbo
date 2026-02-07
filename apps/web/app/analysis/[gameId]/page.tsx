@@ -27,7 +27,7 @@ function computeFenAtPly(startingFen: string, moves: Move[], plyIndex: number): 
       try {
         game.move({ from: move.from, to: move.to, promotion: move.promotion });
       } catch {
-        break;
+        break;  
       }
     }
   }
