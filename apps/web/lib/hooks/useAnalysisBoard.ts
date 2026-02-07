@@ -21,6 +21,9 @@ interface UseAnalysisBoardProps {
   userMoves: Move[];
   legendMoves: Move[];
   userColor: Color;
+  legendPgn?: string | null;
+  moveNumberStart?: number;
+  isLegendMode?: boolean;
 }
 
 // Default FEN for standard chess starting position
@@ -39,6 +42,7 @@ interface UseAnalysisBoardReturn {
   // Current state
   plyIndex: number;
   maxPly: number;
+  minPly: number;
 
   // Board states
   userBoard: BoardState;
@@ -54,7 +58,7 @@ interface UseAnalysisBoardReturn {
   // State flags
   isAtStart: boolean;
   isAtEnd: boolean;
-  isBeforeGameStart: boolean; // Before user's game started (showing legend only)
+  isBeforeGameStart: boolean;
 
   // Divergence info for current ply
   divergences: DivergenceInfo[];
@@ -71,6 +75,10 @@ interface UseAnalysisBoardReturn {
   // Board flip
   isFlipped: boolean;
   toggleFlip: () => void;
+
+  // Legend full game
+  gameStartPly: number;
+  fullLegendMoves: Move[];
 }
 
 /**
@@ -131,14 +139,63 @@ export function useAnalysisBoard({
   userMoves,
   legendMoves,
   userColor,
+  legendPgn,
+  moveNumberStart = 1,
+  isLegendMode = false,
 }: UseAnalysisBoardProps): UseAnalysisBoardReturn {
   // State
   const [plyIndex, setPlyIndex] = useState(0);
   const [showComparison, setShowComparison] = useState(true);
   const [isFlipped, setIsFlipped] = useState(userColor === "b");
 
-  // Max ply is the longer of the two move arrays
-  const maxPly = Math.max(userMoves.length, legendMoves.length);
+  // Sync isFlipped when userColor changes (e.g. after data loads)
+  useEffect(() => {
+    setIsFlipped(userColor === "b");
+  }, [userColor]);
+
+  // Parse full legend game moves from PGN
+  const fullLegendMoves = useMemo(() => {
+    if (!legendPgn) return [];
+    try {
+      const game = new Chess();
+      game.loadPgn(legendPgn);
+      return game.history({ verbose: true });
+    } catch {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error parsing legend PGN");
+      }
+      return [];
+    }
+  }, [legendPgn]);
+
+  // Calculate which ply in the full legend game corresponds to user's game start
+  const gameStartPly = useMemo(() => {
+    if (!startingFen) return 0;
+    const sideToMove = startingFen.split(" ")[1];
+    if (sideToMove === "b") {
+      return (moveNumberStart - 1) * 2 + 1;
+    }
+    return (moveNumberStart - 1) * 2;
+  }, [moveNumberStart, startingFen]);
+
+  // Navigation bounds depend on legend mode
+  const minPly = isLegendMode && fullLegendMoves.length > 0 ? -gameStartPly : 0;
+
+  const userMaxPly = Math.max(userMoves.length, legendMoves.length);
+  const maxPly = isLegendMode && fullLegendMoves.length > 0
+    ? fullLegendMoves.length - gameStartPly
+    : userMaxPly;
+
+  // Clamp plyIndex when switching away from legend mode
+  useEffect(() => {
+    if (!isLegendMode) {
+      if (plyIndex < 0) {
+        setPlyIndex(0);
+      } else if (plyIndex > userMaxPly) {
+        setPlyIndex(userMaxPly);
+      }
+    }
+  }, [isLegendMode, plyIndex, userMaxPly]);
 
   // Compute divergences (memoized)
   const divergences = useMemo(() => {
@@ -167,36 +224,44 @@ export function useAnalysisBoard({
 
   // Current divergence info
   const currentDivergence = useMemo(() => {
-    if (plyIndex === 0) return null;
+    if (plyIndex <= 0) return null;
     return divergences[plyIndex - 1] || null;
   }, [divergences, plyIndex]);
 
   // Compute board states (memoized)
   const userBoard = useMemo(() => {
-    return computeBoardAtPly(startingFen, userMoves, plyIndex);
+    return computeBoardAtPly(startingFen, userMoves, Math.max(0, plyIndex));
   }, [startingFen, userMoves, plyIndex]);
 
   const legendBoard = useMemo(() => {
+    if (isLegendMode && fullLegendMoves.length > 0) {
+      const absolutePly = gameStartPly + plyIndex;
+      return computeBoardAtPly(DEFAULT_FEN, fullLegendMoves, absolutePly);
+    }
     return computeBoardAtPly(startingFen, legendMoves, plyIndex);
-  }, [startingFen, legendMoves, plyIndex]);
+  }, [isLegendMode, fullLegendMoves, gameStartPly, startingFen, legendMoves, plyIndex]);
 
   // Last moves for highlighting
   const userLastMove = useMemo(() => {
-    return getLastMove(userMoves, plyIndex);
+    return getLastMove(userMoves, Math.max(0, plyIndex));
   }, [userMoves, plyIndex]);
 
   const legendLastMove = useMemo(() => {
+    if (isLegendMode && fullLegendMoves.length > 0) {
+      const absolutePly = gameStartPly + plyIndex;
+      return getLastMove(fullLegendMoves, absolutePly);
+    }
     return getLastMove(legendMoves, plyIndex);
-  }, [legendMoves, plyIndex]);
+  }, [isLegendMode, fullLegendMoves, gameStartPly, legendMoves, plyIndex]);
 
   // Navigation functions
   const goToFirst = useCallback(() => {
-    setPlyIndex(0);
-  }, []);
+    setPlyIndex(minPly);
+  }, [minPly]);
 
   const goBack = useCallback(() => {
-    setPlyIndex((prev) => Math.max(0, prev - 1));
-  }, []);
+    setPlyIndex((prev) => Math.max(minPly, prev - 1));
+  }, [minPly]);
 
   const goForward = useCallback(() => {
     setPlyIndex((prev) => Math.min(maxPly, prev + 1));
@@ -208,9 +273,9 @@ export function useAnalysisBoard({
 
   const goToPly = useCallback(
     (ply: number) => {
-      setPlyIndex(Math.max(0, Math.min(maxPly, ply)));
+      setPlyIndex(Math.max(minPly, Math.min(maxPly, ply)));
     },
-    [maxPly]
+    [minPly, maxPly]
   );
 
   const toggleFlip = useCallback(() => {
@@ -255,13 +320,14 @@ export function useAnalysisBoard({
   }, [goBack, goForward, goToFirst, goToLast]);
 
   // State flags
-  const isAtStart = plyIndex === 0;
+  const isAtStart = plyIndex <= minPly;
   const isAtEnd = plyIndex >= maxPly;
-  const isBeforeGameStart = plyIndex <= 0; // At starting position
+  const isBeforeGameStart = plyIndex < 0;
 
   return {
     plyIndex,
     maxPly,
+    minPly,
     userBoard,
     legendBoard,
     goToFirst,
@@ -280,5 +346,7 @@ export function useAnalysisBoard({
     setShowComparison,
     isFlipped,
     toggleFlip,
+    gameStartPly,
+    fullLegendMoves,
   };
 }

@@ -166,7 +166,17 @@ export async function GET(
     } | null;
 
     const userMoves = gameData?.moveHistory || [];
-    const userColor = (gameData?.playerColor === "black" ? "b" : "w") as "w" | "b";
+    // Determine user color: prefer gameData.playerColor, fall back to creator/opponent relationship
+    // (creator = white player in AI games)
+    let userColor: "w" | "b" = "w";
+    if (gameData?.playerColor === "black" || gameData?.playerColor === "b") {
+      userColor = "b";
+    } else if (gameData?.playerColor === "white" || gameData?.playerColor === "w") {
+      userColor = "w";
+    } else if (currentUserId) {
+      // Fallback: creator plays white, opponent plays black
+      userColor = currentUserId === game.creatorId ? "w" : "b";
+    }
 
     // 3. If game has a chess position, fetch it for legend data
     let legendMoves: Move[] = [];

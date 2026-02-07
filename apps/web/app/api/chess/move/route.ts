@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       where: { referenceId: validatedData.gameReferenceId },
       data: {
         gameData: {
+          ...(game.gameData as Record<string, unknown>),
           fen: validatedData.fen,
           moveHistory: validatedData.moveHistory,
         },

@@ -66,12 +66,18 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     fetchData();
   }, [gameId, isReady, userReferenceId]);
 
+  // Tab state: "your-moves" | "comparison" | "legend-moves"
+  const [activeTab, setActiveTab] = useState<"your-moves" | "comparison" | "legend-moves">("legend-moves");
+
   // Initialize analysis board hook
   const analysisBoard = useAnalysisBoard({
     startingFen: data?.startingFen || "",
     userMoves: data?.userMoves || [],
     legendMoves: data?.legendMoves || [],
     userColor: (data?.userColor || "w") as Color,
+    legendPgn: data?.legendPgn,
+    moveNumberStart: data?.moveNumberStart,
+    isLegendMode: activeTab === "legend-moves",
   });
 
   const {
@@ -91,10 +97,9 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     legendLastMove,
     isFlipped,
     toggleFlip,
+    gameStartPly,
+    fullLegendMoves,
   } = analysisBoard;
-
-  // Tab state: "your-moves" | "comparison" | "legend-moves"
-  const [activeTab, setActiveTab] = useState<"your-moves" | "comparison" | "legend-moves">("legend-moves");
 
   // Determine starting side from FEN
   const startingSide =
@@ -168,7 +173,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   style={{ fontFamily: "'Geist', sans-serif" }}
                   className="text-[10px] tracking-[0.3em] uppercase text-white/40"
                 >
-                  Move Comparison
+                  {activeTab === "legend-moves" ? "Legend Game" : "Move Comparison"}
                 </p>
               </div>
               {hasLegendMoves ? (
@@ -178,6 +183,9 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onPlyClick={goToPly}
                   moveNumberStart={data.moveNumberStart}
                   startingSide={startingSide as "w" | "b"}
+                  isLegendMode={activeTab === "legend-moves"}
+                  fullLegendMoves={fullLegendMoves}
+                  gameStartPly={gameStartPly}
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-center p-4">
@@ -702,51 +710,55 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                       style={{ fontFamily: "'Geist', sans-serif" }}
                       className="text-white/60 text-sm"
                     >
-                      Total Moves
+                      {activeTab === "legend-moves" ? "Legend Game Moves" : "Total Moves"}
                     </span>
                     <span
                       style={{ fontFamily: "'Geist', sans-serif" }}
                       className="text-white text-sm font-mono"
                     >
-                      {maxPly}
+                      {activeTab === "legend-moves" ? fullLegendMoves.length : maxPly}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/60 text-sm"
-                    >
-                      Divergent Moves
-                    </span>
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-amber-400 text-sm font-mono"
-                    >
-                      {divergences.filter((d) => d.isDivergent).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-white/60 text-sm"
-                    >
-                      Match Rate
-                    </span>
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-green-400 text-sm font-mono"
-                    >
-                      {maxPly > 0
-                        ? Math.round(
-                            ((maxPly -
-                              divergences.filter((d) => d.isDivergent).length) /
-                              maxPly) *
-                              100
-                          )
-                        : 0}
-                      %
-                    </span>
-                  </div>
+                  {activeTab !== "legend-moves" && (
+                    <>
+                      <div className="flex justify-between">
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-white/60 text-sm"
+                        >
+                          Divergent Moves
+                        </span>
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-amber-400 text-sm font-mono"
+                        >
+                          {divergences.filter((d) => d.isDivergent).length}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-white/60 text-sm"
+                        >
+                          Match Rate
+                        </span>
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-green-400 text-sm font-mono"
+                        >
+                          {maxPly > 0
+                            ? Math.round(
+                                ((maxPly -
+                                  divergences.filter((d) => d.isDivergent).length) /
+                                  maxPly) *
+                                  100
+                              )
+                            : 0}
+                          %
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
