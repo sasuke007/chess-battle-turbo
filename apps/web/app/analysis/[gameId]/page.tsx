@@ -1,15 +1,38 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { Move, Color } from "chess.js";
+import { useState, useEffect, useCallback, useRef, use } from "react";
+import { Chess, Move, Color } from "chess.js";
 import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import AnalysisMoveList from "../../components/AnalysisMoveList";
+import { PromotionPopup } from "../../components/PromotionPopup";
 import { Navbar } from "../../components/Navbar";
+import PracticeMoveList from "./PracticeMoveList";
 import { useAnalysisBoard } from "@/lib/hooks/useAnalysisBoard";
+import { usePlayFromPosition } from "@/lib/hooks/usePlayFromPosition";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
+
+type AnalysisTab = "your-moves" | "legend-moves" | "practice";
+
+const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+function computeFenAtPly(startingFen: string, moves: Move[], plyIndex: number): string {
+  const game = new Chess(startingFen);
+  const movesToReplay = Math.min(Math.max(0, plyIndex), moves.length);
+  for (let i = 0; i < movesToReplay; i++) {
+    const move = moves[i];
+    if (move) {
+      try {
+        game.move({ from: move.from, to: move.to, promotion: move.promotion });
+      } catch {
+        break;
+      }
+    }
+  }
+  return game.fen();
+}
 
 interface AnalysisData {
   gameReferenceId: string;
@@ -66,8 +89,11 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     fetchData();
   }, [gameId, isReady, userReferenceId]);
 
-  // Tab state: "your-moves" | "legend-moves"
-  const [activeTab, setActiveTab] = useState<"your-moves" | "legend-moves">("legend-moves");
+  // Tab state
+  const [activeTab, setActiveTab] = useState<AnalysisTab>("legend-moves");
+  const [practiceFen, setPracticeFen] = useState<string | null>(null);
+  const [practiceKey, setPracticeKey] = useState(0); // bumped to force reset even for same FEN
+  const previousTabRef = useRef<AnalysisTab>("legend-moves");
 
   // Initialize analysis board hook
   const analysisBoard = useAnalysisBoard({
@@ -78,6 +104,14 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     legendPgn: data?.legendPgn,
     moveNumberStart: data?.moveNumberStart,
     isLegendMode: activeTab === "legend-moves",
+    enableKeyboardNav: activeTab !== "practice",
+  });
+
+  // Practice game hook
+  const practiceGame = usePlayFromPosition({
+    startingFen: practiceFen,
+    playerColor: (data?.userColor || "w") as Color,
+    resetKey: practiceKey,
   });
 
   const {
@@ -101,9 +135,36 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     fullLegendMoves,
   } = analysisBoard;
 
+  // Handle switching to practice tab — capture FEN from current position
+  const handlePracticeTabClick = useCallback(() => {
+    if (!data) return;
+    previousTabRef.current = activeTab !== "practice" ? activeTab : previousTabRef.current;
+
+    let fen: string;
+    if (activeTab === "legend-moves" && fullLegendMoves.length > 0) {
+      fen = computeFenAtPly(DEFAULT_FEN, fullLegendMoves, gameStartPly + plyIndex);
+    } else {
+      fen = computeFenAtPly(data.startingFen, data.userMoves, Math.max(0, plyIndex));
+    }
+    setPracticeFen(fen);
+    setPracticeKey((k) => k + 1);
+    setActiveTab("practice");
+  }, [data, activeTab, fullLegendMoves, gameStartPly, plyIndex]);
+
+  const handleBackToAnalysis = useCallback(() => {
+    setActiveTab(previousTabRef.current);
+  }, []);
+
   // Determine starting side from FEN
   const startingSide =
     data?.startingFen?.split(" ")[1] === "b" ? "b" : "w";
+
+  // Determine which board flip to use
+  const currentFlipped = activeTab === "practice" ? practiceGame.isFlipped : isFlipped;
+  const currentToggleFlip = activeTab === "practice" ? practiceGame.toggleFlip : toggleFlip;
+
+  // Practice board starting side (from practice FEN)
+  const practiceFenSide = practiceFen?.split(" ")[1] === "b" ? "b" : "w";
 
   if (!isReady || loading) {
     return (
@@ -167,35 +228,54 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         >
           {/* Left - Move List (hidden on mobile) */}
           <div className="lg:col-span-3 order-2 lg:order-1 hidden lg:flex lg:flex-col">
-            <div className="border border-white/10 flex flex-col max-h-[70vh] overflow-hidden">
-              <div className="p-4 border-b border-white/10">
-                <p
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-[10px] tracking-[0.3em] uppercase text-white/40"
-                >
-                  {activeTab === "legend-moves" ? "Legend Game" : "Move Comparison"}
-                </p>
-              </div>
-              {hasLegendMoves ? (
-                <AnalysisMoveList
-                  divergences={divergences}
-                  currentPlyIndex={plyIndex}
-                  onPlyClick={goToPly}
-                  moveNumberStart={data.moveNumberStart}
-                  startingSide={startingSide as "w" | "b"}
-                  isLegendMode={activeTab === "legend-moves"}
-                  fullLegendMoves={fullLegendMoves}
-                  gameStartPly={gameStartPly}
+            <div className={cn(
+              "border flex flex-col max-h-[70vh] overflow-hidden",
+              activeTab === "practice" ? "border-amber-500/20" : "border-white/10"
+            )}>
+              {activeTab === "practice" ? (
+                <PracticeMoveList
+                  moveHistory={practiceGame.moveHistory}
+                  isBotThinking={practiceGame.isBotThinking}
+                  gameOver={practiceGame.gameOver}
+                  gameOverReason={practiceGame.gameOverReason}
+                  gameResult={practiceGame.gameResult}
+                  onReset={practiceGame.resetGame}
+                  onBackToAnalysis={handleBackToAnalysis}
+                  playerColor={(data.userColor || "w") as Color}
+                  startingSide={practiceFenSide as "w" | "b"}
                 />
               ) : (
-                <div className="flex-1 flex items-center justify-center p-4">
-                  <p
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-white/30 text-sm text-center"
-                  >
-                    No legend moves available for comparison
-                  </p>
-                </div>
+                <>
+                  <div className="p-4 border-b border-white/10">
+                    <p
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-[10px] tracking-[0.3em] uppercase text-white/40"
+                    >
+                      {activeTab === "legend-moves" ? "Legend Game" : "Move Comparison"}
+                    </p>
+                  </div>
+                  {hasLegendMoves ? (
+                    <AnalysisMoveList
+                      divergences={divergences}
+                      currentPlyIndex={plyIndex}
+                      onPlyClick={goToPly}
+                      moveNumberStart={data.moveNumberStart}
+                      startingSide={startingSide as "w" | "b"}
+                      isLegendMode={activeTab === "legend-moves"}
+                      fullLegendMoves={fullLegendMoves}
+                      gameStartPly={gameStartPly}
+                    />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center p-4">
+                      <p
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-white/30 text-sm text-center"
+                      >
+                        No legend moves available for comparison
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -307,7 +387,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <button
                   onClick={() => setActiveTab("legend-moves")}
                   className={cn(
-                    "px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                    "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "legend-moves"
                       ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -319,7 +399,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <button
                   onClick={() => setActiveTab("your-moves")}
                   className={cn(
-                    "px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                    "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "your-moves"
                       ? "border-white/40 text-white bg-white/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -328,138 +408,164 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 >
                   Your Moves
                 </button>
+                <button
+                  onClick={handlePracticeTabClick}
+                  className={cn(
+                    "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                    activeTab === "practice"
+                      ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                      : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                  )}
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  Practice
+                </button>
               </div>
             )}
 
             {/* Board */}
             <div className="mx-0 md:mx-8 mt-0 mb-3 md:mb-6 lg:mt-6 lg:mb-4 lg:mx-0">
-              <ChessBoard
-                board={activeTab === "legend-moves" ? legendBoard : userBoard}
-                playerColor={isFlipped ? "b" : "w"}
-                showCoordinates={true}
-                lastMove={activeTab === "legend-moves" ? legendLastMove : userLastMove}
-                isInteractive={false}
-                gameEndState={null}
-                fadedPieces={activeTab === "legend-moves"}
-                squareSize="md"
-              />
+              {activeTab === "practice" ? (
+                <ChessBoard
+                  board={practiceGame.board}
+                  playerColor={practiceGame.isFlipped ? "b" : "w"}
+                  showCoordinates={true}
+                  selectedSquare={practiceGame.selectedSquare}
+                  legalMoves={practiceGame.legalMoves}
+                  onSquareClick={practiceGame.handleSquareClick}
+                  lastMove={practiceGame.lastMove}
+                  isInteractive={!practiceGame.gameOver}
+                  gameEndState={
+                    practiceGame.gameResult === "win"
+                      ? "victory"
+                      : practiceGame.gameResult === "loss"
+                        ? "defeat"
+                        : practiceGame.gameResult === "draw"
+                          ? "draw"
+                          : null
+                  }
+                  squareSize="md"
+                />
+              ) : (
+                <ChessBoard
+                  board={activeTab === "legend-moves" ? legendBoard : userBoard}
+                  playerColor={isFlipped ? "b" : "w"}
+                  showCoordinates={true}
+                  lastMove={activeTab === "legend-moves" ? legendLastMove : userLastMove}
+                  isInteractive={false}
+                  gameEndState={null}
+                  fadedPieces={activeTab === "legend-moves"}
+                  squareSize="md"
+                />
+              )}
             </div>
+
+            {/* Promotion Popup */}
+            <PromotionPopup
+              isOpen={practiceGame.pendingPromotion !== null}
+              color={(data.userColor || "w") as Color}
+              onSelect={practiceGame.handlePromotionSelect}
+            />
 
             {/* Navigation Controls */}
             <div className="flex flex-row items-center gap-2 md:gap-3 mt-10 md:mt-14 lg:mt-6 px-2 lg:px-0 justify-center">
-              {/* Navigation Buttons */}
-              <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
-                <button
-                  onClick={goToFirst}
-                  disabled={isAtStart}
-                  className={cn(
-                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
-                    isAtStart
-                      ? "opacity-30 cursor-not-allowed border-white/10"
-                      : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
-                  )}
-                  title="First (Home)"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-white/70 md:scale-110 lg:scale-100"
+              {/* Analysis Navigation Buttons — hidden during practice */}
+              {activeTab !== "practice" && (
+                <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
+                  <button
+                    onClick={goToFirst}
+                    disabled={isAtStart}
+                    className={cn(
+                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      isAtStart
+                        ? "opacity-30 cursor-not-allowed border-white/10"
+                        : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
+                    )}
+                    title="First (Home)"
                   >
-                    <polyline points="11 17 6 12 11 7" />
-                    <polyline points="18 17 13 12 18 7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goBack}
-                  disabled={isAtStart}
-                  className={cn(
-                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
-                    isAtStart
-                      ? "opacity-30 cursor-not-allowed border-white/10"
-                      : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
-                  )}
-                  title="Back (Left Arrow)"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-white/70 md:scale-110 lg:scale-100"
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 md:scale-110 lg:scale-100">
+                      <polyline points="11 17 6 12 11 7" />
+                      <polyline points="18 17 13 12 18 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={goBack}
+                    disabled={isAtStart}
+                    className={cn(
+                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      isAtStart
+                        ? "opacity-30 cursor-not-allowed border-white/10"
+                        : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
+                    )}
+                    title="Back (Left Arrow)"
                   >
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goForward}
-                  disabled={isAtEnd}
-                  className={cn(
-                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
-                    isAtEnd
-                      ? "opacity-30 cursor-not-allowed border-white/10"
-                      : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
-                  )}
-                  title="Forward (Right Arrow)"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-white/70 md:scale-110 lg:scale-100"
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 md:scale-110 lg:scale-100">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={goForward}
+                    disabled={isAtEnd}
+                    className={cn(
+                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      isAtEnd
+                        ? "opacity-30 cursor-not-allowed border-white/10"
+                        : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
+                    )}
+                    title="Forward (Right Arrow)"
                   >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goToLast}
-                  disabled={isAtEnd}
-                  className={cn(
-                    "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
-                    isAtEnd
-                      ? "opacity-30 cursor-not-allowed border-white/10"
-                      : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
-                  )}
-                  title="Last (End)"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-white/70 md:scale-110 lg:scale-100"
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 md:scale-110 lg:scale-100">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={goToLast}
+                    disabled={isAtEnd}
+                    className={cn(
+                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      isAtEnd
+                        ? "opacity-30 cursor-not-allowed border-white/10"
+                        : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
+                    )}
+                    title="Last (End)"
                   >
-                    <polyline points="13 17 18 12 13 7" />
-                    <polyline points="6 17 11 12 6 7" />
-                  </svg>
-                </button>
-              </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 md:scale-110 lg:scale-100">
+                      <polyline points="13 17 18 12 13 7" />
+                      <polyline points="6 17 11 12 6 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              {/* Practice controls — shown during practice on mobile */}
+              {activeTab === "practice" && (
+                <div className="flex items-center gap-1 md:gap-2 lg:gap-1 lg:hidden">
+                  <button
+                    onClick={practiceGame.resetGame}
+                    className="h-10 md:h-12 px-4 md:px-6 text-sm md:text-base border border-amber-500/30 text-amber-400/80 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={handleBackToAnalysis}
+                    className="h-10 md:h-12 px-4 md:px-6 text-sm md:text-base border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Back to Analysis
+                  </button>
+                </div>
+              )}
 
               {/* Separator */}
-              <div className="w-px h-8 md:h-10 lg:h-6 bg-white/10 mx-1 md:mx-2" />
+              {activeTab !== "practice" && (
+                <div className="w-px h-8 md:h-10 lg:h-6 bg-white/10 mx-1 md:mx-2" />
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
                 <button
-                  onClick={toggleFlip}
+                  onClick={currentToggleFlip}
                   className="h-10 md:h-12 lg:h-9 px-4 md:px-6 lg:px-3 text-sm md:text-base lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
@@ -475,7 +581,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
             </div>
 
-            {/* Legend Key (Mobile) */}
+            {/* Legend Key / Practice Status (Mobile) */}
             <div className="lg:hidden mt-4 md:mt-8 px-4 md:px-8">
               <div className="flex items-center justify-center gap-6 md:gap-10 py-3 md:py-5 border-t border-white/10">
                 {activeTab === "your-moves" && (
@@ -505,6 +611,38 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     >
                       Legend&apos;s Moves
                     </span>
+                  </div>
+                )}
+                {activeTab === "practice" && (
+                  <div className="flex items-center gap-2">
+                    {practiceGame.isBotThinking ? (
+                      <>
+                        <div className="flex gap-1">
+                          <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse" />
+                          <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }} />
+                          <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }} />
+                        </div>
+                        <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-amber-400/60 text-xs">
+                          Engine thinking...
+                        </span>
+                      </>
+                    ) : practiceGame.gameOver ? (
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className={cn(
+                          "text-xs",
+                          practiceGame.gameResult === "win" && "text-amber-400",
+                          practiceGame.gameResult === "loss" && "text-red-400",
+                          practiceGame.gameResult === "draw" && "text-white/60"
+                        )}
+                      >
+                        {practiceGame.gameOverReason} — {practiceGame.gameResult === "win" ? "You win!" : practiceGame.gameResult === "loss" ? "You lost" : "Draw"}
+                      </span>
+                    ) : (
+                      <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-amber-400/60 text-xs">
+                        Practice vs Engine (Expert ~2200)
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -547,6 +685,18 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   >
                     Your Moves
                   </button>
+                  <button
+                    onClick={handlePracticeTabClick}
+                    className={cn(
+                      "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
+                      activeTab === "practice"
+                        ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Practice
+                  </button>
                 </div>
               </div>
             )}
@@ -585,8 +735,78 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
             )}
 
-            {/* Divergence Info */}
-            {hasLegendMoves && (
+            {/* Practice Info Panel */}
+            {activeTab === "practice" && (
+              <div className="border border-amber-500/20 p-5">
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.3em] uppercase text-amber-400/60 mb-4"
+                >
+                  Practice Mode
+                </p>
+                <div className="space-y-3">
+                  {/* Engine info */}
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      practiceGame.isEngineReady ? "bg-amber-400" : "bg-white/30 animate-pulse"
+                    )} />
+                    <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/60 text-sm">
+                      {practiceGame.isEngineReady ? "Stockfish Expert (~2200)" : "Loading engine..."}
+                    </span>
+                  </div>
+
+                  {/* Turn indicator */}
+                  <div className="flex items-center gap-2">
+                    {practiceGame.isBotThinking ? (
+                      <>
+                        <div className="flex gap-0.5">
+                          <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse" />
+                          <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }} />
+                          <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }} />
+                        </div>
+                        <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-amber-400/60 text-sm">
+                          Engine thinking...
+                        </span>
+                      </>
+                    ) : practiceGame.gameOver ? (
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className={cn(
+                          "text-sm",
+                          practiceGame.gameResult === "win" && "text-amber-400",
+                          practiceGame.gameResult === "loss" && "text-red-400",
+                          practiceGame.gameResult === "draw" && "text-white/60"
+                        )}
+                      >
+                        {practiceGame.gameOverReason}
+                      </span>
+                    ) : practiceGame.isPlayerTurn ? (
+                      <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/60 text-sm">
+                        Your turn
+                      </span>
+                    ) : (
+                      <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm">
+                        Waiting...
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Moves played */}
+                  <div className="flex justify-between">
+                    <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm">
+                      Moves played
+                    </span>
+                    <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white text-sm font-mono">
+                      {practiceGame.moveHistory.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Divergence Info — hidden during practice */}
+            {hasLegendMoves && activeTab !== "practice" && (
               <div className="border border-white/10 p-5">
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}

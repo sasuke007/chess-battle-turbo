@@ -24,6 +24,7 @@ interface UseAnalysisBoardProps {
   legendPgn?: string | null;
   moveNumberStart?: number;
   isLegendMode?: boolean;
+  enableKeyboardNav?: boolean;
 }
 
 // Default FEN for standard chess starting position
@@ -138,6 +139,7 @@ export function useAnalysisBoard({
   legendPgn,
   moveNumberStart = 1,
   isLegendMode = false,
+  enableKeyboardNav = true,
 }: UseAnalysisBoardProps): UseAnalysisBoardReturn {
   // State
   const [plyIndex, setPlyIndex] = useState(0);
@@ -279,6 +281,8 @@ export function useAnalysisBoard({
 
   // Keyboard navigation
   useEffect(() => {
+    if (!enableKeyboardNav) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in an input
       if (
@@ -312,7 +316,7 @@ export function useAnalysisBoard({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goBack, goForward, goToFirst, goToLast]);
+  }, [enableKeyboardNav, goBack, goForward, goToFirst, goToLast]);
 
   // State flags
   const isAtStart = plyIndex <= minPly;
