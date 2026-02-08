@@ -73,6 +73,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     tournamentName?: string | null;
     whitePlayerImageUrl?: string | null;
     blackPlayerImageUrl?: string | null;
+    openingName?: string | null;
+    openingEco?: string | null;
   } | null>(null);
 
   // Move navigation state
@@ -631,6 +633,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           router.push("/play");
         }}
         onDismiss={() => setShowGameEndOverlay(false)}
+        analysisLabel={positionInfo?.openingName ? "Review" : "Compare"}
       />
 
       {/* Promotion popup */}
@@ -805,7 +808,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                       className="w-full py-2.5 bg-white text-black hover:bg-white/90 transition-colors"
                       style={{ fontFamily: "'Geist', sans-serif" }}
                     >
-                      Compare
+                      {positionInfo.openingName ? "Review" : "Compare"}
                     </button>
                   )}
                   <button
@@ -856,8 +859,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Center - Chess Board */}
             <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-2xl mx-auto w-full">
-              {/* Tournament Name Banner - compact */}
-              {positionInfo?.tournamentName && (
+              {/* Opening / Tournament Name Banner - compact */}
+              {(positionInfo?.openingName || positionInfo?.tournamentName) && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -865,12 +868,31 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   className="flex items-center justify-center gap-2 lg:gap-3 mb-1 px-2"
                 >
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                  <p
-                    style={{ fontFamily: "'Instrument Serif', serif" }}
-                    className="text-white/40 text-xs lg:text-sm italic tracking-wide"
-                  >
-                    {positionInfo.tournamentName}
-                  </p>
+                  {positionInfo.openingName ? (
+                    <div className="flex items-center gap-2">
+                      {positionInfo.openingEco && (
+                        <span
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                          className="text-[10px] tracking-wider text-white/50 bg-white/10 px-1.5 py-0.5 uppercase"
+                        >
+                          {positionInfo.openingEco}
+                        </span>
+                      )}
+                      <p
+                        style={{ fontFamily: "'Instrument Serif', serif" }}
+                        className="text-white/40 text-xs lg:text-sm italic tracking-wide"
+                      >
+                        {positionInfo.openingName}
+                      </p>
+                    </div>
+                  ) : (
+                    <p
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-white/40 text-xs lg:text-sm italic tracking-wide"
+                    >
+                      {positionInfo.tournamentName}
+                    </p>
+                  )}
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 </motion.div>
               )}
@@ -977,7 +999,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                       className="h-10 px-5 text-sm bg-white text-black hover:bg-white/90 transition-colors"
                       style={{ fontFamily: "'Geist', sans-serif" }}
                     >
-                      Compare
+                      {positionInfo.openingName ? "Review" : "Compare"}
                     </button>
                   )}
                   <button

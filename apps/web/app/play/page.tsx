@@ -5,10 +5,11 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
+import SearchableDropdown from "../components/SearchableDropdown";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
-import { Users, Zap, Crown, Bot, ArrowRight, Sparkles } from "lucide-react";
+import { Users, Zap, Crown, Bot, ArrowRight, Sparkles, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 // Static game mode definitions — never change at runtime
@@ -64,6 +65,18 @@ export default function Play() {
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [hoveredMode, setHoveredMode] = useState<string | null>(null);
 
+  // Opening state
+  const [playOpening, setPlayOpening] = useState(false);
+  const [selectedOpening, setSelectedOpening] = useState<string | null>(null);
+
+  interface Opening {
+    id: string;
+    eco: string;
+    name: string;
+  }
+  const [openings, setOpenings] = useState<Opening[]>([]);
+  const [openingsLoading, setOpeningsLoading] = useState(true);
+
   interface Legend {
     id: string;
     name: string;
@@ -94,6 +107,25 @@ export default function Play() {
     fetchLegends();
   }, []);
 
+  useEffect(() => {
+    async function fetchOpenings() {
+      try {
+        const response = await fetch("/api/openings");
+        const data = await response.json();
+        if (data.success && data.data?.openings) {
+          setOpenings(data.data.openings);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Failed to fetch openings:", error);
+        }
+      } finally {
+        setOpeningsLoading(false);
+      }
+    }
+    fetchOpenings();
+  }, []);
+
   const handleCreateGame = async () => {
     if (!userReferenceId) {
       alert("User not authenticated. Please sign in.");
@@ -114,6 +146,9 @@ export default function Play() {
           params.set("legendName", selectedLegendData.name);
         }
       }
+      if (playOpening && selectedOpening) {
+        params.set("opening", selectedOpening);
+      }
       router.push(`/queue?${params.toString()}`);
       return;
     }
@@ -124,6 +159,7 @@ export default function Play() {
         initialTimeSeconds: timeControl.time,
         incrementSeconds: timeControl.increment,
         ...(playAsLegend && selectedHero && { selectedLegend: selectedHero }),
+        ...(playOpening && selectedOpening && { selectedOpening: selectedOpening }),
       };
 
       try {
@@ -158,6 +194,7 @@ export default function Play() {
       gameMode: selectedMode,
       playAsLegend: playAsLegend,
       selectedLegend: playAsLegend ? selectedHero : null,
+      selectedOpening: playOpening ? selectedOpening : null,
     };
 
     try {
@@ -348,8 +385,14 @@ export default function Play() {
                 {/* Toggle */}
                 <button
                   onClick={() => {
-                    setPlayAsLegend(!playAsLegend);
-                    if (playAsLegend) setSelectedHero(null);
+                    const newVal = !playAsLegend;
+                    setPlayAsLegend(newVal);
+                    if (!newVal) setSelectedHero(null);
+                    if (newVal) {
+                      // Mutually exclusive: turn off openings
+                      setPlayOpening(false);
+                      setSelectedOpening(null);
+                    }
                   }}
                   className="w-full p-4 lg:p-5 flex items-center justify-between group"
                 >
@@ -393,7 +436,7 @@ export default function Play() {
                   </div>
                 </button>
 
-                {/* Expandable legends */}
+                {/* Expandable legends — now using SearchableDropdown */}
                 <AnimatePresence>
                   {playAsLegend && (
                     <motion.div
@@ -402,79 +445,111 @@ export default function Play() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >
-                      <div className="px-5 pb-5 border-t border-white/10">
-                        {legendsLoading ? (
-                          <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-3">
-                            <div className="relative w-8 h-8">
-                              <div className="absolute inset-0 border border-white/20 rounded-full" />
-                              <div
-                                className="absolute inset-0 border border-transparent border-t-white/60 rounded-full animate-spin"
-                              />
-                            </div>
-                            <p
-                              style={{ fontFamily: "'Geist', sans-serif" }}
-                              className="text-white/30 text-[10px] tracking-[0.2em] uppercase"
-                            >
-                              Loading legends
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="pt-4 grid grid-cols-2 gap-2 max-h-40 lg:max-h-48 overflow-y-auto custom-scrollbar">
-                            {legends.map((legend, index) => (
-                              <motion.button
-                                key={legend.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                onClick={() => setSelectedHero(legend.id)}
-                                className={cn(
-                                  "p-3 border text-left transition-all duration-300",
-                                  selectedHero === legend.id
-                                    ? "border-white bg-white"
-                                    : "border-white/10 hover:border-white/30"
-                                )}
-                              >
-                                <div className="flex items-center gap-2.5">
-                                  {legend.profilePhotoUrl ? (
-                                    <Image
-                                      src={legend.profilePhotoUrl}
-                                      alt={legend.name}
-                                      width={32}
-                                      height={32}
-                                      className={cn(
-                                        "w-8 h-8 object-cover grayscale transition-all",
-                                        selectedHero === legend.id ? "grayscale-0" : "opacity-70"
-                                      )}
-                                    />
-                                  ) : (
-                                    <div className={cn(
-                                      "w-8 h-8 flex items-center justify-center text-xs font-medium border",
-                                      selectedHero === legend.id
-                                        ? "bg-black text-white border-black"
-                                        : "bg-white/5 text-white/60 border-white/20"
-                                    )}>
-                                      {legend.name.split(' ').map(n => n[0]).join('')}
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p style={{ fontFamily: "'Geist', sans-serif" }} className={cn(
-                                      "text-xs font-medium truncate transition-colors",
-                                      selectedHero === legend.id ? "text-black" : "text-white/80"
-                                    )}>
-                                      {legend.name}
-                                    </p>
-                                    <p className={cn(
-                                      "text-[10px] truncate transition-colors",
-                                      selectedHero === legend.id ? "text-black/50" : "text-white/40"
-                                    )}>
-                                      {legend.era}
-                                    </p>
-                                  </div>
-                                </div>
-                              </motion.button>
-                            ))}
-                          </div>
-                        )}
+                      <div className="px-5 pb-5 pt-4 border-t border-white/10">
+                        <SearchableDropdown
+                          items={legends}
+                          selectedId={selectedHero}
+                          onSelect={setSelectedHero}
+                          getLabel={(l) => l.name}
+                          getSubLabel={(l) => l.era}
+                          getId={(l) => l.id}
+                          placeholder="Search legends..."
+                          isLoading={legendsLoading}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* Play Opening Section */}
+            {(openingsLoading || openings.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.85 }}
+                className={cn(
+                  "mb-5 lg:mb-8 border overflow-hidden transition-all duration-500",
+                  playOpening
+                    ? "border-white bg-white/5"
+                    : "border-white/10"
+                )}
+              >
+                {/* Toggle */}
+                <button
+                  onClick={() => {
+                    const newVal = !playOpening;
+                    setPlayOpening(newVal);
+                    if (!newVal) setSelectedOpening(null);
+                    if (newVal) {
+                      // Mutually exclusive: turn off legends
+                      setPlayAsLegend(false);
+                      setSelectedHero(null);
+                    }
+                  }}
+                  className="w-full p-4 lg:p-5 flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-9 h-9 lg:w-10 lg:h-10 border flex items-center justify-center transition-all duration-300",
+                      playOpening ? "border-white bg-white" : "border-white/20"
+                    )}>
+                      <BookOpen className={cn(
+                        "w-4 h-4 transition-colors",
+                        playOpening ? "text-black" : "text-white/60"
+                      )} strokeWidth={1.5} />
+                    </div>
+                    <div className="text-left">
+                      <p style={{ fontFamily: "'Geist', sans-serif" }} className={cn(
+                        "font-medium tracking-tight transition-colors",
+                        playOpening ? "text-white" : "text-white/80"
+                      )}>
+                        Play Opening
+                      </p>
+                      <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/40 flex items-center gap-1.5">
+                        <BookOpen className="w-3 h-3" />
+                        Start from a known opening
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Minimal toggle */}
+                  <div className={cn(
+                    "w-10 h-5 border relative overflow-hidden transition-colors duration-300 flex-shrink-0",
+                    playOpening ? "border-white bg-white" : "border-white/30"
+                  )}>
+                    <motion.div
+                      className={cn(
+                        "absolute top-0 w-1/2 h-full transition-colors duration-300",
+                        playOpening ? "bg-black" : "bg-white/50"
+                      )}
+                      animate={{ left: playOpening ? "50%" : "0%" }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  </div>
+                </button>
+
+                {/* Expandable openings */}
+                <AnimatePresence>
+                  {playOpening && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="px-5 pb-5 pt-4 border-t border-white/10">
+                        <SearchableDropdown
+                          items={openings}
+                          selectedId={selectedOpening}
+                          onSelect={setSelectedOpening}
+                          getLabel={(o) => o.name}
+                          getSubLabel={(o) => o.eco}
+                          getId={(o) => o.id}
+                          placeholder="Search openings..."
+                          isLoading={openingsLoading}
+                        />
                       </div>
                     </motion.div>
                   )}

@@ -111,6 +111,8 @@ export async function getRandomPositionByLegend(legendReferenceId: string) {
       sideToMove: true,
       whitePlayerName: true,
       blackPlayerName: true,
+      whitePlayerId: true,
+      blackPlayerId: true,
       tournamentName: true,
       positionType: true,
       sourceType: true,
@@ -123,5 +125,5 @@ export async function getRandomPositionByLegend(legendReferenceId: string) {
     },
   });
 
-  return position;
+  return position ? { ...position, legendId: legend.id } : null;
 }

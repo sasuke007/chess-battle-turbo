@@ -19,6 +19,10 @@ interface AnalysisData {
   tournamentName: string | null;
   legendPgn: string | null;
   legendGameResult: "white_won" | "black_won" | "draw" | null;
+
+  // Opening info
+  openingName: string | null;
+  openingEco: string | null;
 }
 
 /**
@@ -162,6 +166,15 @@ export async function GET(
         whitePlayerName?: string;
         blackPlayerName?: string;
         tournamentName?: string;
+        openingName?: string;
+        openingEco?: string;
+      };
+      openingInfo?: {
+        referenceId?: string;
+        name?: string;
+        eco?: string;
+        pgn?: string;
+        moveCount?: number;
       };
     } | null;
 
@@ -235,6 +248,10 @@ export async function GET(
     // 5. Extract legend game result from gameMetadata
     const legendGameResult = parseResultFromMetadata(positionGameMetadata);
 
+    // 5b. Extract opening info from gameData
+    const openingName = gameData?.openingInfo?.name || gameData?.positionInfo?.openingName || null;
+    const openingEco = gameData?.openingInfo?.eco || gameData?.positionInfo?.openingEco || null;
+
     // 6. Build response
     const analysisData: AnalysisData = {
       gameReferenceId: game.referenceId,
@@ -250,6 +267,8 @@ export async function GET(
       tournamentName,
       legendPgn,
       legendGameResult,
+      openingName,
+      openingEco,
     };
 
     return NextResponse.json({

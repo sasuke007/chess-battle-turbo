@@ -12,7 +12,8 @@
     "check-types": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed:openings": "tsx prisma/opening-seed.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",

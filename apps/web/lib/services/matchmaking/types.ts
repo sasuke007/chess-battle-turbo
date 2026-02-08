@@ -25,6 +25,7 @@ export interface QueueEntry {
 export interface CreateMatchRequestInput {
   userReferenceId: string;
   legendReferenceId?: string | null;
+  openingReferenceId?: string | null;
   initialTimeSeconds: number;
   incrementSeconds: number;
 }

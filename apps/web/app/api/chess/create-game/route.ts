@@ -2,7 +2,8 @@ import {NextRequest, NextResponse} from "next/server";
 import {Decimal} from "@prisma/client/runtime/library";
 import {z} from "zod";
 import {prisma} from "@/lib/prisma";
-import {getRandomChessPosition, incrementPositionPlayCount} from "@/lib/services/chess-position.service";
+import {getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlayCount} from "@/lib/services/chess-position.service";
+import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser, validateSufficientBalance } from "@/lib/services/user-validation.service";
 
@@ -14,6 +15,7 @@ const createGameSchema = z.object({
   gameMode: z.enum(["quick", "friend", "ai"]),
   playAsLegend: z.boolean(),
   selectedLegend: z.string().nullable(),
+  selectedOpening: z.string().nullable().optional(),
 });
 
 type CreateGameRequest = z.infer<typeof createGameSchema>;
@@ -44,7 +46,8 @@ async function createGameTransaction(
   request: CreateGameRequest,
   chessPositionId: bigint | null,
   startingFen: string,
-  positionInfo: { whitePlayerName: string | null; blackPlayerName: string | null; tournamentName: string | null; whitePlayerImageUrl: string | null; blackPlayerImageUrl: string | null } | null,
+  positionInfo: { whitePlayerName: string | null; blackPlayerName: string | null; tournamentName: string | null; whitePlayerImageUrl: string | null; blackPlayerImageUrl: string | null; openingName?: string | null; openingEco?: string | null } | null,
+  extraGameData?: Record<string, unknown>,
 ) {
   const amounts = calculateGameAmounts(request.stakeAmount);
   const expiresAt = calculateExpirationTime(1);
@@ -71,6 +74,7 @@ async function createGameTransaction(
           playAsLegend: request.playAsLegend,
           selectedLegend: request.selectedLegend,
           positionInfo: positionInfo,
+          ...extraGameData,
         },
       },
     });
@@ -117,23 +121,71 @@ export async function POST(request: NextRequest) {
     // 3. Calculate amounts
     const amounts = calculateGameAmounts(validatedData.stakeAmount);
 
-    // 4. Fetch random chess position
-    const chessPosition = await getRandomChessPosition();
-
-    // Default starting position FEN if no chess position found
+    // 4. Fetch chess position, opening, or legend position
     const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    let chessPosition;
+    let legendPosition: Awaited<ReturnType<typeof getRandomPositionByLegend>> = null;
+    let opening: Awaited<ReturnType<typeof getOpeningByReferenceId>> = null;
 
-    const chessPositionId = chessPosition?.id ?? null;
-    const startingFen = chessPosition?.fen ?? DEFAULT_STARTING_FEN;
+    if (validatedData.selectedOpening) {
+      opening = await getOpeningByReferenceId(validatedData.selectedOpening);
+    } else if (validatedData.playAsLegend && validatedData.selectedLegend) {
+      legendPosition = await getRandomPositionByLegend(validatedData.selectedLegend);
+      chessPosition = legendPosition;
 
-    // 5. Build position info for legend display
-    const positionInfo = chessPosition ? {
-      whitePlayerName: chessPosition.whitePlayerName ?? null,
-      blackPlayerName: chessPosition.blackPlayerName ?? null,
-      tournamentName: chessPosition.tournamentName ?? null,
-      whitePlayerImageUrl: chessPosition.whiteLegend?.profilePhotoUrl ?? null,
-      blackPlayerImageUrl: chessPosition.blackLegend?.profilePhotoUrl ?? null,
-    } : null;
+      if (!chessPosition) {
+        chessPosition = await getRandomChessPosition();
+      }
+    } else {
+      chessPosition = await getRandomChessPosition();
+    }
+
+    const chessPositionId = opening ? null : (chessPosition?.id ?? null);
+    const startingFen = opening ? opening.fen : (chessPosition?.fen ?? DEFAULT_STARTING_FEN);
+
+    // 5. Build position info for display
+    let positionInfo;
+    if (opening) {
+      positionInfo = {
+        whitePlayerName: null,
+        blackPlayerName: null,
+        tournamentName: null,
+        openingName: opening.name,
+        openingEco: opening.eco,
+        whitePlayerImageUrl: null,
+        blackPlayerImageUrl: null,
+      };
+    } else if (chessPosition) {
+      positionInfo = {
+        whitePlayerName: chessPosition.whitePlayerName ?? null,
+        blackPlayerName: chessPosition.blackPlayerName ?? null,
+        tournamentName: chessPosition.tournamentName ?? null,
+        whitePlayerImageUrl: chessPosition.whiteLegend?.profilePhotoUrl ?? null,
+        blackPlayerImageUrl: chessPosition.blackLegend?.profilePhotoUrl ?? null,
+      };
+    } else {
+      positionInfo = null;
+    }
+
+    // 5b. Determine creator color and build extra game data
+    const extraGameData: Record<string, unknown> = {};
+    if (opening) {
+      extraGameData.creatorColor = getOpeningPlayerColor(opening.sideToMove);
+      extraGameData.selectedOpening = validatedData.selectedOpening;
+      extraGameData.openingInfo = {
+        referenceId: opening.referenceId,
+        name: opening.name,
+        eco: opening.eco,
+        pgn: opening.pgn,
+        moveCount: opening.moveCount,
+      };
+    } else if (legendPosition && legendPosition.legendId) {
+      if (legendPosition.whitePlayerId === legendPosition.legendId) {
+        extraGameData.creatorColor = "white";
+      } else {
+        extraGameData.creatorColor = "black";
+      }
+    }
 
     // 6. Execute transaction
     const result = await createGameTransaction(
@@ -145,6 +197,7 @@ export async function POST(request: NextRequest) {
       chessPositionId,
       startingFen,
       positionInfo,
+      extraGameData,
     );
 
     // 7. Increment position play count if a position was used

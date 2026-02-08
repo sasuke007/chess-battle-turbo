@@ -31,6 +31,8 @@ export interface GameStartedPayload {
     tournamentName?: string | null;
     whitePlayerImageUrl?: string | null;
     blackPlayerImageUrl?: string | null;
+    openingName?: string | null;
+    openingEco?: string | null;
   };
 }
 
@@ -108,6 +110,8 @@ export interface AnalysisPhaseStartedPayload {
     tournamentName?: string | null;
     whitePlayerImageUrl?: string | null;
     blackPlayerImageUrl?: string | null;
+    openingName?: string | null;
+    openingEco?: string | null;
   };
 }
 

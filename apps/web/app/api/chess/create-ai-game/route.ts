@@ -3,6 +3,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlayCount } from "@/lib/services/chess-position.service";
+import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
 
 // Bot user constants - must match the seeded bot user
@@ -15,6 +16,7 @@ const createAIGameSchema = z.object({
   initialTimeSeconds: z.number().int().positive("Initial time must be greater than 0"),
   incrementSeconds: z.number().int().min(0, "Increment seconds must be 0 or greater"),
   selectedLegend: z.string().optional(), // Optional legend ID to play their famous positions
+  selectedOpening: z.string().optional(), // Optional opening referenceId
 });
 
 type Difficulty = "easy" | "medium" | "hard" | "expert";
@@ -163,23 +165,24 @@ export async function POST(request: NextRequest) {
     const timeFormat = validatedData.initialTimeSeconds < 180 ? "bullet"
       : validatedData.initialTimeSeconds < 600 ? "blitz" : "rapid";
 
-    // 5. Player color is always random
-    const resolvedPlayerColor = Math.random() < 0.5 ? "white" : "black";
-
-    console.log("[AI Game] Settings:", {
-      timeFormat,
-      userRating,
-      difficulty,
-      playerColor: resolvedPlayerColor,
-    });
-
-    // 6. Fetch chess position - from legend's games if selected, otherwise random
+    // 5. Fetch chess position or opening
     const selectedLegend = validatedData.selectedLegend;
+    const selectedOpeningRef = validatedData.selectedOpening;
     let chessPosition;
+    let legendPosition: Awaited<ReturnType<typeof getRandomPositionByLegend>> = null;
+    let opening: Awaited<ReturnType<typeof getOpeningByReferenceId>> = null;
 
-    if (selectedLegend) {
+    if (selectedOpeningRef) {
+      // Opening selected — fetch from openings table
+      opening = await getOpeningByReferenceId(selectedOpeningRef);
+      console.log("[AI Game] Opening fetched:", {
+        opening: selectedOpeningRef,
+        found: !!opening,
+      });
+    } else if (selectedLegend) {
       // Fetch a position from the selected legend's games
-      chessPosition = await getRandomPositionByLegend(selectedLegend);
+      legendPosition = await getRandomPositionByLegend(selectedLegend);
+      chessPosition = legendPosition;
       console.log("[AI Game] Legend position fetched:", {
         legend: selectedLegend,
         found: !!chessPosition,
@@ -193,19 +196,43 @@ export async function POST(request: NextRequest) {
         });
       }
     } else {
-      // No legend selected - fetch random position
+      // No legend or opening selected - fetch random position
       chessPosition = await getRandomChessPosition();
       console.log("[AI Game] Random position fetched:", {
         found: !!chessPosition,
       });
     }
 
-    const chessPositionId = chessPosition?.id ?? null;
-    const startingFen = chessPosition?.fen ?? DEFAULT_STARTING_FEN;
+    // 6. Player color: match the legend's side or opening side, otherwise random
+    let resolvedPlayerColor: string;
+    if (opening) {
+      // For openings, user plays as the side that made the last move
+      resolvedPlayerColor = getOpeningPlayerColor(opening.sideToMove);
+    } else if (legendPosition && legendPosition.legendId) {
+      // Player plays as the legend's side
+      if (legendPosition.whitePlayerId === legendPosition.legendId) {
+        resolvedPlayerColor = "white";
+      } else {
+        resolvedPlayerColor = "black";
+      }
+    } else {
+      resolvedPlayerColor = Math.random() < 0.5 ? "white" : "black";
+    }
+
+    console.log("[AI Game] Settings:", {
+      timeFormat,
+      userRating,
+      difficulty,
+      playerColor: resolvedPlayerColor,
+    });
+
+    const chessPositionId = opening ? null : (chessPosition?.id ?? null);
+    const startingFen = opening ? opening.fen : (chessPosition?.fen ?? DEFAULT_STARTING_FEN);
 
     console.log("[AI Game] Starting position:", {
       positionId: chessPositionId?.toString(),
       fen: startingFen,
+      isOpening: !!opening,
     });
 
     // 7. Determine creator and opponent based on player color
@@ -214,6 +241,37 @@ export async function POST(request: NextRequest) {
     const isPlayerCreator = resolvedPlayerColor === "white";
     const creatorId = isPlayerCreator ? user.id : botUser.id;
     const opponentId = isPlayerCreator ? botUser.id : user.id;
+
+    // Build position info and opening info for gameData
+    const positionInfo = opening
+      ? {
+          whitePlayerName: null,
+          blackPlayerName: null,
+          tournamentName: null,
+          openingName: opening.name,
+          openingEco: opening.eco,
+          whitePlayerImageUrl: null,
+          blackPlayerImageUrl: null,
+        }
+      : chessPosition
+        ? {
+            whitePlayerName: chessPosition.whitePlayerName ?? null,
+            blackPlayerName: chessPosition.blackPlayerName ?? null,
+            tournamentName: chessPosition.tournamentName ?? null,
+            whitePlayerImageUrl: chessPosition.whiteLegend?.profilePhotoUrl ?? null,
+            blackPlayerImageUrl: chessPosition.blackLegend?.profilePhotoUrl ?? null,
+          }
+        : null;
+
+    const openingInfo = opening
+      ? {
+          referenceId: opening.referenceId,
+          name: opening.name,
+          eco: opening.eco,
+          pgn: opening.pgn,
+          moveCount: opening.moveCount,
+        }
+      : null;
 
     // 8. Create game - immediately IN_PROGRESS since bot is always ready
     const game = await prisma.game.create({
@@ -237,18 +295,13 @@ export async function POST(request: NextRequest) {
           gameMode: "AI",
           difficulty,
           playerColor: resolvedPlayerColor,
-          playerReferenceId: user.referenceId, // Track the human player
+          playerReferenceId: user.referenceId,
           botReferenceId: botUser.referenceId,
           botName: "Chess Bot",
           selectedLegend: selectedLegend || null,
-          // Position info for legend display (same format as regular games)
-          positionInfo: chessPosition ? {
-            whitePlayerName: chessPosition.whitePlayerName ?? null,
-            blackPlayerName: chessPosition.blackPlayerName ?? null,
-            tournamentName: chessPosition.tournamentName ?? null,
-            whitePlayerImageUrl: chessPosition.whiteLegend?.profilePhotoUrl ?? null,
-            blackPlayerImageUrl: chessPosition.blackLegend?.profilePhotoUrl ?? null,
-          } : null,
+          selectedOpening: selectedOpeningRef || null,
+          positionInfo,
+          openingInfo,
         },
       },
     });

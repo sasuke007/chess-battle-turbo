@@ -19,6 +19,8 @@ interface PlayerInfoCardProps {
     tournamentName?: string | null;
     whitePlayerImageUrl?: string | null;
     blackPlayerImageUrl?: string | null;
+    openingName?: string | null;
+    openingEco?: string | null;
   } | null;
 }
 
@@ -94,7 +96,7 @@ export function PlayerInfoCard({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {positionInfo && (
+        {positionInfo && !positionInfo.openingName && (
           <div className="flex items-center gap-2">
             <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
               <span className="text-white/40">as </span>

@@ -264,6 +264,7 @@ interface GameEndOverlayProps {
   onAnalysisClick: () => void;
   onBackClick?: () => void;
   onDismiss: () => void;
+  analysisLabel?: string;
 }
 
 export const GameEndOverlay = ({
@@ -272,6 +273,7 @@ export const GameEndOverlay = ({
   onAnalysisClick,
   onBackClick,
   onDismiss,
+  analysisLabel = "Compare",
 }: GameEndOverlayProps) => {
   const [showButton, setShowButton] = useState(false);
 
@@ -367,7 +369,7 @@ export const GameEndOverlay = ({
                   className="text-sm uppercase tracking-[0.2em]"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
-                  Compare
+                  {analysisLabel}
                 </span>
               </button>
               <button

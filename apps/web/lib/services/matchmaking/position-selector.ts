@@ -106,6 +106,34 @@ export async function getRandomChessPosition(): Promise<MatchedPosition | null> 
 }
 
 /**
+ * Fetches an opening by referenceId for matchmaking
+ */
+export async function selectOpeningPosition(
+  openingReferenceId: string
+): Promise<{
+  referenceId: string;
+  name: string;
+  eco: string;
+  fen: string;
+  pgn: string;
+  moveCount: number;
+} | null> {
+  const opening = await prisma.opening.findFirst({
+    where: { referenceId: openingReferenceId, isActive: true },
+    select: {
+      referenceId: true,
+      name: true,
+      eco: true,
+      fen: true,
+      pgn: true,
+      moveCount: true,
+    },
+  });
+
+  return opening;
+}
+
+/**
  * Returns the default starting FEN position
  */
 export function getDefaultFen(): string {

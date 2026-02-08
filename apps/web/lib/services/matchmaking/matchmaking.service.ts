@@ -8,7 +8,7 @@ import {
   getTimeControlType,
   TimeControlType,
 } from "./types";
-import { selectPositionFromLegends, getDefaultFen } from "./position-selector";
+import { selectPositionFromLegends, getDefaultFen, selectOpeningPosition } from "./position-selector";
 
 const QUEUE_TIMEOUT_SECONDS = 60;
 const TIGHT_RATING_RANGE = 200;
@@ -61,6 +61,7 @@ export async function createMatchRequest(
     timeControlSeconds: input.initialTimeSeconds,
     incrementSeconds: input.incrementSeconds,
     legendReferenceId: input.legendReferenceId || null,
+    openingReferenceId: input.openingReferenceId || null,
   });
 
   if (immediateMatch) {
@@ -88,6 +89,7 @@ export async function createMatchRequest(
       rating,
       timeControlType,
       legendReferenceId: input.legendReferenceId || null,
+      openingReferenceId: input.openingReferenceId || null,
       timeControlSeconds: input.initialTimeSeconds,
       incrementSeconds: input.incrementSeconds,
       status: "SEARCHING",
@@ -116,6 +118,7 @@ async function tryFindMatch(params: {
   timeControlSeconds: number;
   incrementSeconds: number;
   legendReferenceId: string | null;
+  openingReferenceId: string | null;
 }): Promise<{
   gameReferenceId: string;
   queueEntryRef: string;
@@ -166,16 +169,48 @@ async function tryFindMatch(params: {
       return null;
     }
 
-    // Select position from either legend
-    const position = await selectPositionFromLegends(
+    // Check if either player has an opening selected
+    const openingRef = params.openingReferenceId || null;
+    let openingData = null;
+
+    if (openingRef) {
+      openingData = await selectOpeningPosition(openingRef);
+    }
+
+    // Select position from either legend (only if no opening)
+    const position = openingData ? null : await selectPositionFromLegends(
       params.legendReferenceId,
       opponent.legendReferenceId
     );
 
-    // Random color assignment
+    // Random color assignment (for both legend and opening quick matches)
     const newPlayerIsWhite = Math.random() < 0.5;
     const whiteUserId = newPlayerIsWhite ? params.userId : opponent.userId;
     const blackUserId = newPlayerIsWhite ? opponent.userId : params.userId;
+
+    // Build gameData based on opening vs legend
+    const startingFen = openingData?.fen || position?.fen || getDefaultFen();
+    const chessPositionId = openingData ? null : (position?.id || null);
+
+    const positionInfo = openingData
+      ? {
+          whitePlayerName: null,
+          blackPlayerName: null,
+          tournamentName: null,
+          openingName: openingData.name,
+          openingEco: openingData.eco,
+          whitePlayerImageUrl: null,
+          blackPlayerImageUrl: null,
+        }
+      : position
+        ? {
+            whitePlayerName: position.whitePlayerName ?? null,
+            blackPlayerName: position.blackPlayerName ?? null,
+            tournamentName: position.tournamentName ?? null,
+            whitePlayerImageUrl: position.whiteLegend?.profilePhotoUrl ?? null,
+            blackPlayerImageUrl: position.blackLegend?.profilePhotoUrl ?? null,
+          }
+        : null;
 
     // Create the game
     const game = await tx.game.create({
@@ -186,8 +221,8 @@ async function tryFindMatch(params: {
         totalPot: new Decimal(0),
         platformFeePercentage: new Decimal(10),
         platformFeeAmount: new Decimal(0),
-        chessPositionId: position?.id || null,
-        startingFen: position?.fen || getDefaultFen(),
+        chessPositionId,
+        startingFen,
         initialTimeSeconds: params.timeControlSeconds,
         incrementSeconds: params.incrementSeconds,
         creatorTimeRemaining: params.timeControlSeconds,
@@ -201,13 +236,17 @@ async function tryFindMatch(params: {
           player1Legend: params.legendReferenceId,
           player2Legend: opponent.legendReferenceId,
           matchedAt: new Date().toISOString(),
-          positionInfo: position ? {
-            whitePlayerName: position.whitePlayerName ?? null,
-            blackPlayerName: position.blackPlayerName ?? null,
-            tournamentName: position.tournamentName ?? null,
-            whitePlayerImageUrl: position.whiteLegend?.profilePhotoUrl ?? null,
-            blackPlayerImageUrl: position.blackLegend?.profilePhotoUrl ?? null,
-          } : null,
+          positionInfo,
+          ...(openingData && {
+            selectedOpening: openingRef,
+            openingInfo: {
+              referenceId: openingData.referenceId,
+              name: openingData.name,
+              eco: openingData.eco,
+              pgn: openingData.pgn,
+              moveCount: openingData.moveCount,
+            },
+          }),
         },
       },
     });

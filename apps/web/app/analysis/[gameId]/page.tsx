@@ -48,6 +48,8 @@ interface AnalysisData {
   tournamentName: string | null;
   legendPgn: string | null;
   legendGameResult: "white_won" | "black_won" | "draw" | null;
+  openingName: string | null;
+  openingEco: string | null;
 }
 
 const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
@@ -94,6 +96,14 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [practiceFen, setPracticeFen] = useState<string | null>(null);
   const [practiceKey, setPracticeKey] = useState(0); // bumped to force reset even for same FEN
   const previousTabRef = useRef<AnalysisTab>("legend-moves");
+
+  // Default to "your-moves" when no legend moves (e.g. opening games)
+  useEffect(() => {
+    if (data && data.legendMoves.length === 0) {
+      setActiveTab("your-moves");
+      previousTabRef.current = "your-moves";
+    }
+  }, [data]);
 
   // Initialize analysis board hook
   const analysisBoard = useAnalysisBoard({
@@ -205,6 +215,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   }
 
   const hasLegendMoves = data.legendMoves.length > 0;
+  const isOpeningGame = !!data.openingName;
 
   return (
     <div className="min-h-screen bg-black text-white overflow-auto">
@@ -251,7 +262,11 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                       style={{ fontFamily: "'Geist', sans-serif" }}
                       className="text-[10px] tracking-[0.3em] uppercase text-white/40"
                     >
-                      {activeTab === "legend-moves" ? "Legend Game" : "Move Comparison"}
+                      {isOpeningGame
+                        ? "Your Moves"
+                        : activeTab === "legend-moves"
+                          ? "Legend Game"
+                          : "Move Comparison"}
                     </p>
                   </div>
                   {hasLegendMoves ? (
@@ -271,7 +286,9 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="text-white/30 text-sm text-center"
                       >
-                        No legend moves available for comparison
+                        {isOpeningGame
+                          ? "Review your moves from this opening"
+                          : "No legend moves available for comparison"}
                       </p>
                     </div>
                   )}
@@ -291,49 +308,70 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             >
               {/* Two-line header */}
               <div className="flex flex-col items-center gap-0.5">
-                {/* Line 1: Tournament + Players */}
+                {/* Line 1: Opening name OR Tournament + Players */}
                 <div className="flex items-center justify-center gap-1.5 lg:gap-2 flex-wrap">
-                  {data.tournamentName && (
-                    <>
-                      <span
-                        style={{ fontFamily: "'Geist', sans-serif" }}
-                        className="text-white/25 text-[10px] lg:text-xs"
-                      >
-                        {data.tournamentName}
-                      </span>
-                      {(data.whitePlayerName || data.blackPlayerName) && (
-                        <span className="text-white/20">·</span>
-                      )}
-                    </>
-                  )}
-                  {(data.whitePlayerName || data.blackPlayerName) && (
-                    <div className="flex items-center gap-1.5 lg:gap-2">
-                      <span
-                        style={{ fontFamily: "'Instrument Serif', serif" }}
-                        className="text-sky-300/60 text-sm lg:text-base"
-                      >
-                        {data.whitePlayerName || "White"}
-                      </span>
-                      {data.legendGameResult && (
+                  {isOpeningGame ? (
+                    <div className="flex items-center gap-2">
+                      {data.openingEco && (
                         <span
                           style={{ fontFamily: "'Geist', sans-serif" }}
-                          className="text-sky-400/70 text-xs lg:text-sm font-medium"
+                          className="text-[10px] tracking-wider text-white/50 bg-white/10 px-1.5 py-0.5 uppercase"
                         >
-                          {data.legendGameResult === "white_won" && "1–0"}
-                          {data.legendGameResult === "black_won" && "0–1"}
-                          {data.legendGameResult === "draw" && "½–½"}
+                          {data.openingEco}
                         </span>
-                      )}
-                      {!data.legendGameResult && (
-                        <span className="text-white/20 text-xs">vs</span>
                       )}
                       <span
                         style={{ fontFamily: "'Instrument Serif', serif" }}
-                        className="text-sky-300/60 text-sm lg:text-base"
+                        className="text-white/50 text-sm lg:text-base italic"
                       >
-                        {data.blackPlayerName || "Black"}
+                        {data.openingName}
                       </span>
                     </div>
+                  ) : (
+                    <>
+                      {data.tournamentName && (
+                        <>
+                          <span
+                            style={{ fontFamily: "'Geist', sans-serif" }}
+                            className="text-white/25 text-[10px] lg:text-xs"
+                          >
+                            {data.tournamentName}
+                          </span>
+                          {(data.whitePlayerName || data.blackPlayerName) && (
+                            <span className="text-white/20">·</span>
+                          )}
+                        </>
+                      )}
+                      {(data.whitePlayerName || data.blackPlayerName) && (
+                        <div className="flex items-center gap-1.5 lg:gap-2">
+                          <span
+                            style={{ fontFamily: "'Instrument Serif', serif" }}
+                            className="text-sky-300/60 text-sm lg:text-base"
+                          >
+                            {data.whitePlayerName || "White"}
+                          </span>
+                          {data.legendGameResult && (
+                            <span
+                              style={{ fontFamily: "'Geist', sans-serif" }}
+                              className="text-sky-400/70 text-xs lg:text-sm font-medium"
+                            >
+                              {data.legendGameResult === "white_won" && "1–0"}
+                              {data.legendGameResult === "black_won" && "0–1"}
+                              {data.legendGameResult === "draw" && "½–½"}
+                            </span>
+                          )}
+                          {!data.legendGameResult && (
+                            <span className="text-white/20 text-xs">vs</span>
+                          )}
+                          <span
+                            style={{ fontFamily: "'Instrument Serif', serif" }}
+                            className="text-sky-300/60 text-sm lg:text-base"
+                          >
+                            {data.blackPlayerName || "Black"}
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -368,15 +406,17 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                       </span>
                     </div>
                   )}
-                  {data.userGameOutcome && (
+                  {data.userGameOutcome && !isOpeningGame && (
                     <span className="text-white/15">·</span>
                   )}
-                  <span
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-white/30 text-[10px] lg:text-xs"
-                  >
-                    from move {data.moveNumberStart}
-                  </span>
+                  {!isOpeningGame && (
+                    <span
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-white/30 text-[10px] lg:text-xs"
+                    >
+                      from move {data.moveNumberStart}
+                    </span>
+                  )}
                 </div>
               </div>
             </motion.div>

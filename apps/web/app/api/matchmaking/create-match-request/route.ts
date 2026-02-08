@@ -5,6 +5,7 @@ import { createMatchRequest } from "@/lib/services/matchmaking";
 const createMatchRequestSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
   legendReferenceId: z.string().nullable().optional(),
+  openingReferenceId: z.string().nullable().optional(),
   initialTimeSeconds: z
     .number()
     .int()
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
     const result = await createMatchRequest({
       userReferenceId: validatedData.userReferenceId,
       legendReferenceId: validatedData.legendReferenceId,
+      openingReferenceId: validatedData.openingReferenceId,
       initialTimeSeconds: validatedData.initialTimeSeconds,
       incrementSeconds: validatedData.incrementSeconds,
     });

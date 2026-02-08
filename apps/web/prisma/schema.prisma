@@ -281,6 +281,28 @@ model Legend {
   @@map("legends")
 }
 
+model Opening {
+  id          BigInt   @id @default(autoincrement())
+  referenceId String   @unique @default(cuid())
+
+  eco        String   // ECO code e.g. "A00", "C50"
+  name       String   // Full name e.g. "Italian Game: Giuoco Piano"
+  pgn        String   // PGN moves e.g. "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5"
+  fen        String   // FEN after PGN moves played out
+  sideToMove String   // "white" or "black" — whose turn after PGN
+  moveCount  Int      // Number of half-moves (plies)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eco])
+  @@index([name])
+  @@unique([eco, name, pgn])
+  @@index([isActive])
+  @@map("openings")
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -331,6 +353,7 @@ model MatchmakingQueue {
 
   // Game preferences
   legendReferenceId  String? // Legend.referenceId (no FK - just stored for position lookup)
+  openingReferenceId String? // Opening.referenceId (no FK - just stored for position lookup)
   timeControlSeconds Int     // e.g., 300 for 5 min
   incrementSeconds   Int     // e.g., 5
 
