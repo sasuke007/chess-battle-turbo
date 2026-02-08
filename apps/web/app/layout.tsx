@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Instrument_Serif } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { UserSync } from "./components/UserSync";
@@ -667,6 +668,22 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
+        <head>
+          {process.env.NODE_ENV === "development" && (
+            <>
+              <Script
+                src="https://unpkg.com/react-scan/dist/auto.global.js"
+                crossOrigin="anonymous"
+                strategy="beforeInteractive"
+              />
+              <Script
+                src="//unpkg.com/react-grab/dist/index.global.js"
+                crossOrigin="anonymous"
+                strategy="beforeInteractive"
+              />
+            </>
+          )}
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-black`}
         >

@@ -94,6 +94,17 @@ show the original game line after game has ended.
 Also we can show some sort of review of the game and till what point they player play same moves as the legend.
 
 
-
 reconnection scenarios and testing and observability for quick match.
+
+
+Create youtube channel, UI fixes, discord , and other communities , ToS, cookies and fix home page dummy data.
+
+Observability and logs for web socket and list down happy flows and sleep with them in mind if a scenario click which can break thing fix it immediately.
+
+Make a video of how it works.
+
+Work on 2nd product and keep marketing it alongside.
+
+Optimize for SEO.
+
 

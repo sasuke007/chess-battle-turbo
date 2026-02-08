@@ -440,8 +440,7 @@ export class GameSession {
     }
 
     const winner = player.color === "w" ? "b" : "w";
-    const result: GameResult =
-      winner === "w" ? "CREATOR_WON" : "OPPONENT_WON";
+    const result: GameResult = this.getGameResult(winner);
 
     await this.endGame(result, winner, "resignation");
   }
@@ -694,7 +693,28 @@ export class GameSession {
   // PRIVATE HELPER METHODS
   // ============================================
 
+  /**
+   * Determine the correct GameResult based on winner color.
+   * Looks up whether the winner is the creator or opponent by reference ID,
+   * rather than assuming white=creator.
+   */
+  private getGameResult(winner: Color): GameResult {
+    const winnerRefId = winner === "w"
+      ? this.whitePlayer?.userReferenceId
+      : this.blackPlayer?.userReferenceId;
+    return winnerRefId === this.gameData.creator.userReferenceId
+      ? "CREATOR_WON"
+      : "OPPONENT_WON";
+  }
+
   private getPlayerBySocket(socket: Socket): PlayerConnection | null {
+    // In AI games, both players share the human's socket.
+    // Any action from this socket belongs to the human player.
+    if (this.isAIGame) {
+      const humanPlayer = this.humanPlayerColor === "w" ? this.whitePlayer : this.blackPlayer;
+      if (humanPlayer?.socket.id === socket.id) return humanPlayer;
+      return null;
+    }
     if (this.whitePlayer?.socket.id === socket.id) {
       return this.whitePlayer;
     }
@@ -802,8 +822,8 @@ export class GameSession {
       `Timeout for ${color === "w" ? "White" : "Black"} in game ${this.gameData.referenceId}`
     );
 
-    const result: GameResult = color === "w" ? "OPPONENT_WON" : "CREATOR_WON";
     const winner = color === "w" ? "b" : "w";
+    const result: GameResult = this.getGameResult(winner);
 
     await this.endGame(result, winner, "timeout");
   }
@@ -817,7 +837,7 @@ export class GameSession {
       // Opponent of current turn wins
       const loser = this.chess.turn();
       winner = loser === "w" ? "b" : "w";
-      result = winner === "w" ? "CREATOR_WON" : "OPPONENT_WON";
+      result = this.getGameResult(winner);
       method = "checkmate";
     } else if (this.chess.isStalemate()) {
       result = "DRAW";
