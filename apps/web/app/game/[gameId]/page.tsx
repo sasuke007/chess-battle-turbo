@@ -440,7 +440,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setGameOver(true);
       const resultText = payload.result === "DRAW"
         ? "Draw"
-        : payload.winner === myColor
+        : payload.winner === myColorRef.current
         ? "Victory"
         : "Defeat";
       setGameResult(`${resultText} — ${payload.method}`);
@@ -483,7 +483,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [isReady, gameId, myColor, userReferenceId]);
+  }, [isReady, gameId, userReferenceId]);
 
   // Clear pending promotion if game ends
   useEffect(() => {
@@ -972,6 +972,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   onNavigate={handleNavigate}
                   onPlaySound={() => playSound('move')}
                   disabled={!gameStarted}
+                  enableKeyboard={false}
                 />
               </div>
 

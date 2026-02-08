@@ -9,6 +9,7 @@ interface MoveNavigationProps {
   onNavigate: (index: number | null) => void;
   onPlaySound?: () => void;
   disabled?: boolean;
+  enableKeyboard?: boolean;
 }
 
 export default function MoveNavigation({
@@ -17,6 +18,7 @@ export default function MoveNavigation({
   onNavigate,
   onPlaySound,
   disabled = false,
+  enableKeyboard = true,
 }: MoveNavigationProps) {
   const isLive = viewingMoveIndex === null;
   const currentIndex = viewingMoveIndex ?? totalMoves;
@@ -59,9 +61,9 @@ export default function MoveNavigation({
     }
   }, [disabled, totalMoves, onNavigate, onPlaySound]);
 
-  // Keyboard navigation
+  // Keyboard navigation — only one instance should handle this
   useEffect(() => {
-    if (disabled) return;
+    if (disabled || !enableKeyboard) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -95,7 +97,7 @@ export default function MoveNavigation({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [disabled, goBack, goForward, goToFirst, goToLast]);
+  }, [disabled, enableKeyboard, goBack, goForward, goToFirst, goToLast]);
 
   const canGoBack = totalMoves > 0 && (isLive || currentIndex > 0);
   const canGoForward = !isLive;

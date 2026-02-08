@@ -422,20 +422,22 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </motion.div>
 
             {/* Tabs - Mobile Only */}
-            {hasLegendMoves && (
+            {(hasLegendMoves || isOpeningGame) && (
               <div className="flex items-center justify-center gap-2 md:gap-3 mb-10 md:mb-14 px-2 lg:hidden">
-                <button
-                  onClick={() => setActiveTab("legend-moves")}
-                  className={cn(
-                    "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
-                    activeTab === "legend-moves"
-                      ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
-                      : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
-                  )}
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                >
-                  Legend&apos;s Moves
-                </button>
+                {hasLegendMoves && (
+                  <button
+                    onClick={() => setActiveTab("legend-moves")}
+                    className={cn(
+                      "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                      activeTab === "legend-moves"
+                        ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
+                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    )}
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    Legend&apos;s Moves
+                  </button>
+                )}
                 <button
                   onClick={() => setActiveTab("your-moves")}
                   className={cn(
@@ -692,7 +694,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           {/* Right - Legend Key & Info (hidden on mobile) */}
           <div className="lg:col-span-3 order-3 hidden lg:flex lg:flex-col max-h-[70vh] overflow-y-auto space-y-4">
             {/* View Mode Tabs - Desktop */}
-            {hasLegendMoves && (
+            {(hasLegendMoves || isOpeningGame) && (
               <div className="border border-white/10 p-4">
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}
@@ -701,18 +703,20 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   View Mode
                 </p>
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => setActiveTab("legend-moves")}
-                    className={cn(
-                      "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
-                      activeTab === "legend-moves"
-                        ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
-                        : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
-                    )}
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    Legend&apos;s Moves
-                  </button>
+                  {hasLegendMoves && (
+                    <button
+                      onClick={() => setActiveTab("legend-moves")}
+                      className={cn(
+                        "w-full px-4 py-2.5 text-xs tracking-wide border transition-colors text-left",
+                        activeTab === "legend-moves"
+                          ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
+                          : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                      )}
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                    >
+                      Legend&apos;s Moves
+                    </button>
+                  )}
                   <button
                     onClick={() => setActiveTab("your-moves")}
                     className={cn(
