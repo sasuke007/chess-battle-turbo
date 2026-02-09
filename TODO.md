@@ -108,3 +108,17 @@ Work on 2nd product and keep marketing it alongside.
 Optimize for SEO.
 
 
+If i share a link with someone and it does not working.
+
+when from analysis page if someone click back button he should not go to game page, figure out a logic to take him to play page.
+
+once we have sent an event after both the players have joined the game_start event then we should actively check for sometime and the client should sent a event back that game has actually started if we dont receive a event form client a game started event then we should again send that game_start event to that client maybe the packet got lost, otherwise the client will be struck on the joining screen forever.
+
+
+And on joining screen also should have a 1 minute timeout that if after one minute, if the game does not start we should show client that unbale to load the game at the moment, please try after sometime.
+
+
+
+
+
+

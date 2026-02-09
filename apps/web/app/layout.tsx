@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Instrument_Serif } from "next/font/google";
-import Script from "next/script";
+
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { UserSync } from "./components/UserSync";
@@ -671,15 +671,13 @@ export default function RootLayout({
         <head>
           {process.env.NODE_ENV === "development" && (
             <>
-              <Script
+              <script
                 src="https://unpkg.com/react-scan/dist/auto.global.js"
                 crossOrigin="anonymous"
-                strategy="beforeInteractive"
               />
-              <Script
-                src="//unpkg.com/react-grab/dist/index.global.js"
+              <script
+                src="https://unpkg.com/react-grab/dist/index.global.js"
                 crossOrigin="anonymous"
-                strategy="beforeInteractive"
               />
             </>
           )}
