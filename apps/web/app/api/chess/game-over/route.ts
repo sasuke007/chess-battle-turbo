@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Decimal } from "@prisma/client/runtime/library";
+import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "../../../../lib/prisma";
-import { logger } from "@/lib/logger";
+import { logger } from "@/lib/sentry/logger";
 
 type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = gameOverSchema.parse(body);
 
-    logger.info(`POST /api/chess/game-over - game ${validatedData.gameReferenceId}, result ${validatedData.result}, method ${validatedData.method}`);
+    Sentry.setTag("game.referenceId", validatedData.gameReferenceId);
 
     // 2. Find game
     const game = await prisma.game.findUnique({
@@ -247,8 +248,6 @@ export async function POST(request: NextRequest) {
       timeout: 15000, // Maximum time for transaction to complete (15 seconds)
     });
 
-    logger.info(`Game completed: ${result.game.referenceId}, result ${result.game.result}, status ${result.game.status}`);
-
     // 6. Return success (don't send full game object with BigInt fields)
     return NextResponse.json(
       {
@@ -279,7 +278,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    logger.error(`POST /api/chess/game-over failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
+    logger.error("Error completing game", error);
     return NextResponse.json(
       {
         success: false,

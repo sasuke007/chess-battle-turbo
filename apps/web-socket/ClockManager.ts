@@ -64,7 +64,7 @@ export class ClockManager {
       this.tick();
     }, this.TICK_INTERVAL);
 
-    logger.debug(`Clock started for ${color === "w" ? "White" : "Black"}`);
+    logger.info(`Clock started for ${color === "w" ? "White" : "Black"}`);
   }
 
   /**
@@ -86,7 +86,7 @@ export class ClockManager {
       this.updateTimeForColor(wasActive);
     }
 
-    logger.debug("Clock stopped");
+    logger.info("Clock stopped");
   }
 
   /**
@@ -97,10 +97,10 @@ export class ClockManager {
 
     if (color === "w") {
       this.whiteTime += incrementMs;
-      logger.debug(`Added ${this.config.increment}s increment to White`);
+      logger.info(`Added ${this.config.increment}s increment to White`);
     } else {
       this.blackTime += incrementMs;
-      logger.debug(`Added ${this.config.increment}s increment to Black`);
+      logger.info(`Added ${this.config.increment}s increment to Black`);
     }
 
     // Emit update after adding increment

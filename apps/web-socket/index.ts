@@ -1,4 +1,6 @@
+// Must be first import — initializes Sentry before anything else
 import "./instrument";
+
 import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
@@ -11,16 +13,8 @@ import {
   OfferDrawPayload,
   AcceptDrawPayload,
   DeclineDrawPayload,
-  AnalysisCompletePayload,
 } from "./types";
-import {
-  captureSocketError,
-  addSocketBreadcrumb,
-  trackSocketEvent,
-  trackActiveConnections,
-  trackActiveGames,
-  flushSentry,
-} from "./utils/sentry";
+import { withGameTrace } from "./utils/traceContext";
 import { logger } from "./utils/logger";
 
 const app = express();
@@ -29,9 +23,6 @@ const app = express();
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "WebSocket server is running" });
 });
-
-// Sentry error handler for Express (must be after all routes)
-Sentry.setupExpressErrorHandler(app);
 
 const server = createServer(app);
 
@@ -47,45 +38,30 @@ const io = new Server(server, {
 // Initialize GameManager
 const gameManager = new GameManager();
 
-// Periodically report active game count
-const metricsInterval = setInterval(() => {
-  trackActiveGames(gameManager.getActiveGameCount());
-}, 30_000);
-
 // Socket.IO connection handler
 io.on("connection", (socket) => {
   logger.info(`Client connected, socket id: ${socket.id}`);
-  addSocketBreadcrumb("client_connected", { socketId: socket.id });
-  trackActiveConnections(io.engine.clientsCount);
 
   // Handle player joining a game
   socket.on("join_game", async (payload: JoinGamePayload) => {
-    await Sentry.startSpan(
+    const { gameReferenceId, userReferenceId } = payload;
+
+    await withGameTrace(
+      gameReferenceId,
       {
+        name: "websocket.join_game",
         op: "websocket.event",
-        name: "join_game",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "user.referenceId": payload.userReferenceId,
-          "socket.id": socket.id,
-        },
+        attributes: { "game.referenceId": gameReferenceId, "user.referenceId": userReferenceId },
       },
       async () => {
-        trackSocketEvent("join_game");
         try {
-          const { gameReferenceId, userReferenceId } = payload;
-          logger.info(`join_game event: gameRef=${gameReferenceId}, user=${userReferenceId}`);
-          addSocketBreadcrumb("join_game", { gameReferenceId, userReferenceId });
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info(`join_game event`, { game: gameReferenceId, user: userReferenceId });
 
           await gameManager.handleJoinGame(socket, gameReferenceId, userReferenceId);
         } catch (error) {
-          logger.error(`Error in join_game handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "join_game",
-            gameReferenceId: payload.gameReferenceId,
-            userReferenceId: payload.userReferenceId,
-            socketId: socket.id,
-          });
+          Sentry.captureException(error);
+          logger.error("Error in join_game handler", error, { game: gameReferenceId });
           socket.emit("error", {
             message: error instanceof Error ? error.message : "Failed to join game",
           });
@@ -96,22 +72,19 @@ io.on("connection", (socket) => {
 
   // Handle move attempts
   socket.on("make_move", async (payload: MakeMovePayload) => {
-    await Sentry.startSpan(
+    const { gameReferenceId, from, to, promotion } = payload;
+
+    await withGameTrace(
+      gameReferenceId,
       {
+        name: "websocket.make_move",
         op: "websocket.event",
-        name: "make_move",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "socket.id": socket.id,
-          "move.from": payload.from,
-          "move.to": payload.to,
-        },
+        attributes: { "game.referenceId": gameReferenceId },
       },
       async () => {
-        trackSocketEvent("make_move");
         try {
-          const { gameReferenceId, from, to, promotion } = payload;
-          logger.info(`make_move event: game=${gameReferenceId}, from=${from}, to=${to}`);
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info(`make_move event: from=${from}, to=${to}`, { game: gameReferenceId });
 
           await gameManager.handleMove(
             socket,
@@ -121,13 +94,8 @@ io.on("connection", (socket) => {
             promotion
           );
         } catch (error) {
-          logger.error(`Error in make_move handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "make_move",
-            gameReferenceId: payload.gameReferenceId,
-            socketId: socket.id,
-            extra: { from: payload.from, to: payload.to },
-          });
+          Sentry.captureException(error);
+          logger.error("Error in make_move handler", error, { game: gameReferenceId });
           socket.emit("move_error", {
             message: error instanceof Error ? error.message : "Failed to make move",
           });
@@ -138,30 +106,24 @@ io.on("connection", (socket) => {
 
   // Handle resignation
   socket.on("resign", async (payload: ResignPayload) => {
-    await Sentry.startSpan(
+    const { gameReferenceId } = payload;
+
+    await withGameTrace(
+      gameReferenceId,
       {
+        name: "websocket.resign",
         op: "websocket.event",
-        name: "resign",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "socket.id": socket.id,
-        },
+        attributes: { "game.referenceId": gameReferenceId },
       },
       async () => {
-        trackSocketEvent("resign");
-        addSocketBreadcrumb("resign", { gameReferenceId: payload.gameReferenceId });
         try {
-          const { gameReferenceId } = payload;
-          logger.info(`resign event: game=${gameReferenceId}`);
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info("resign event", { game: gameReferenceId });
 
           await gameManager.handleResign(socket, gameReferenceId);
         } catch (error) {
-          logger.error(`Error in resign handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "resign",
-            gameReferenceId: payload.gameReferenceId,
-            socketId: socket.id,
-          });
+          Sentry.captureException(error);
+          logger.error("Error in resign handler", error, { game: gameReferenceId });
           socket.emit("error", {
             message: error instanceof Error ? error.message : "Failed to resign",
           });
@@ -172,30 +134,24 @@ io.on("connection", (socket) => {
 
   // Handle draw offer
   socket.on("offer_draw", (payload: OfferDrawPayload) => {
-    Sentry.startSpan(
+    const { gameReferenceId } = payload;
+
+    withGameTrace(
+      gameReferenceId,
       {
+        name: "websocket.offer_draw",
         op: "websocket.event",
-        name: "offer_draw",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "socket.id": socket.id,
-        },
+        attributes: { "game.referenceId": gameReferenceId },
       },
       () => {
-        trackSocketEvent("offer_draw");
-        addSocketBreadcrumb("offer_draw", { gameReferenceId: payload.gameReferenceId });
         try {
-          const { gameReferenceId } = payload;
-          logger.info(`offer_draw event: game=${gameReferenceId}`);
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info("offer_draw event", { game: gameReferenceId });
 
           gameManager.handleOfferDraw(socket, gameReferenceId);
         } catch (error) {
-          logger.error(`Error in offer_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "offer_draw",
-            gameReferenceId: payload.gameReferenceId,
-            socketId: socket.id,
-          });
+          Sentry.captureException(error);
+          logger.error("Error in offer_draw handler", error, { game: gameReferenceId });
           socket.emit("error", {
             message: error instanceof Error ? error.message : "Failed to offer draw",
           });
@@ -206,30 +162,24 @@ io.on("connection", (socket) => {
 
   // Handle draw acceptance
   socket.on("accept_draw", async (payload: AcceptDrawPayload) => {
-    await Sentry.startSpan(
+    const { gameReferenceId } = payload;
+
+    await withGameTrace(
+      gameReferenceId,
       {
+        name: "websocket.accept_draw",
         op: "websocket.event",
-        name: "accept_draw",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "socket.id": socket.id,
-        },
+        attributes: { "game.referenceId": gameReferenceId },
       },
       async () => {
-        trackSocketEvent("accept_draw");
-        addSocketBreadcrumb("accept_draw", { gameReferenceId: payload.gameReferenceId });
         try {
-          const { gameReferenceId } = payload;
-          logger.info(`accept_draw event: game=${gameReferenceId}`);
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info("accept_draw event", { game: gameReferenceId });
 
           await gameManager.handleAcceptDraw(socket, gameReferenceId);
         } catch (error) {
-          logger.error(`Error in accept_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "accept_draw",
-            gameReferenceId: payload.gameReferenceId,
-            socketId: socket.id,
-          });
+          Sentry.captureException(error);
+          logger.error("Error in accept_draw handler", error, { game: gameReferenceId });
           socket.emit("error", {
             message: error instanceof Error ? error.message : "Failed to accept draw",
           });
@@ -240,86 +190,35 @@ io.on("connection", (socket) => {
 
   // Handle draw decline
   socket.on("decline_draw", (payload: DeclineDrawPayload) => {
-    Sentry.startSpan(
+    const { gameReferenceId } = payload;
+
+    withGameTrace(
+      gameReferenceId,
       {
+        name: "websocket.decline_draw",
         op: "websocket.event",
-        name: "decline_draw",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "socket.id": socket.id,
-        },
+        attributes: { "game.referenceId": gameReferenceId },
       },
       () => {
-        trackSocketEvent("decline_draw");
         try {
-          const { gameReferenceId } = payload;
-          logger.info(`decline_draw event: game=${gameReferenceId}`);
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info("decline_draw event", { game: gameReferenceId });
 
           gameManager.handleDeclineDraw(socket, gameReferenceId);
         } catch (error) {
-          logger.error(`Error in decline_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "decline_draw",
-            gameReferenceId: payload.gameReferenceId,
-            socketId: socket.id,
-          });
+          Sentry.captureException(error);
+          logger.error("Error in decline_draw handler", error, { game: gameReferenceId });
         }
       }
     );
   });
 
-  // Handle analysis phase completion (client countdown finished)
-  socket.on("analysis_complete", (payload: AnalysisCompletePayload & { userReferenceId?: string }) => {
-    Sentry.startSpan(
-      {
-        op: "websocket.event",
-        name: "analysis_complete",
-        attributes: {
-          "game.referenceId": payload.gameReferenceId,
-          "socket.id": socket.id,
-        },
-      },
-      () => {
-        trackSocketEvent("analysis_complete");
-        try {
-          const { gameReferenceId, userReferenceId } = payload;
-          logger.info(`analysis_complete event: game=${gameReferenceId}, user=${userReferenceId}`);
-
-          if (!userReferenceId) {
-            socket.emit("error", { message: "userReferenceId required for analysis_complete" });
-            return;
-          }
-
-          gameManager.handleAnalysisComplete(socket, gameReferenceId, userReferenceId);
-        } catch (error) {
-          logger.error(`Error in analysis_complete handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
-          captureSocketError(error, {
-            event: "analysis_complete",
-            gameReferenceId: payload.gameReferenceId,
-            userReferenceId: payload.userReferenceId,
-            socketId: socket.id,
-          });
-          socket.emit("error", {
-            message: error instanceof Error ? error.message : "Failed to handle analysis complete",
-          });
-        }
-      }
-    );
-  });
-
-  // Handle disconnection
+  // Handle disconnection (no gameReferenceId — stays as isolated span)
   socket.on("disconnect", () => {
     Sentry.startSpan(
-      {
-        op: "websocket.event",
-        name: "disconnect",
-        attributes: { "socket.id": socket.id },
-      },
+      { name: "websocket.disconnect", op: "websocket.event" },
       () => {
         logger.info(`Client disconnected, socket id: ${socket.id}`);
-        addSocketBreadcrumb("client_disconnected", { socketId: socket.id });
-        trackActiveConnections(io.engine.clientsCount);
-        trackSocketEvent("disconnect");
         gameManager.handleDisconnect(socket);
       }
     );
@@ -327,19 +226,23 @@ io.on("connection", (socket) => {
 });
 
 // Graceful shutdown
-async function gracefulShutdown(signal: string): Promise<void> {
-  logger.info(`${signal} received, shutting down gracefully`);
-  clearInterval(metricsInterval);
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received, shutting down gracefully");
   gameManager.destroy();
-  server.close(async () => {
+  server.close(() => {
     logger.info("Server closed");
-    await flushSentry(2000);
     process.exit(0);
   });
-}
+});
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGINT", () => {
+  logger.info("SIGINT received, shutting down gracefully");
+  gameManager.destroy();
+  server.close(() => {
+    logger.info("Server closed");
+    process.exit(0);
+  });
+});
 
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {

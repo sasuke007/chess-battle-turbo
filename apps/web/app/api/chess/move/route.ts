@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "../../../../lib/prisma";
-import { logger } from "@/lib/logger";
+import { logger } from "@/lib/sentry/logger";
 
 const moveSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = moveSchema.parse(body);
 
-    logger.info(`POST /api/chess/move - game ${validatedData.gameReferenceId}, ${validatedData.from}-${validatedData.to}`);
+    Sentry.setTag("game.referenceId", validatedData.gameReferenceId);
 
     // 2. Find game with user relations to get reference IDs
     const game = await prisma.game.findUnique({

@@ -1,8 +1,7 @@
-import * as Sentry from "@sentry/node";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * Extracts the current Sentry trace ID from the active span.
- * When called inside withGameTrace(), this returns the game's shared traceId.
  */
 function getTraceId(): string | undefined {
   const span = Sentry.getActiveSpan();
@@ -40,13 +39,6 @@ export const logger = {
       console.error(prefix ? `${prefix} ${message}` : message, err);
     } else {
       console.error(prefix ? `${prefix} ${message}` : message);
-    }
-  },
-
-  debug(message: string, context?: Record<string, string>) {
-    if (process.env.NODE_ENV === "development") {
-      const prefix = formatPrefix(context);
-      console.log(prefix ? `${prefix} ${message}` : message);
     }
   },
 };

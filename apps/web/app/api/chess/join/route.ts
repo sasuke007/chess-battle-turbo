@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { z } from "zod";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser } from "@/lib/services/user-validation.service";
-import { logger } from "@/lib/logger";
+import { logger } from "@/lib/sentry/logger";
 
 const joinGameSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -20,6 +21,7 @@ interface GameWithCreator {
   stakeAmount: Decimal;
   status: string;
   expiresAt: Date;
+  gameData: any;
   creator: {
     id: bigint;
     referenceId: string;
@@ -152,65 +154,80 @@ export async function POST(request: NextRequest) {
     // 1. Parse and validate request body
     const body = await request.json();
     const validatedData = joinGameSchema.parse(body);
-    logger.debug(`validatedData: ${JSON.stringify(validatedData)}`);
-
-    logger.info(`POST /api/chess/join - game ${validatedData.gameReferenceId}, opponent ${validatedData.opponentReferenceId}`);
+    logger.info(`Join game request: game=${validatedData.gameReferenceId}`);
 
     // 2. Fetch and validate game
     const game = await validateAndFetchGame(validatedData.gameReferenceId);
 
-    // 3. Fetch and validate opponent
-    const opponent = await validateAndFetchUser(validatedData.opponentReferenceId);
+    // 2b. Continue the game's distributed trace if trace context is available
+    const traceContext = game.gameData?.traceContext;
+    Sentry.setTag("game.referenceId", game.referenceId);
 
-    // 4. Prevent self-play - check if opponent is the same as creator
-    if (game.creatorId === opponent.id) {
-      throw new ValidationError("You cannot join your own game", 400);
-    }
+    const executeJoin = async () => {
+      // 3. Fetch and validate opponent
+      const opponent = await validateAndFetchUser(validatedData.opponentReferenceId);
 
-    // 5. Execute join game transaction
-    const result = await joinGameTransaction(
-      game,
-      opponent,
-      new Decimal(opponent.wallet!.balance),
-      new Decimal(opponent.wallet!.lockedAmount)
-    );
+      // 4. Prevent self-play - check if opponent is the same as creator
+      if (game.creatorId === opponent.id) {
+        throw new ValidationError("You cannot join your own game", 400);
+      }
 
-    logger.info(`Game joined: ${validatedData.gameReferenceId} by opponent ${validatedData.opponentReferenceId}`);
+      // 5. Execute join game transaction
+      const result = await joinGameTransaction(
+        game,
+        opponent,
+        new Decimal(opponent.wallet!.balance),
+        new Decimal(opponent.wallet!.lockedAmount)
+      );
 
-    // 6. Return success response
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Successfully joined the game",
-        data: {
-          game: {
-            referenceId: result.game.referenceId,
-            status: result.game.status,
-            stakeAmount: result.game.stakeAmount.toString(),
-            totalPot: result.game.totalPot.toString(),
-            platformFeeAmount: result.game.platformFeeAmount.toString(),
-            initialTimeSeconds: result.game.initialTimeSeconds,
-            incrementSeconds: result.game.incrementSeconds,
-            timeControl: {
-              format: `${result.game.initialTimeSeconds / 60}+${result.game.incrementSeconds}`,
+      // 6. Return success response
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Successfully joined the game",
+          data: {
+            game: {
+              referenceId: result.game.referenceId,
+              status: result.game.status,
+              stakeAmount: result.game.stakeAmount.toString(),
+              totalPot: result.game.totalPot.toString(),
+              platformFeeAmount: result.game.platformFeeAmount.toString(),
+              initialTimeSeconds: result.game.initialTimeSeconds,
+              incrementSeconds: result.game.incrementSeconds,
+              timeControl: {
+                format: `${result.game.initialTimeSeconds / 60}+${result.game.incrementSeconds}`,
+              },
+              creator: result.game.creator,
+              opponent: result.game.opponent,
+              startedAt: result.game.startedAt,
+              expiresAt: result.game.expiresAt,
+              createdAt: result.game.createdAt,
             },
-            creator: result.game.creator,
-            opponent: result.game.opponent,
-            startedAt: result.game.startedAt,
-            expiresAt: result.game.expiresAt,
-            createdAt: result.game.createdAt,
-          },
-          wallet: {
-            balance: result.wallet.balance.toString(),
-            lockedAmount: result.wallet.lockedAmount.toString(),
-            availableBalance: new Decimal(result.wallet.balance)
-              .sub(new Decimal(result.wallet.lockedAmount))
-              .toString(),
+            wallet: {
+              balance: result.wallet.balance.toString(),
+              lockedAmount: result.wallet.lockedAmount.toString(),
+              availableBalance: new Decimal(result.wallet.balance)
+                .sub(new Decimal(result.wallet.lockedAmount))
+                .toString(),
+            },
           },
         },
-      },
-      { status: 200 }
-    );
+        { status: 200 }
+      );
+    };
+
+    // Link to the game's original trace if trace context is available
+    if (traceContext?.sentryTrace) {
+      return await Sentry.continueTrace(
+        {
+          sentryTrace: traceContext.sentryTrace,
+          baggage: traceContext.baggage || "",
+        },
+        executeJoin
+      );
+    }
+
+    return await executeJoin();
   } catch (error) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
@@ -238,7 +255,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    logger.error(`POST /api/chess/join failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
+    logger.error("Error joining game", error);
     return NextResponse.json(
       {
         error: "Failed to join game",
