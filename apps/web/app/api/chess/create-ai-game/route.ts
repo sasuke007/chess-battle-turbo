@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlayCount } from "@/lib/services/chess-position.service";
 import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
+import { logger } from "@/lib/logger";
 
 // Bot user constants - must match the seeded bot user
 const BOT_USER_CODE = "CHESS_BOT_001";
@@ -129,7 +130,7 @@ async function getOrCreateBotUser() {
         },
       },
     });
-    console.log("Created bot user:", botUser.referenceId);
+    logger.debug(`Created bot user: ${botUser.referenceId}`);
   }
 
   return botUser;
@@ -147,6 +148,8 @@ export async function POST(request: NextRequest) {
     // 1. Parse and validate request body
     const body = await request.json();
     const validatedData = createAIGameSchema.parse(body);
+
+    logger.info(`POST /api/chess/create-ai-game - user ${validatedData.userReferenceId}, time ${validatedData.initialTimeSeconds}+${validatedData.incrementSeconds}`);
 
     // 2. Validate user and fetch with rating
     const user = await validateAndFetchUserWithRating(validatedData.userReferenceId);
@@ -175,32 +178,22 @@ export async function POST(request: NextRequest) {
     if (selectedOpeningRef) {
       // Opening selected — fetch from openings table
       opening = await getOpeningByReferenceId(selectedOpeningRef);
-      console.log("[AI Game] Opening fetched:", {
-        opening: selectedOpeningRef,
-        found: !!opening,
-      });
+      logger.debug(`[AI Game] Opening fetched: opening=${selectedOpeningRef}, found=${!!opening}`);
     } else if (selectedLegend) {
       // Fetch a position from the selected legend's games
       legendPosition = await getRandomPositionByLegend(selectedLegend);
       chessPosition = legendPosition;
-      console.log("[AI Game] Legend position fetched:", {
-        legend: selectedLegend,
-        found: !!chessPosition,
-      });
+      logger.debug(`[AI Game] Legend position fetched: legend=${selectedLegend}, found=${!!chessPosition}`);
 
       // Fallback to random position if no legend positions found
       if (!chessPosition) {
         chessPosition = await getRandomChessPosition();
-        console.log("[AI Game] Fallback to random position:", {
-          found: !!chessPosition,
-        });
+        logger.debug(`[AI Game] Fallback to random position: found=${!!chessPosition}`);
       }
     } else {
       // No legend or opening selected - fetch random position
       chessPosition = await getRandomChessPosition();
-      console.log("[AI Game] Random position fetched:", {
-        found: !!chessPosition,
-      });
+      logger.debug(`[AI Game] Random position fetched: found=${!!chessPosition}`);
     }
 
     // 6. Player color: match the legend's side or opening side, otherwise random
@@ -219,21 +212,12 @@ export async function POST(request: NextRequest) {
       resolvedPlayerColor = Math.random() < 0.5 ? "white" : "black";
     }
 
-    console.log("[AI Game] Settings:", {
-      timeFormat,
-      userRating,
-      difficulty,
-      playerColor: resolvedPlayerColor,
-    });
+    logger.debug(`[AI Game] Settings: timeFormat=${timeFormat}, userRating=${userRating}, difficulty=${difficulty}, playerColor=${resolvedPlayerColor}`);
 
     const chessPositionId = opening ? null : (chessPosition?.id ?? null);
     const startingFen = opening ? opening.fen : (chessPosition?.fen ?? DEFAULT_STARTING_FEN);
 
-    console.log("[AI Game] Starting position:", {
-      positionId: chessPositionId?.toString(),
-      fen: startingFen,
-      isOpening: !!opening,
-    });
+    logger.debug(`[AI Game] Starting position: positionId=${chessPositionId?.toString()}, fen=${startingFen}, isOpening=${!!opening}`);
 
     // 7. Determine creator and opponent based on player color
     // If player is white, they are creator. If player is black, bot is creator.
@@ -311,6 +295,8 @@ export async function POST(request: NextRequest) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
+    logger.info(`AI game created: ${game.referenceId}, difficulty ${difficulty}, color ${resolvedPlayerColor}`);
+
     // 10. Return success response
     return NextResponse.json(
       {
@@ -358,7 +344,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    console.error("Error creating AI game:", error);
+    logger.error(`POST /api/chess/create-ai-game failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       {
         error: "Failed to create AI game",

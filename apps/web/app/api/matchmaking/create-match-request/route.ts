@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createMatchRequest } from "@/lib/services/matchmaking";
+import { logger } from "@/lib/logger";
 
 const createMatchRequestSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createMatchRequestSchema.parse(body);
 
+    logger.info(`POST /api/matchmaking/create-match-request - user ${validatedData.userReferenceId}, time ${validatedData.initialTimeSeconds}+${validatedData.incrementSeconds}`);
+
     const result = await createMatchRequest({
       userReferenceId: validatedData.userReferenceId,
       legendReferenceId: validatedData.legendReferenceId,
@@ -28,6 +31,8 @@ export async function POST(request: NextRequest) {
       initialTimeSeconds: validatedData.initialTimeSeconds,
       incrementSeconds: validatedData.incrementSeconds,
     });
+
+    logger.info(`Match request created for user ${validatedData.userReferenceId}`);
 
     return NextResponse.json(
       {
@@ -67,7 +72,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.error("Error creating match request:", error);
+    logger.error(`POST /api/matchmaking/create-match-request failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       {
         success: false,

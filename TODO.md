@@ -207,6 +207,7 @@ We can creaate a changelog page.(Datafast)
 
 
 
-
+A game which is completed should redirect to analyze page should not remain on /game page 
+http://localhost:3000/game/cmlifvbro0001va5f03iv2jnw
 
 

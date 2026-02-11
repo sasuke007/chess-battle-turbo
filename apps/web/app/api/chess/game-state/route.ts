@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "../../../../lib/prisma";
+import { logger } from "@/lib/logger";
 
 const gameStateSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -16,6 +17,8 @@ export async function POST(request: NextRequest) {
     // 1. Parse and validate request body
     const body = await request.json();
     const validatedData = gameStateSchema.parse(body);
+
+    logger.info(`POST /api/chess/game-state - game ${validatedData.gameReferenceId}`);
 
     // 2. Find game
     const game = await prisma.game.findUnique({
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    console.error("Error updating game state:", error);
+    logger.error(`POST /api/chess/game-state failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       {
         success: false,

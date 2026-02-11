@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -7,6 +8,8 @@ export async function GET(
 ) {
   try {
     const { gameReferenceId } = await params;
+
+    logger.info(`GET /api/chess/game-by-ref/${gameReferenceId}`);
 
     if (!gameReferenceId) {
       return NextResponse.json(
@@ -99,7 +102,7 @@ export async function GET(
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("Error fetching game by reference:", error);
+    logger.error(`GET /api/chess/game-by-ref failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       { 
         success: false, 
