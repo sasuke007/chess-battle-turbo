@@ -115,10 +115,7 @@ export interface AnalysisPhaseStartedPayload {
   };
 }
 
-export interface AnalysisCountdownPayload {
-  secondsRemaining: number;
-}
-
-export interface AnalysisCompletePayload {
-  gameReferenceId: string;
+export interface AnalysisTickPayload {
+  remainingSeconds: number;
+  totalSeconds: number;
 }

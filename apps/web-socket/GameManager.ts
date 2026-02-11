@@ -2,6 +2,11 @@ import { Socket } from "socket.io";
 import { GameSession } from "./GameSession";
 import { GameData } from "./types";
 import { fetchGameByRef } from "./utils/apiClient";
+import {
+  setGameTraceContext,
+  removeGameTraceContext,
+} from "./utils/traceContext";
+import { logger } from "./utils/logger";
 
 /**
  * GameManager manages all active game sessions
@@ -21,8 +26,9 @@ export class GameManager {
     userReferenceId: string
   ): Promise<void> {
     try {
-      console.log(
-        `Player ${userReferenceId} attempting to join game ${gameReferenceId}`
+      logger.info(
+        `Player ${userReferenceId} attempting to join game`,
+        { game: gameReferenceId, user: userReferenceId }
       );
 
       // Get or create game session
@@ -33,10 +39,13 @@ export class GameManager {
         // Fetch game data from API
         const gameData : GameData = await fetchGameByRef(gameReferenceId);
 
-        console.log("=== GAME MANAGER FETCHED GAME DATA ===");
-        console.log("gameData.gameData:", gameData.gameData);
-        console.log("gameData.gameData?.gameMode:", gameData.gameData?.gameMode);
-        console.log("=======================================");
+        // Extract and store trace context for distributed tracing
+        const traceContext = gameData.gameData?.traceContext;
+        if (traceContext) {
+          setGameTraceContext(gameReferenceId, traceContext);
+        }
+
+        logger.debug(`Fetched game data: gameMode=${gameData.gameData?.gameMode}`, { game: gameReferenceId });
 
         // Validate game status
         if (
@@ -53,17 +62,17 @@ export class GameManager {
         gameSession = new GameSession(gameData);
         this.games.set(gameReferenceId, gameSession);
 
-        console.log(`Created new game session for ${gameReferenceId}`);
+        logger.info(`Created new game session`, { game: gameReferenceId });
       } else {
         // Check if this player is already in the game (reconnection)
         isReconnection = gameSession.isPlayerInGame(userReferenceId);
-        console.log(`Is reconnection: ${isReconnection}`);
+        logger.info(`Is reconnection: ${isReconnection}`, { game: gameReferenceId, user: userReferenceId });
       }
 
       //TODO: do we need to validate game status again here, check what can go wrong if we don't.
       const game: GameData = await fetchGameByRef(gameReferenceId);
       await gameSession.setGameData(game);
-      
+
       // Track socket to game mapping BEFORE adding player
       if (!this.socketToGames.has(socket.id)) {
         this.socketToGames.set(socket.id, new Set());
@@ -72,10 +81,10 @@ export class GameManager {
 
       // Handle reconnection vs new join
       if (isReconnection) {
-        console.log(`Handling reconnection for ${userReferenceId}`);
+        logger.info(`Handling reconnection for ${userReferenceId}`, { game: gameReferenceId });
         gameSession.handleReconnect(socket, userReferenceId);
       } else {
-        console.log(`Handling new player join for ${userReferenceId}`);
+        logger.info(`Handling new player join for ${userReferenceId}`, { game: gameReferenceId });
         // Add player to session
         await gameSession.addPlayer(socket, userReferenceId);
 
@@ -85,11 +94,11 @@ export class GameManager {
           !gameSession.hasBothPlayers()
         ) {
           socket.emit("waiting_for_opponent", { gameReferenceId });
-          console.log(`Player waiting for opponent in game ${gameReferenceId}`);
+          logger.info(`Player waiting for opponent`, { game: gameReferenceId });
         }
       }
     } catch (error) {
-      console.error("Error handling join game:", error);
+      logger.error("Error handling join game", error, { game: gameReferenceId });
       socket.emit("error", {
         message: error instanceof Error ? error.message : "Failed to join game",
       });
@@ -186,25 +195,7 @@ export class GameManager {
     }
 
     gameSession.handleDrawDecline(socket);
-    console.log(`Draw declined in game ${gameReferenceId}`);
-  }
-
-  /**
-   * Handle analysis phase completion acknowledgment from client
-   */
-  public handleAnalysisComplete(
-    socket: Socket,
-    gameReferenceId: string,
-    userReferenceId: string
-  ): void {
-    const gameSession = this.games.get(gameReferenceId);
-
-    if (!gameSession) {
-      socket.emit("error", { message: "Game not found" });
-      return;
-    }
-
-    gameSession.handleAnalysisComplete(userReferenceId);
+    logger.info(`Draw declined`, { game: gameReferenceId });
   }
 
   /**
@@ -217,7 +208,7 @@ export class GameManager {
       return;
     }
 
-    console.log(`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
+    logger.info(`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
 
     // Notify all games this socket was part of
     gameIds.forEach((gameReferenceId) => {
@@ -264,7 +255,8 @@ export class GameManager {
     if (gameSession) {
       gameSession.destroy();
       this.games.delete(gameReferenceId);
-      console.log(`Removed game session ${gameReferenceId}`);
+      removeGameTraceContext(gameReferenceId);
+      logger.info(`Removed game session`, { game: gameReferenceId });
     }
   }
 
@@ -288,10 +280,10 @@ export class GameManager {
   public destroy(): void {
     this.games.forEach((gameSession, gameReferenceId) => {
       gameSession.destroy();
+      removeGameTraceContext(gameReferenceId);
     });
     this.games.clear();
     this.socketToGames.clear();
-    console.log("GameManager destroyed");
+    logger.info("GameManager destroyed");
   }
 }
-

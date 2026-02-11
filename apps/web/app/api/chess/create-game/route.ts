@@ -1,11 +1,14 @@
 import {NextRequest, NextResponse} from "next/server";
 import {Decimal} from "@prisma/client/runtime/library";
 import {z} from "zod";
+import * as Sentry from "@sentry/nextjs";
 import {prisma} from "@/lib/prisma";
 import {getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlayCount} from "@/lib/services/chess-position.service";
 import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser, validateSufficientBalance } from "@/lib/services/user-validation.service";
+import { captureGameTraceData } from "@/lib/sentry/game-trace";
+import { logger } from "@/lib/sentry/logger";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -167,8 +170,14 @@ export async function POST(request: NextRequest) {
       positionInfo = null;
     }
 
-    // 5b. Determine creator color and build extra game data
+    // 5b. Capture Sentry trace context for distributed tracing
+    const traceData = captureGameTraceData();
+
+    // 5c. Determine creator color and build extra game data
     const extraGameData: Record<string, unknown> = {};
+    if (traceData) {
+      extraGameData.traceContext = traceData;
+    }
     if (opening) {
       extraGameData.creatorColor = getOpeningPlayerColor(opening.sideToMove);
       extraGameData.selectedOpening = validatedData.selectedOpening;
@@ -205,7 +214,10 @@ export async function POST(request: NextRequest) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
-    // 8. Return success response
+    // 8. Tag for Sentry filtering
+    Sentry.setTag("game.referenceId", result.game.referenceId);
+
+    // 9. Return success response
     return NextResponse.json(
       {
         success: true,
@@ -262,7 +274,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    console.error("Error creating game:", error);
+    logger.error("Error creating game", error);
     return NextResponse.json(
       {
         error: "Failed to create game",

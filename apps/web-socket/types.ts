@@ -51,6 +51,10 @@ export interface GameData {
       whitePlayerImageUrl?: string | null;
       blackPlayerImageUrl?: string | null;
     };
+    traceContext?: {
+      sentryTrace: string;
+      baggage: string;
+    };
   };
   creator: PlayerInfo;
   opponent?: PlayerInfo;
@@ -239,14 +243,7 @@ export interface AnalysisPhaseStartedPayload {
   };
 }
 
-export interface AnalysisCountdownPayload {
-  secondsRemaining: number;
-}
-
-// ============================================
-// CLIENT → SERVER: ANALYSIS COMPLETE
-// ============================================
-
-export interface AnalysisCompletePayload {
-  gameReferenceId: string;
+export interface AnalysisTickPayload {
+  remainingSeconds: number;
+  totalSeconds: number;
 }

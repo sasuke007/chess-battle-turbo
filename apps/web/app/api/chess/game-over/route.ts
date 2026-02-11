@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Decimal } from "@prisma/client/runtime/library";
+import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "../../../../lib/prisma";
+import { logger } from "@/lib/sentry/logger";
 
 type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -49,6 +51,8 @@ export async function POST(request: NextRequest) {
     // 1. Parse and validate request body
     const body = await request.json();
     const validatedData = gameOverSchema.parse(body);
+
+    Sentry.setTag("game.referenceId", validatedData.gameReferenceId);
 
     // 2. Find game
     const game = await prisma.game.findUnique({
@@ -274,7 +278,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    console.error("Error completing game:", error);
+    logger.error("Error completing game", error);
     return NextResponse.json(
       {
         success: false,

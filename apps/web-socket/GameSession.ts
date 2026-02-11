@@ -14,6 +14,7 @@ import {
   AnalysisPhaseStartedPayload,
 } from "./types";
 import { persistMove, completeGame } from "./utils/apiClient";
+import { logger } from "./utils/logger";
 
 /**
  * GameSession manages the state and logic for a single chess game
@@ -43,7 +44,10 @@ export class GameSession {
 
   // Analysis phase
   private isAnalysisPhase: boolean = false;
-  private analysisCompleteFrom: Set<string> = new Set();
+  private analysisTickInterval: NodeJS.Timeout | null = null;
+  private analysisExpiryTimeout: NodeJS.Timeout | null = null;
+  private analysisRemainingSeconds: number = 0;
+  private analysisTotalSeconds: number = 0;
 
   constructor(gameData: GameData) {
     this.gameData = gameData;
@@ -52,9 +56,7 @@ export class GameSession {
     this.chess = new Chess(gameData.startingFen);
 
     // Detect AI game from gameData
-    console.log("=== GAME SESSION CONSTRUCTOR DEBUG ===");
-    console.log("gameData.gameData:", JSON.stringify(gameData.gameData, null, 2));
-    console.log("gameData.gameData?.gameMode:", gameData.gameData?.gameMode);
+    logger.debug("GameSession constructor - detecting game mode", { game: this.gameData.referenceId, gameMode: gameData.gameData?.gameMode || "unknown" });
 
     if (gameData.gameData?.gameMode === "AI") {
       this.isAIGame = true;
@@ -63,11 +65,10 @@ export class GameSession {
       const playerColor = gameData.gameData.playerColor;
       this.humanPlayerColor = playerColor === "white" ? "w" : "b";
       this.botColor = playerColor === "white" ? "b" : "w";
-      console.log(`AI game detected - Player: ${this.humanPlayerColor}, Bot: ${this.botColor}, Difficulty: ${this.aiDifficulty}`);
+      logger.info(`AI game detected - Player: ${this.humanPlayerColor}, Bot: ${this.botColor}, Difficulty: ${this.aiDifficulty}`, { game: this.gameData.referenceId });
     } else {
-      console.log("NOT an AI game - gameMode:", gameData.gameData?.gameMode);
+      logger.debug(`Not an AI game - gameMode: ${gameData.gameData?.gameMode}`, { game: this.gameData.referenceId });
     }
-    console.log("======================================");
 
     // Initialize clock manager
     this.clockManager = new ClockManager(
@@ -88,7 +89,7 @@ export class GameSession {
       this.handleTimeout(color);
     });
 
-    console.log(`GameSession created for game ${gameData.referenceId} with starting FEN: ${gameData.startingFen}`);
+    logger.info(`GameSession created with starting FEN: ${gameData.startingFen}`, { game: gameData.referenceId });
   }
 
   public async setGameData(gameData: GameData): Promise<void> {
@@ -111,7 +112,7 @@ export class GameSession {
   public isGameStarted(): boolean {
     return this.gameStarted;
   }
-  
+
   /**
    * Add a player to the game session
    */
@@ -122,16 +123,7 @@ export class GameSession {
     const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
     const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
 
-    console.log("=== ADD PLAYER DEBUG ===");
-    console.log("Attempting to add player:", userReferenceId);
-    console.log("Game reference ID:", this.gameData.referenceId);
-    console.log("Game status:", this.gameData.status);
-    console.log("Creator ID:", this.gameData.creator.userReferenceId);
-    console.log("Opponent ID:", this.gameData.opponent?.userReferenceId);
-    console.log("Is creator?", isCreator);
-    console.log("Is opponent?", isOpponent);
-    console.log("Is AI game?", this.isAIGame);
-    console.log("=======================");
+    logger.debug(`Attempting to add player: ${userReferenceId}, isCreator=${isCreator}, isOpponent=${isOpponent}, isAIGame=${this.isAIGame}`, { game: this.gameData.referenceId });
 
     if (!isCreator && !isOpponent) {
       throw new Error(`User ${userReferenceId} is not part of game ${this.gameData.referenceId}. Creator: ${this.gameData.creator.userReferenceId}, Opponent: ${this.gameData.opponent?.userReferenceId || 'null'}`);
@@ -147,7 +139,7 @@ export class GameSession {
         playerInfo,
       };
       socket.join(this.gameData.referenceId);
-      console.log(`Creator joined game ${this.gameData.referenceId}`);
+      logger.info(`Creator joined game`, { game: this.gameData.referenceId });
     } else if (isOpponent) {
       const playerInfo = this.gameData.opponent!;
       this.opponentPlayer = {
@@ -157,7 +149,7 @@ export class GameSession {
         playerInfo,
       };
       socket.join(this.gameData.referenceId);
-      console.log(`Opponent joined game ${this.gameData.referenceId}`);
+      logger.info(`Opponent joined game`, { game: this.gameData.referenceId });
     }
 
     // For AI games, start immediately when the human player joins
@@ -167,7 +159,7 @@ export class GameSession {
       const isHumanPlayer = userReferenceId === humanPlayerReferenceId;
 
       if (isHumanPlayer) {
-        console.log("Human player joined AI game - starting immediately");
+        logger.info("Human player joined AI game - starting immediately", { game: this.gameData.referenceId });
         await this.startAIGame(socket, userReferenceId);
         return;
       }
@@ -206,7 +198,6 @@ export class GameSession {
 
     // Enter analysis phase instead of starting immediately
     this.isAnalysisPhase = true;
-    this.analysisCompleteFrom.clear();
 
     const analysisTime = this.getAnalysisTime();
     const positionInfo = this.gameData.gameData?.positionInfo;
@@ -232,7 +223,10 @@ export class GameSession {
     this.whitePlayer.socket.emit("analysis_phase_started", whitePayload);
     this.blackPlayer.socket.emit("analysis_phase_started", blackPayload);
 
-    console.log(`Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - waiting for client ACKs`);
+    // Start server-authoritative countdown
+    this.startAnalysisTimer();
+
+    logger.info(`Entering analysis phase (${analysisTime}s) - server timer started`, { game: this.gameData.referenceId });
   }
 
   /**
@@ -290,7 +284,6 @@ export class GameSession {
 
     // Enter analysis phase instead of starting immediately
     this.isAnalysisPhase = true;
-    this.analysisCompleteFrom.clear();
 
     const analysisTime = this.getAnalysisTime();
     const positionInfo = this.gameData.gameData?.positionInfo;
@@ -311,7 +304,11 @@ export class GameSession {
     };
 
     socket.emit("analysis_phase_started", payload);
-    console.log(`AI Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}, waiting for client ACK`);
+
+    // Start server-authoritative countdown
+    this.startAnalysisTimer();
+
+    logger.info(`AI game entering analysis phase (${analysisTime}s) - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}, server timer started`, { game: this.gameData.referenceId });
   }
 
   /**
@@ -380,7 +377,7 @@ export class GameSession {
       return;
     }
 
-    console.log(`Move made: ${move.san} in game ${this.gameData.referenceId}${this.isAIGame ? " (AI game)" : ""}`);
+    logger.info(`Move made: ${move.san}${this.isAIGame ? " (AI game)" : ""}`, { game: this.gameData.referenceId });
 
     // Stop current player's clock and add increment
     this.clockManager.stopClock();
@@ -422,7 +419,7 @@ export class GameSession {
       : player.userReferenceId;
 
     this.persistMoveToDb(movePlayerId, move).catch((error) => {
-      console.error("Error persisting move to DB:", error);
+      logger.error("Error persisting move to DB", error, { game: this.gameData.referenceId });
     });
   }
 
@@ -505,18 +502,16 @@ export class GameSession {
       return;
     }
 
-    console.log(
-      `Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`
-    );
+    logger.info(`Player ${player.userReferenceId} disconnected`, { game: this.gameData.referenceId });
 
     // In AI games, if the human disconnects, end the game (bot wins)
     if (this.isAIGame && this.gameStarted && !this.gameEnded) {
       const isHumanPlayer = player.color === this.humanPlayerColor;
       if (isHumanPlayer) {
-        console.log("Human player disconnected from AI game - starting grace period");
+        logger.info("Human player disconnected from AI game - starting grace period", { game: this.gameData.referenceId });
         // Start disconnect timer - if human doesn't reconnect, bot wins
         const timer = setTimeout(async () => {
-          console.log("Human player did not reconnect to AI game - bot wins");
+          logger.info("Human player did not reconnect to AI game - bot wins", { game: this.gameData.referenceId });
           const result: GameResult = this.botColor === "w" ? "CREATOR_WON" : "OPPONENT_WON";
           await this.endGame(result, this.botColor, "timeout");
         }, this.DISCONNECT_GRACE_PERIOD);
@@ -534,9 +529,7 @@ export class GameSession {
 
       // Start disconnect timer
       const timer = setTimeout(async () => {
-        console.log(
-          `Player ${player.userReferenceId} did not reconnect in time`
-        );
+        logger.info(`Player ${player.userReferenceId} did not reconnect in time`, { game: this.gameData.referenceId });
         // Player forfeits
         const result: GameResult =
           player.color === "w" ? "OPPONENT_WON" : "CREATOR_WON";
@@ -554,17 +547,14 @@ export class GameSession {
     const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
     const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
 
-    console.log(
-      `Player ${userReferenceId} reconnecting to game ${this.gameData.referenceId}`,
-      { isCreator, isOpponent, gameStarted: this.gameStarted }
-    );
+    logger.info(`Player ${userReferenceId} reconnecting (isCreator=${isCreator}, isOpponent=${isOpponent}, gameStarted=${this.gameStarted})`, { game: this.gameData.referenceId });
 
     // Clear disconnect timer if exists
     const timer = this.disconnectTimers.get(userReferenceId);
     if (timer) {
       clearTimeout(timer);
       this.disconnectTimers.delete(userReferenceId);
-      console.log(`Cleared disconnect timer for ${userReferenceId}`);
+      logger.info(`Cleared disconnect timer for ${userReferenceId}`, { game: this.gameData.referenceId });
     }
 
     // Update socket references
@@ -594,10 +584,10 @@ export class GameSession {
         this.whitePlayer?.userReferenceId === userReferenceId
           ? this.blackPlayer
           : this.whitePlayer;
-      
+
       if (opponent) {
         opponent.socket.emit("opponent_reconnected", {});
-        console.log(`Notified opponent of reconnection`);
+        logger.info("Notified opponent of reconnection", { game: this.gameData.referenceId });
       }
 
       // Send current game state to reconnected player
@@ -613,11 +603,46 @@ export class GameSession {
         blackPlayer: this.blackPlayer!.playerInfo,
         positionInfo: positionInfo || undefined,
       });
-      console.log(`Sent game state to reconnected player`);
+      logger.info("Sent game state to reconnected player", { game: this.gameData.referenceId });
+    } else if (this.isAnalysisPhase) {
+      // Reconnecting during analysis phase — send analysis state + current tick
+      const reconnectColor = this.whitePlayer?.userReferenceId === userReferenceId ? "w" : "b";
+      const positionInfo = this.gameData.gameData?.positionInfo;
+
+      const payload: AnalysisPhaseStartedPayload = {
+        gameReferenceId: this.gameData.referenceId,
+        analysisTimeSeconds: this.analysisTotalSeconds,
+        yourColor: reconnectColor as "w" | "b",
+        fen: this.chess.fen(),
+        whiteTime: this.clockManager.getTimeInSeconds("w"),
+        blackTime: this.clockManager.getTimeInSeconds("b"),
+        whitePlayer: this.whitePlayer!.playerInfo,
+        blackPlayer: this.blackPlayer!.playerInfo,
+        isAIGame: this.isAIGame || undefined,
+        difficulty: this.isAIGame ? this.aiDifficulty : undefined,
+        positionInfo: positionInfo || undefined,
+      };
+      socket.emit("analysis_phase_started", payload);
+
+      // Send current tick so client knows where the countdown is
+      socket.emit("analysis_tick", {
+        remainingSeconds: this.analysisRemainingSeconds,
+        totalSeconds: this.analysisTotalSeconds,
+      });
+
+      // Notify opponent of reconnection
+      if (!this.isAIGame) {
+        const opponent = this.whitePlayer?.userReferenceId === userReferenceId
+          ? this.blackPlayer
+          : this.whitePlayer;
+        opponent?.socket.emit("opponent_reconnected", {});
+      }
+
+      logger.info(`Sent analysis phase state to reconnected player, remaining: ${this.analysisRemainingSeconds}s`, { game: this.gameData.referenceId });
     } else {
       // Game hasn't started yet, just send waiting status
-      socket.emit("waiting_for_opponent", { 
-        gameReferenceId: this.gameData.referenceId 
+      socket.emit("waiting_for_opponent", {
+        gameReferenceId: this.gameData.referenceId
       });
     }
   }
@@ -626,11 +651,11 @@ export class GameSession {
    * Clean up resources
    */
   public destroy(): void {
+    this.clearAnalysisTimers();
     this.clockManager.destroy();
     this.disconnectTimers.forEach((timer) => clearTimeout(timer));
     this.disconnectTimers.clear();
-    this.analysisCompleteFrom.clear();
-    console.log(`GameSession destroyed for game ${this.gameData.referenceId}`);
+    logger.info("GameSession destroyed", { game: this.gameData.referenceId });
   }
 
   /**
@@ -656,37 +681,6 @@ export class GameSession {
    */
   public getGameReferenceId(): string {
     return this.gameData.referenceId;
-  }
-
-  /**
-   * Handle analysis_complete acknowledgment from a player
-   * Called when client's countdown finishes
-   */
-  public handleAnalysisComplete(userReferenceId: string): void {
-    if (!this.isAnalysisPhase) {
-      console.log(`Ignoring analysis_complete from ${userReferenceId} - not in analysis phase`);
-      return;
-    }
-
-    this.analysisCompleteFrom.add(userReferenceId);
-    console.log(`Analysis complete ACK from ${userReferenceId} in game ${this.gameData.referenceId}`);
-
-    if (this.isAIGame) {
-      // AI game: start immediately when human player ACKs
-      console.log(`AI game - starting immediately after human ACK`);
-      this.endAnalysisPhaseForAI();
-    } else {
-      // PvP game: wait for both players to ACK
-      const hasWhite = this.analysisCompleteFrom.has(this.whitePlayer?.userReferenceId || '');
-      const hasBlack = this.analysisCompleteFrom.has(this.blackPlayer?.userReferenceId || '');
-
-      console.log(`PvP game - ACKs: white=${hasWhite}, black=${hasBlack}`);
-
-      if (hasWhite && hasBlack) {
-        console.log(`Both players ready - starting game`);
-        this.endAnalysisPhase();
-      }
-    }
   }
 
   // ============================================
@@ -750,9 +744,77 @@ export class GameSession {
   }
 
   /**
+   * Start the server-authoritative analysis phase timer.
+   * Emits analysis_tick every second and auto-transitions to game_started on expiry.
+   */
+  private startAnalysisTimer(): void {
+    const analysisTime = this.getAnalysisTime();
+    this.analysisTotalSeconds = analysisTime;
+    this.analysisRemainingSeconds = analysisTime;
+
+    // Emit the first tick immediately so clients see the full countdown from the start
+    this.emitAnalysisTick();
+
+    // Tick every 1 second
+    this.analysisTickInterval = setInterval(() => {
+      this.analysisRemainingSeconds--;
+
+      if (this.analysisRemainingSeconds > 0) {
+        this.emitAnalysisTick();
+      } else {
+        // Final tick reached 0 — clean up interval (setTimeout handles the transition)
+        if (this.analysisTickInterval) {
+          clearInterval(this.analysisTickInterval);
+          this.analysisTickInterval = null;
+        }
+      }
+    }, 1000);
+
+    // Hard expiry after the full analysis duration
+    this.analysisExpiryTimeout = setTimeout(() => {
+      this.clearAnalysisTimers();
+      if (this.isAnalysisPhase) {
+        if (this.isAIGame) {
+          this.endAnalysisPhaseForAI();
+        } else {
+          this.endAnalysisPhase();
+        }
+      }
+    }, analysisTime * 1000);
+
+    logger.info(`Analysis timer started: ${analysisTime}s`, { game: this.gameData.referenceId });
+  }
+
+  private emitAnalysisTick(): void {
+    const payload = {
+      remainingSeconds: this.analysisRemainingSeconds,
+      totalSeconds: this.analysisTotalSeconds,
+    };
+
+    if (this.isAIGame) {
+      const humanPlayer = this.humanPlayerColor === "w" ? this.whitePlayer : this.blackPlayer;
+      humanPlayer?.socket.emit("analysis_tick", payload);
+    } else {
+      this.broadcast("analysis_tick", payload);
+    }
+  }
+
+  private clearAnalysisTimers(): void {
+    if (this.analysisTickInterval) {
+      clearInterval(this.analysisTickInterval);
+      this.analysisTickInterval = null;
+    }
+    if (this.analysisExpiryTimeout) {
+      clearTimeout(this.analysisExpiryTimeout);
+      this.analysisExpiryTimeout = null;
+    }
+  }
+
+  /**
    * End the analysis phase and start the actual game (PvP)
    */
   private endAnalysisPhase(): void {
+    this.clearAnalysisTimers();
     this.isAnalysisPhase = false;
     this.gameStarted = true;
 
@@ -777,13 +839,14 @@ export class GameSession {
     this.whitePlayer!.socket.emit("game_started", whitePayload);
     this.blackPlayer!.socket.emit("game_started", { ...whitePayload, yourColor: "b" as const });
 
-    console.log(`Analysis phase ended, game ${this.gameData.referenceId} started - clock started for ${currentTurn === "w" ? "white" : "black"}`);
+    logger.info(`Analysis phase ended, game started - clock started for ${currentTurn === "w" ? "white" : "black"}`, { game: this.gameData.referenceId });
   }
 
   /**
    * End the analysis phase for AI games
    */
   private endAnalysisPhaseForAI(): void {
+    this.clearAnalysisTimers();
     this.isAnalysisPhase = false;
     this.gameStarted = true;
 
@@ -794,7 +857,7 @@ export class GameSession {
     // Get current socket from player reference (handles reconnection)
     const humanPlayer = this.humanPlayerColor === "w" ? this.whitePlayer : this.blackPlayer;
     if (!humanPlayer) {
-      console.error("No human player found when ending analysis phase");
+      logger.error("No human player found when ending analysis phase", undefined, { game: this.gameData.referenceId });
       return;
     }
 
@@ -814,13 +877,11 @@ export class GameSession {
     };
 
     humanPlayer.socket.emit("game_started", payload);
-    console.log(`AI Game ${this.gameData.referenceId} analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`);
+    logger.info(`AI game analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`, { game: this.gameData.referenceId });
   }
 
   private async handleTimeout(color: Color): Promise<void> {
-    console.log(
-      `Timeout for ${color === "w" ? "White" : "Black"} in game ${this.gameData.referenceId}`
-    );
+    logger.info(`Timeout for ${color === "w" ? "White" : "Black"}`, { game: this.gameData.referenceId });
 
     const winner = color === "w" ? "b" : "w";
     const result: GameResult = this.getGameResult(winner);
@@ -880,9 +941,7 @@ export class GameSession {
 
     this.broadcast("game_over", gameOverPayload);
 
-    console.log(
-      `Game ${this.gameData.referenceId} ended: ${result} by ${method}`
-    );
+    logger.info(`Game ended: ${result} by ${method}`, { game: this.gameData.referenceId });
 
     // Persist game result to database
     const winnerId =
@@ -901,7 +960,7 @@ export class GameSession {
       whiteTime: this.clockManager.getTimeInSeconds("w"),
       blackTime: this.clockManager.getTimeInSeconds("b"),
     }).catch((error) => {
-      console.error("Error completing game in DB:", error);
+      logger.error("Error completing game in DB", error, { game: this.gameData.referenceId });
     });
   }
 

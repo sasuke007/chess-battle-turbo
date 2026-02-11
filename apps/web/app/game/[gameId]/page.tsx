@@ -26,6 +26,7 @@ import type {
   GameOverPayload,
   ErrorPayload,
   AnalysisPhaseStartedPayload,
+  AnalysisTickPayload,
 } from "@/lib/types/socket-events";
 
 const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -339,6 +340,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       playSound('notify');
     });
 
+    // Server-authoritative analysis countdown ticks
+    socketRef.current.on("analysis_tick", (payload: AnalysisTickPayload) => {
+      setAnalysisTimeRemaining(payload.remainingSeconds);
+      setTotalAnalysisTime(payload.totalSeconds);
+    });
+
     socketRef.current.on("game_started", (payload: GameStartedPayload) => {
       // End analysis phase when game actually starts
       setIsAnalysisPhase(false);
@@ -556,42 +563,6 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     makeBotMove();
   }, [isAIGame, gameStarted, gameOver, botColor, currentTurn, computeBotMove, gameId, game]);
-
-  // Client-side analysis countdown timer
-  // Runs locally and emits analysis_complete when countdown finishes
-  // Using a ref to track if we've already sent the ACK to avoid duplicates
-  const analysisAckSentRef = useRef(false);
-
-  useEffect(() => {
-    // Reset ACK sent flag when entering analysis phase
-    if (isAnalysisPhase && analysisTimeRemaining > 0) {
-      analysisAckSentRef.current = false;
-    }
-  }, [isAnalysisPhase, totalAnalysisTime]);
-
-  useEffect(() => {
-    if (!isAnalysisPhase || analysisTimeRemaining <= 0) return;
-
-    const timer = setInterval(() => {
-      setAnalysisTimeRemaining(prev => {
-        if (prev <= 1) {
-          // Send ACK to server when countdown finishes (only once)
-          if (!analysisAckSentRef.current && socketRef.current && userReferenceId) {
-            analysisAckSentRef.current = true;
-            socketRef.current.emit("analysis_complete", {
-              gameReferenceId: gameId,
-              userReferenceId,
-            });
-          }
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isAnalysisPhase, gameId, userReferenceId]);
 
   if (!isReady) {
     return (

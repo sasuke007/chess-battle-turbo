@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import {
   ApiGameResponse,
   ApiMoveRequest,
@@ -5,9 +6,27 @@ import {
   ApiGameStateRequest,
   GameData,
 } from "../types";
+import { logger } from "./logger";
 
 // Configuration
 const API_BASE_URL = process.env.WEB_APP_URL || "http://localhost:3000";
+
+/**
+ * Returns sentry-trace and baggage headers for the current active span.
+ * When called inside withGameTrace, these headers carry the game's trace context
+ * so the receiving Next.js server links the request to the same distributed trace.
+ */
+function getSentryHeaders(): Record<string, string> {
+  const traceData = Sentry.getTraceData();
+  const headers: Record<string, string> = {};
+  if (traceData["sentry-trace"]) {
+    headers["sentry-trace"] = traceData["sentry-trace"];
+  }
+  if (traceData["baggage"]) {
+    headers["baggage"] = traceData["baggage"];
+  }
+  return headers;
+}
 
 /**
  * Fetch game details by reference ID
@@ -17,7 +36,12 @@ export async function fetchGameByRef(
 ): Promise<GameData> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/chess/game-by-ref/${gameReferenceId}`
+      `${API_BASE_URL}/api/chess/game-by-ref/${gameReferenceId}`,
+      {
+        headers: {
+          ...getSentryHeaders(),
+        },
+      }
     );
 
     if (!response.ok) {
@@ -32,7 +56,7 @@ export async function fetchGameByRef(
 
     return result.data;
   } catch (error) {
-    console.error("Error fetching game by ref:", error);
+    logger.error("Error fetching game by ref", error, { game: gameReferenceId });
     throw error;
   }
 }
@@ -46,6 +70,7 @@ export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getSentryHeaders(),
       },
       body: JSON.stringify(moveData),
     });
@@ -61,7 +86,7 @@ export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
       throw new Error(result.error || "Failed to persist move");
     }
   } catch (error) {
-    console.error("Error persisting move:", error);
+    logger.error("Error persisting move", error, { game: moveData.gameReferenceId });
     throw error;
   }
 }
@@ -73,41 +98,41 @@ export async function completeGame(
   gameOverData: ApiGameOverRequest
 ): Promise<void> {
   try {
-    console.log("Calling game-over API with data:", gameOverData);
-    
+    logger.info("Calling game-over API", { game: gameOverData.gameReferenceId, result: gameOverData.result });
+
     const response = await fetch(`${API_BASE_URL}/api/chess/game-over`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getSentryHeaders(),
       },
       body: JSON.stringify(gameOverData),
     });
 
-    console.log("Game-over API response status:", response.status);
+    logger.info(`Game-over API response status: ${response.status}`, { game: gameOverData.gameReferenceId });
 
     if (!response.ok) {
       const errorData = await response.json() as { error?: string; details?: any };
-      console.error("Game-over API error response:", errorData);
-      const errorMessage = errorData.details 
+      logger.error("Game-over API error response", errorData, { game: gameOverData.gameReferenceId });
+      const errorMessage = errorData.details
         ? `${errorData.error}: ${JSON.stringify(errorData.details)}`
         : errorData.error || `HTTP error! status: ${response.status}`;
       throw new Error(errorMessage);
     }
 
     const result = await response.json() as { success: boolean; error?: string; details?: any };
-    console.log("Game-over API result:", result);
 
     if (!result.success) {
-      console.error("Game-over API returned success: false", result);
-      const errorMessage = result.details 
+      logger.error("Game-over API returned success: false", result, { game: gameOverData.gameReferenceId });
+      const errorMessage = result.details
         ? `${result.error}: ${JSON.stringify(result.details)}`
         : result.error || "Failed to complete game";
       throw new Error(errorMessage);
     }
-    
-    console.log("Game completed successfully in database");
+
+    logger.info("Game completed successfully in database", { game: gameOverData.gameReferenceId });
   } catch (error) {
-    console.error("Error completing game:", error);
+    logger.error("Error completing game", error, { game: gameOverData.gameReferenceId });
     throw error;
   }
 }
@@ -123,6 +148,7 @@ export async function updateGameState(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getSentryHeaders(),
       },
       body: JSON.stringify(stateData),
     });
@@ -138,8 +164,7 @@ export async function updateGameState(
       throw new Error(result.error || "Failed to update game state");
     }
   } catch (error) {
-    console.error("Error updating game state:", error);
-    // Non-critical error, log but don't throw
-    console.warn("Continuing despite game state update failure");
+    logger.error("Error updating game state", error, { game: stateData.gameReferenceId });
+    logger.warn("Continuing despite game state update failure", { game: stateData.gameReferenceId });
   }
 }
