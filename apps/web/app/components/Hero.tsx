@@ -119,23 +119,28 @@ export default function Hero() {
           className="mt-16 flex items-center gap-8 sm:gap-12"
         >
           {[
-            { value: "50K+", label: "Players" },
-            { value: "1M+", label: "Games Played" },
-            { value: "100+", label: "Legendary Positions" },
-          ].map((stat, index) => (
-            <div key={index} className="text-center">
-              <p
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-2xl sm:text-3xl text-white mb-1"
-              >
-                {stat.value}
-              </p>
-              <p
-                style={{ fontFamily: "'Geist', sans-serif" }}
-                className="text-[10px] tracking-[0.2em] uppercase text-white/30"
-              >
-                {stat.label}
-              </p>
+            { value: "10K+", label: "Legendary Positions" },
+            { value: "100+", label: "Players" },
+            { value: "100+", label: "Games Played" },
+          ].map((stat, index, arr) => (
+            <div key={index} className="flex items-center gap-8 sm:gap-12">
+              <div className="text-center">
+                <p
+                  style={{ fontFamily: "'Instrument Serif', serif" }}
+                  className="text-2xl sm:text-3xl text-white mb-1"
+                >
+                  {stat.value}
+                </p>
+                <p
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                  className="text-[10px] tracking-[0.2em] uppercase text-white/30"
+                >
+                  {stat.label}
+                </p>
+              </div>
+              {index < arr.length - 1 && (
+                <div className="h-10 w-px bg-white/20" />
+              )}
             </div>
           ))}
         </motion.div>
