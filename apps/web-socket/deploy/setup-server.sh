@@ -44,6 +44,7 @@ fi
 # Paths
 REPO_DIR="/var/www/chess-websocket/chess-battle-turbo"
 APP_DIR="$REPO_DIR/apps/web-socket"
+DEPLOY_DIR="$APP_DIR/deploy"
 
 # =============================================================================
 # STEP 1: Update System
@@ -113,60 +114,9 @@ echo ""
 echo "Step 6: Configuring Nginx for $DOMAIN..."
 NGINX_CONF="/etc/nginx/sites-available/chess-websocket.conf"
 
-# Start with HTTP-only config — Certbot will add the SSL server block automatically
-$SUDO tee $NGINX_CONF > /dev/null << NGINXEOF
-upstream websocket_backend {
-    server 127.0.0.1:3002;
-    keepalive 64;
-}
-
-server {
-    listen 80;
-    server_name $DOMAIN;
-
-    location /health {
-        proxy_pass http://websocket_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    location / {
-        proxy_pass http://websocket_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 86400s;
-        proxy_send_timeout 86400s;
-        proxy_buffering off;
-        proxy_buffer_size 128k;
-        proxy_buffers 4 256k;
-        proxy_busy_buffers_size 256k;
-    }
-
-    location /socket.io/ {
-        proxy_pass http://websocket_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 86400s;
-        proxy_send_timeout 86400s;
-        proxy_buffering off;
-    }
-}
-NGINXEOF
-
-print_status "Nginx HTTP config created for $DOMAIN"
+# Copy Nginx config from deploy directory (HTTP-only — Certbot adds SSL later)
+$SUDO cp "$DEPLOY_DIR/chess-websocket.nginx.conf" $NGINX_CONF
+print_status "Nginx config copied to $NGINX_CONF"
 
 # Enable site and remove default
 $SUDO ln -sf $NGINX_CONF /etc/nginx/sites-enabled/chess-websocket.conf
@@ -192,27 +142,10 @@ print_status "Firewall configured (ports 22, 80, 443)"
 # =============================================================================
 echo ""
 echo "Step 8: Creating systemd service..."
-$SUDO tee /etc/systemd/system/chess-websocket.service > /dev/null << EOF
-[Unit]
-Description=Chess WebSocket Server
-After=network.target
 
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$APP_DIR
-ExecStart=/usr/bin/node $APP_DIR/dist/index.js
-Restart=on-failure
-RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=chess-websocket
-Environment=NODE_ENV=production
-EnvironmentFile=$APP_DIR/.env
-
-[Install]
-WantedBy=multi-user.target
-EOF
+# Copy service file from deploy directory
+$SUDO cp "$DEPLOY_DIR/chess-websocket.service" /etc/systemd/system/chess-websocket.service
+print_status "Service file copied to /etc/systemd/system/chess-websocket.service"
 
 $SUDO systemctl daemon-reload
 $SUDO systemctl enable chess-websocket
