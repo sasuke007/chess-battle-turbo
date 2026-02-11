@@ -4,30 +4,22 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 
 const stats = [
-  { value: "10K+", label: "Games Played" },
-  { value: "500+", label: "Positions" },
+  { value: "10,000+", label: "Positions" },
   { value: "50+", label: "Legends" },
-  { value: "99.9%", label: "Uptime" },
+  { value: "100+", label: "Games Played" },
 ];
 
 const milestones = [
-  { year: "2023", title: "The First Move", description: "Chess Battle was founded with a vision to make legendary chess moments playable and shareable." },
-  { year: "2024", title: "Opening Gambit", description: "Launched the first 100 legendary positions and introduced real-time multiplayer matchmaking." },
-  { year: "2024", title: "Middlegame Expansion", description: "Integrated AI-powered analysis, voice coaching, and Chess.com game imports." },
-  { year: "2025", title: "Endgame Precision", description: "Reached 10,000 active players. Introduced tournaments, rankings, and community features." },
-  { year: "2026", title: "New Horizons", description: "Expanding into mobile-native experiences, API access, and competitive league partnerships." },
+  { year: "2026", title: "The First Move", description: "Founded to solve a specific problem: allowing you to play legendary chess positions against a real opponent. What started as a personal frustration became a platform.", upcoming: false },
+  { year: "", title: "The Next Chapter", description: "Expanding the position library, refining multiplayer matchmaking, and building tools that make chess history more accessible than ever.", upcoming: true },
+  { year: "", title: "Building the Community", description: "Tournaments, rankings, and a space for players who share a love for the beauty of chess — coming soon.", upcoming: true },
 ];
 
-const team = [
-  { piece: "♔", name: "Alexander Petrov", role: "Founder & CEO", line: "Building the future of chess, one move at a time." },
-  { piece: "♕", name: "Maria Chen", role: "Head of Product", line: "Turning chess theory into intuitive experiences." },
-  { piece: "♗", name: "James Okafor", role: "Lead Engineer", line: "Performance obsessed. Sub-100ms move latency." },
-  { piece: "♘", name: "Sofia Andersson", role: "Head of Design", line: "Where editorial precision meets digital craft." },
-];
 
 export default function AboutPage() {
   return (
@@ -153,7 +145,7 @@ export default function AboutPage() {
       {/* Stats Bar */}
       <section className="relative px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/10">
             {stats.map((stat, index) => (
               <motion.div
                 key={stat.label}
@@ -220,20 +212,39 @@ export default function AboutPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative pl-16 sm:pl-24"
+                  className={cn(
+                    "relative pl-16 sm:pl-24",
+                    milestone.upcoming && "opacity-40"
+                  )}
                 >
                   {/* Dot */}
-                  <div className="absolute left-[13px] sm:left-[29px] top-1 w-2 h-2 bg-white" />
+                  <div className={cn(
+                    "absolute left-[13px] sm:left-[29px] top-1 w-2 h-2",
+                    milestone.upcoming ? "border border-dashed border-white/40" : "bg-white"
+                  )} />
 
-                  <p
-                    style={{ fontFamily: "'Geist Mono', monospace" }}
-                    className="text-xs text-white/30 mb-1"
-                  >
-                    {milestone.year}
-                  </p>
+                  {milestone.year && (
+                    <p
+                      style={{ fontFamily: "'Geist Mono', monospace" }}
+                      className="text-xs text-white/30 mb-1"
+                    >
+                      {milestone.year}
+                    </p>
+                  )}
+                  {milestone.upcoming && (
+                    <p
+                      style={{ fontFamily: "'Geist Mono', monospace" }}
+                      className="text-xs text-white/30 mb-1"
+                    >
+                      Coming Soon
+                    </p>
+                  )}
                   <h3
                     style={{ fontFamily: "'Instrument Serif', serif" }}
-                    className="text-xl sm:text-2xl text-white mb-2"
+                    className={cn(
+                      "text-xl sm:text-2xl mb-2",
+                      milestone.upcoming ? "text-white/60" : "text-white"
+                    )}
                   >
                     {milestone.title}
                   </h3>
@@ -250,7 +261,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Founder */}
       <section className="relative py-20 sm:py-32 px-6">
         <div
           className="absolute inset-0 opacity-[0.015]"
@@ -272,7 +283,7 @@ export default function AboutPage() {
                 style={{ fontFamily: "'Geist', sans-serif" }}
                 className="text-white/40 text-[10px] tracking-[0.4em] uppercase"
               >
-                The Team
+                The Founder
               </span>
               <div className="h-px w-16 bg-white/20" />
             </div>
@@ -280,55 +291,50 @@ export default function AboutPage() {
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="text-4xl sm:text-5xl text-white"
             >
-              Meet the Minds
+              Behind the Board
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
-            {team.map((member, index) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={cn(
-                  "group relative bg-black p-8",
-                  "hover:bg-white transition-colors duration-500"
-                )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-md mx-auto"
+          >
+            <div className="group relative bg-black border border-white/10 p-8 text-center">
+              <div className="relative w-28 h-28 mx-auto mb-6 overflow-hidden">
+                <Image
+                  src="/rohit-pandit.jpeg"
+                  alt="Rohit Pandit"
+                  fill
+                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                />
+              </div>
+              <h3
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-lg font-semibold text-white mb-1"
               >
-                <span className="text-5xl mb-6 block group-hover:scale-110 transition-transform duration-500">
-                  {member.piece}
-                </span>
-                <h3
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-lg font-semibold text-white group-hover:text-black transition-colors duration-500 mb-1"
-                >
-                  {member.name}
-                </h3>
-                <p
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-xs text-white/40 group-hover:text-black/40 transition-colors duration-500 uppercase tracking-widest mb-4"
-                >
-                  {member.role}
-                </p>
-                <p
-                  style={{ fontFamily: "'Geist', sans-serif" }}
-                  className="text-sm text-white/30 group-hover:text-black/50 transition-colors duration-500 leading-relaxed"
-                >
-                  {member.line}
-                </p>
+                Rohit Pandit
+              </h3>
+              <p
+                style={{ fontFamily: "'Geist', sans-serif" }}
+                className="text-xs text-white/40 uppercase tracking-widest mb-6"
+              >
+                Software Developer / Indie Hacker
+              </p>
+              <p
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+                className="text-lg text-white/50 italic leading-relaxed"
+              >
+                &ldquo;I like to solve the problems I&apos;ve faced in my life — for everyone else.&rdquo;
+              </p>
 
-                {/* Corner accent */}
-                <div className={cn(
-                  "absolute top-4 right-4 w-8 h-8",
-                  "border-t border-r",
-                  "border-white/10 group-hover:border-black/10",
-                  "transition-colors duration-500"
-                )} />
-              </motion.div>
-            ))}
-          </div>
+              {/* Corner accents */}
+              <div className="absolute top-4 right-4 w-8 h-8 border-t border-r border-white/10" />
+              <div className="absolute bottom-4 left-4 w-8 h-8 border-b border-l border-white/10" />
+            </div>
+          </motion.div>
         </div>
       </section>
 
