@@ -127,34 +127,56 @@ async function tryFindMatch(params: {
 } | null> {
   // Use a transaction to atomically find and match
   const result = await prisma.$transaction(async (tx) => {
-    // Find candidates with FOR UPDATE SKIP LOCKED
-    // This skips any rows that are already being processed by another transaction
-    const candidates = await tx.$queryRaw<Array<{
+    // Find the best opponent with FOR UPDATE SKIP LOCKED
+    // Rating filtering and closest-rating ordering is done in SQL
+    type QueueCandidate = {
       id: bigint;
       referenceId: string;
       userId: bigint;
       rating: number | null;
       legendReferenceId: string | null;
-    }>>`
-      SELECT id, "referenceId", "userId", rating, "legendReferenceId"
-      FROM matchmaking_queue
-      WHERE status = 'SEARCHING'
-        AND "userId" != ${params.userId}
-        AND "timeControlSeconds" = ${params.timeControlSeconds}
-        AND "incrementSeconds" = ${params.incrementSeconds}
-        AND "expiresAt" > NOW()
-      ORDER BY "createdAt" ASC
-      FOR UPDATE SKIP LOCKED
-      LIMIT 10
-    `;
+    };
 
-    if (candidates.length === 0) {
-      return null;
-    }
+    const opponents = params.rating !== null
+      ? await tx.$queryRaw<QueueCandidate[]>`
+          SELECT id, "referenceId", "userId", rating, "legendReferenceId"
+          FROM matchmaking_queue
+          WHERE status = 'SEARCHING'
+            AND "userId" != ${params.userId}
+            AND "timeControlSeconds" = ${params.timeControlSeconds}
+            AND "incrementSeconds" = ${params.incrementSeconds}
+            AND "expiresAt" > NOW()
+            AND (
+              rating IS NULL
+              OR rating BETWEEN ${params.rating - WIDE_RATING_RANGE}
+                             AND ${params.rating + WIDE_RATING_RANGE}
+            )
+          ORDER BY
+            CASE
+              WHEN rating IS NULL THEN 0
+              WHEN ABS(rating - ${params.rating}) <= ${TIGHT_RATING_RANGE} THEN 1
+              ELSE 2
+            END,
+            ABS(COALESCE(rating, ${params.rating}) - ${params.rating})
+          FOR UPDATE SKIP LOCKED
+          LIMIT 1
+        `
+      : await tx.$queryRaw<QueueCandidate[]>`
+          SELECT id, "referenceId", "userId", rating, "legendReferenceId"
+          FROM matchmaking_queue
+          WHERE status = 'SEARCHING'
+            AND "userId" != ${params.userId}
+            AND "timeControlSeconds" = ${params.timeControlSeconds}
+            AND "incrementSeconds" = ${params.incrementSeconds}
+            AND "expiresAt" > NOW()
+          ORDER BY
+            CASE WHEN rating IS NULL THEN 0 ELSE 1 END,
+            "createdAt" ASC
+          FOR UPDATE SKIP LOCKED
+          LIMIT 1
+        `;
 
-    // Filter by rating
-    const opponent = findOpponentByRating(candidates, params.rating);
-
+    const opponent = opponents[0] ?? null;
     if (!opponent) {
       return null;
     }
@@ -272,37 +294,6 @@ async function tryFindMatch(params: {
   });
 
   return result;
-}
-
-/**
- * Find an opponent within acceptable rating range
- */
-function findOpponentByRating(
-  candidates: Array<{ id: bigint; referenceId: string; userId: bigint; rating: number | null; legendReferenceId: string | null }>,
-  myRating: number | null
-): typeof candidates[0] | null {
-  // Try tight match first (±200)
-  for (const candidate of candidates) {
-    if (myRating !== null && candidate.rating !== null) {
-      if (Math.abs(myRating - candidate.rating) <= TIGHT_RATING_RANGE) {
-        return candidate;
-      }
-    } else {
-      // One or both unrated - match them
-      return candidate;
-    }
-  }
-
-  // Try wide match (±400)
-  for (const candidate of candidates) {
-    if (myRating !== null && candidate.rating !== null) {
-      if (Math.abs(myRating - candidate.rating) <= WIDE_RATING_RANGE) {
-        return candidate;
-      }
-    }
-  }
-
-  return null;
 }
 
 /**

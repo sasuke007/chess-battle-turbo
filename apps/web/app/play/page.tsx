@@ -89,48 +89,35 @@ export default function Play() {
   const [legendsLoading, setLegendsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchLegends() {
-      try {
-        const response = await fetch("/api/legends?isVisible=true&isActive=true");
-        const data = await response.json();
-        if (data.success && data.data?.legends) {
-          setLegends(data.data.legends);
-        }
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Failed to fetch legends:", error);
-        }
-      } finally {
-        setLegendsLoading(false);
-      }
-    }
-    fetchLegends();
-  }, []);
+    async function fetchData() {
+      const [legendsResult, openingsResult] = await Promise.allSettled([
+        fetch("/api/legends?isVisible=true&isActive=true").then(r => r.json()),
+        fetch("/api/openings").then(r => r.json()),
+      ]);
 
-  useEffect(() => {
-    async function fetchOpenings() {
-      try {
-        const response = await fetch("/api/openings");
-        const data = await response.json();
-        if (data.success && data.data?.openings) {
-          setOpenings(data.data.openings);
-        }
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Failed to fetch openings:", error);
-        }
-      } finally {
-        setOpeningsLoading(false);
+      if (legendsResult.status === "fulfilled" && legendsResult.value.success && legendsResult.value.data?.legends) {
+        setLegends(legendsResult.value.data.legends);
+      } else if (process.env.NODE_ENV === 'development' && legendsResult.status === "rejected") {
+        console.error("Failed to fetch legends:", legendsResult.reason);
       }
+      setLegendsLoading(false);
+
+      if (openingsResult.status === "fulfilled" && openingsResult.value.success && openingsResult.value.data?.openings) {
+        setOpenings(openingsResult.value.data.openings);
+      } else if (process.env.NODE_ENV === 'development' && openingsResult.status === "rejected") {
+        console.error("Failed to fetch openings:", openingsResult.reason);
+      }
+      setOpeningsLoading(false);
     }
-    fetchOpenings();
+    fetchData();
   }, []);
 
   const handleCreateGame = async () => {
-    if (!userReferenceId) {
-      alert("User not authenticated. Please sign in.");
-      return;
-    }
+    // TODO:  This error should ideally not Happen, because we dont load the page untill the auth state is ready, but just in case
+    // if (!userReferenceId) {
+    //   alert("User not authenticated. Please sign in.");
+    //   return;
+    // }
 
     setIsCreatingGame(true);
 
@@ -150,10 +137,7 @@ export default function Play() {
         params.set("opening", selectedOpening);
       }
       router.push(`/queue?${params.toString()}`);
-      return;
-    }
-
-    if (selectedMode === "ai") {
+    } else if (selectedMode === "ai") {
       const aiGameData = {
         userReferenceId: userReferenceId,
         initialTimeSeconds: timeControl.time,
@@ -183,43 +167,41 @@ export default function Play() {
         alert(error instanceof Error ? error.message : "Failed to create AI game");
         setIsCreatingGame(false);
       }
-      return;
     }
+    else {
+      const gameData = {
+        userReferenceId: userReferenceId,
+        stakeAmount: 0,
+        initialTimeSeconds: timeControl.time,
+        incrementSeconds: timeControl.increment,
+        gameMode: selectedMode,
+        playAsLegend: playAsLegend,
+        selectedLegend: playAsLegend ? selectedHero : null,
+        selectedOpening: playOpening ? selectedOpening : null,
+      };
 
-    const gameData = {
-      userReferenceId: userReferenceId,
-      stakeAmount: 0,
-      initialTimeSeconds: timeControl.time,
-      incrementSeconds: timeControl.increment,
-      gameMode: selectedMode,
-      playAsLegend: playAsLegend,
-      selectedLegend: playAsLegend ? selectedHero : null,
-      selectedOpening: playOpening ? selectedOpening : null,
-    };
+      try {
+        const response = await fetch("/api/chess/create-game", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(gameData),
+        });
 
-    try {
-      const response = await fetch("/api/chess/create-game", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(gameData),
-      });
+        const data = await response.json();
 
-      const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to create game");
+        }
 
-      if (!data.success) {
-        throw new Error(data.error || "Failed to create game");
+        const gameRef = data.data.game.referenceId;
+        await navigator.clipboard.writeText(`${window.location.origin}/join/${gameRef}`);
+        router.push(`/game/${gameRef}`);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error creating game:", error);
+        }
+        setIsCreatingGame(false);
       }
-
-      const gameRef = data.data.game.referenceId;
-      await navigator.clipboard.writeText(`${window.location.origin}/join/${gameRef}`);
-      alert("Game link copied to clipboard! Share it with your friend.");
-      router.push(`/game/${gameRef}`);
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error("Error creating game:", error);
-      }
-      alert(error instanceof Error ? error.message : "Failed to create game");
-      setIsCreatingGame(false);
     }
   };
 
@@ -309,9 +291,9 @@ export default function Play() {
                 return (
                   <motion.button
                     key={mode.id}
-                    initial={{ opacity: 0, x: -40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.1, duration: 0.6 }}
+                    initial={{ opacity: 0, y: -40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + index * 0.1, duration: 0.4 }}
                     onClick={() => setSelectedMode(mode.id)}
                     onMouseEnter={() => setHoveredMode(mode.id)}
                     onMouseLeave={() => setHoveredMode(null)}

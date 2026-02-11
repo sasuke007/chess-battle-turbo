@@ -118,6 +118,71 @@ once we have sent an event after both the players have joined the game_start eve
 And on joining screen also should have a 1 minute timeout that if after one minute, if the game does not start we should show client that unbale to load the game at the moment, please try after sometime.
 
 
+Sending Notifications setup.
+
+
+Once the app loads, will store the assests like images and videos in user local storage for better performance.
+
+2x videos , just record a feture and 2x it an post.
+
+When we fetch a request for homepage, we would like to call our profile api and clerk hook to fetch user data in asynchronous manner, 
+
+and store it in local storage using zustand , that will make our pages incredibly fast.
+
+
+
+Using the discussion below we can establish a web socket connection on homepage itself and use it when the user goes on to game page that way the game is already created and when user finally goes on game page he wont have to wait and see the loader again.
+
+---
+
+WebSocket Connections Across Page Navigations
+Short answer: It depends on whether you're doing a full page navigation or a client-side navigation.
+
+Full page navigation (window.location, <a> without SPA router)
+Not possible. A full page load destroys the entire JavaScript runtime, including all WebSocket connections. You must establish a new connection on the new page. There's no way to "transfer" the socket.
+
+Client-side navigation (Next.js router.push, <Link>)
+Yes — this is what you want. In Next.js, client-side navigations don't reload the page. The JavaScript runtime stays alive, so a WebSocket connection created in a shared context (like a Zustand store, React context, or module-level singleton) will survive across route changes.
+
+How to do it in your app
+Since you're using Next.js + Zustand + socket.io-client, the typical pattern is:
+
+Create the socket connection in a Zustand store or module-level singleton — not inside a page component
+Initialize it once (e.g., in a layout or provider that wraps your routes)
+Access it from any page via the store
+
+// stores/socket-store.ts
+import { io, Socket } from 'socket.io-client';
+import { create } from 'zustand';
+
+interface SocketStore {
+  socket: Socket | null;
+  connect: () => void;
+  disconnect: () => void;
+}
+
+export const useSocketStore = create<SocketStore>((set, get) => ({
+  socket: null,
+  connect: () => {
+    if (get().socket) return; // already connected
+    const socket = io('your-server-url');
+    set({ socket });
+  },
+  disconnect: () => {
+    get().socket?.disconnect();
+    set({ socket: null });
+  },
+}));
+Then in your queue page, you call connect(). When the user navigates to /game/[gameId] via router.push(), the socket stays alive and the game page reads from the same store.
+
+Key caveat
+If the user refreshes the page or types a URL manually, the socket is gone and you'll need to reconnect. Your game page should always handle the case where the socket doesn't exist yet and reconnect if needed.
+
+---
+
+
+
+
 
 
 
