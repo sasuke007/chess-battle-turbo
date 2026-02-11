@@ -31,7 +31,7 @@ const nextConfig = {
 };
 
 export default withSentryConfig(withPWA(nextConfig), {
-  org: "chess-battle",
+  org: "my-company-mca",
   project: "chess-battle",
   silent: !process.env.CI,
   widenClientFileUpload: true,
