@@ -185,5 +185,13 @@ If the user refreshes the page or types a URL manually, the socket is gone and y
 
 
 
+Twitter Account, 
+
+Email,
+
+Youtube,
+
+Github. Setup
+
 
 
