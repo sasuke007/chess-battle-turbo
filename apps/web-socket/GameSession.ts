@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/node";
 import { Chess, Color, Move, Square } from "chess.js";
 import { Socket } from "socket.io";
 import { ClockManager } from "./ClockManager";
@@ -16,6 +15,7 @@ import {
 } from "./types";
 import { persistMove, completeGame } from "./utils/apiClient";
 import { addGameBreadcrumb, captureSocketError, trackGameDuration } from "./utils/sentry";
+import { logger } from "./utils/logger";
 
 /**
  * GameSession manages the state and logic for a single chess game
@@ -55,9 +55,7 @@ export class GameSession {
     this.chess = new Chess(gameData.startingFen);
 
     // Detect AI game from gameData
-    console.log("=== GAME SESSION CONSTRUCTOR DEBUG ===");
-    console.log("gameData.gameData:", JSON.stringify(gameData.gameData, null, 2));
-    console.log("gameData.gameData?.gameMode:", gameData.gameData?.gameMode);
+    logger.debug(`GameSession constructor - gameData: ${JSON.stringify(gameData.gameData)}, gameMode: ${gameData.gameData?.gameMode}`);
 
     if (gameData.gameData?.gameMode === "AI") {
       this.isAIGame = true;
@@ -66,11 +64,10 @@ export class GameSession {
       const playerColor = gameData.gameData.playerColor;
       this.humanPlayerColor = playerColor === "white" ? "w" : "b";
       this.botColor = playerColor === "white" ? "b" : "w";
-      console.log(`AI game detected - Player: ${this.humanPlayerColor}, Bot: ${this.botColor}, Difficulty: ${this.aiDifficulty}`);
+      logger.debug(`AI game detected - Player: ${this.humanPlayerColor}, Bot: ${this.botColor}, Difficulty: ${this.aiDifficulty}`);
     } else {
-      console.log("NOT an AI game - gameMode:", gameData.gameData?.gameMode);
+      logger.debug(`NOT an AI game - gameMode: ${gameData.gameData?.gameMode}`);
     }
-    console.log("======================================");
 
     // Initialize clock manager
     this.clockManager = new ClockManager(
@@ -91,8 +88,7 @@ export class GameSession {
       this.handleTimeout(color);
     });
 
-    console.log(`GameSession created for game ${gameData.referenceId} with starting FEN: ${gameData.startingFen}`);
-    Sentry.logger.info(Sentry.logger.fmt`GameSession created for game ${gameData.referenceId}`);
+    logger.info(`GameSession created for game ${gameData.referenceId} with starting FEN: ${gameData.startingFen}`);
   }
 
   public async setGameData(gameData: GameData): Promise<void> {
@@ -126,16 +122,7 @@ export class GameSession {
     const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
     const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
 
-    console.log("=== ADD PLAYER DEBUG ===");
-    console.log("Attempting to add player:", userReferenceId);
-    console.log("Game reference ID:", this.gameData.referenceId);
-    console.log("Game status:", this.gameData.status);
-    console.log("Creator ID:", this.gameData.creator.userReferenceId);
-    console.log("Opponent ID:", this.gameData.opponent?.userReferenceId);
-    console.log("Is creator?", isCreator);
-    console.log("Is opponent?", isOpponent);
-    console.log("Is AI game?", this.isAIGame);
-    console.log("=======================");
+    logger.debug(`addPlayer - user: ${userReferenceId}, game: ${this.gameData.referenceId}, status: ${this.gameData.status}, isCreator: ${isCreator}, isOpponent: ${isOpponent}, isAI: ${this.isAIGame}`);
 
     if (!isCreator && !isOpponent) {
       throw new Error(`User ${userReferenceId} is not part of game ${this.gameData.referenceId}. Creator: ${this.gameData.creator.userReferenceId}, Opponent: ${this.gameData.opponent?.userReferenceId || 'null'}`);
@@ -151,7 +138,7 @@ export class GameSession {
         playerInfo,
       };
       socket.join(this.gameData.referenceId);
-      console.log(`Creator joined game ${this.gameData.referenceId}`);
+      logger.debug(`Creator joined game ${this.gameData.referenceId}`);
     } else if (isOpponent) {
       const playerInfo = this.gameData.opponent!;
       this.opponentPlayer = {
@@ -161,7 +148,7 @@ export class GameSession {
         playerInfo,
       };
       socket.join(this.gameData.referenceId);
-      console.log(`Opponent joined game ${this.gameData.referenceId}`);
+      logger.debug(`Opponent joined game ${this.gameData.referenceId}`);
     }
 
     // For AI games, start immediately when the human player joins
@@ -171,7 +158,7 @@ export class GameSession {
       const isHumanPlayer = userReferenceId === humanPlayerReferenceId;
 
       if (isHumanPlayer) {
-        console.log("Human player joined AI game - starting immediately");
+        logger.info("Human player joined AI game - starting immediately");
         await this.startAIGame(socket, userReferenceId);
         return;
       }
@@ -236,7 +223,7 @@ export class GameSession {
     this.whitePlayer.socket.emit("analysis_phase_started", whitePayload);
     this.blackPlayer.socket.emit("analysis_phase_started", blackPayload);
 
-    console.log(`Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - waiting for client ACKs`);
+    logger.info(`Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - waiting for client ACKs`);
   }
 
   /**
@@ -315,7 +302,7 @@ export class GameSession {
     };
 
     socket.emit("analysis_phase_started", payload);
-    console.log(`AI Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}, waiting for client ACK`);
+    logger.info(`AI Game ${this.gameData.referenceId} entering analysis phase (${analysisTime}s) - Human: ${this.humanPlayerColor}, Bot: ${this.botColor}, waiting for client ACK`);
   }
 
   /**
@@ -389,8 +376,7 @@ export class GameSession {
       return;
     }
 
-    console.log(`Move made: ${move.san} in game ${this.gameData.referenceId}${this.isAIGame ? " (AI game)" : ""}`);
-    Sentry.logger.info(Sentry.logger.fmt`Move made: ${move.san} in game ${this.gameData.referenceId}`);
+    logger.info(`Move made: ${move.san} in game ${this.gameData.referenceId}${this.isAIGame ? " (AI game)" : ""}`);
 
     // Stop current player's clock and add increment
     this.clockManager.stopClock();
@@ -432,8 +418,7 @@ export class GameSession {
       : player.userReferenceId;
 
     this.persistMoveToDb(movePlayerId, move).catch((error) => {
-      console.error("Error persisting move to DB:", error);
-      Sentry.logger.error(Sentry.logger.fmt`Error persisting move to DB in game ${this.gameData.referenceId}`);
+      logger.error(`Error persisting move to DB in game ${this.gameData.referenceId}`, error);
       captureSocketError(error, {
         event: "persist_move_api",
         gameReferenceId: this.gameData.referenceId,
@@ -521,10 +506,7 @@ export class GameSession {
       return;
     }
 
-    console.log(
-      `Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`
-    );
-    Sentry.logger.warn(Sentry.logger.fmt`Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`);
+    logger.warn(`Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`);
     addGameBreadcrumb("player_disconnected", {
       gameReferenceId: this.gameData.referenceId,
       userReferenceId: player.userReferenceId,
@@ -535,10 +517,10 @@ export class GameSession {
     if (this.isAIGame && this.gameStarted && !this.gameEnded) {
       const isHumanPlayer = player.color === this.humanPlayerColor;
       if (isHumanPlayer) {
-        console.log("Human player disconnected from AI game - starting grace period");
+        logger.info("Human player disconnected from AI game - starting grace period");
         // Start disconnect timer - if human doesn't reconnect, bot wins
         const timer = setTimeout(async () => {
-          console.log("Human player did not reconnect to AI game - bot wins");
+          logger.info("Human player did not reconnect to AI game - bot wins");
           const result: GameResult = this.botColor === "w" ? "CREATOR_WON" : "OPPONENT_WON";
           await this.endGame(result, this.botColor, "timeout");
         }, this.DISCONNECT_GRACE_PERIOD);
@@ -556,9 +538,7 @@ export class GameSession {
 
       // Start disconnect timer
       const timer = setTimeout(async () => {
-        console.log(
-          `Player ${player.userReferenceId} did not reconnect in time`
-        );
+        logger.info(`Player ${player.userReferenceId} did not reconnect in time`);
         // Player forfeits
         const result: GameResult =
           player.color === "w" ? "OPPONENT_WON" : "CREATOR_WON";
@@ -581,18 +561,14 @@ export class GameSession {
     const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
     const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
 
-    console.log(
-      `Player ${userReferenceId} reconnecting to game ${this.gameData.referenceId}`,
-      { isCreator, isOpponent, gameStarted: this.gameStarted }
-    );
-    Sentry.logger.info(Sentry.logger.fmt`Player ${userReferenceId} reconnected to game ${this.gameData.referenceId}`);
+    logger.info(`Player ${userReferenceId} reconnecting to game ${this.gameData.referenceId} (isCreator: ${isCreator}, isOpponent: ${isOpponent}, gameStarted: ${this.gameStarted})`);
 
     // Clear disconnect timer if exists
     const timer = this.disconnectTimers.get(userReferenceId);
     if (timer) {
       clearTimeout(timer);
       this.disconnectTimers.delete(userReferenceId);
-      console.log(`Cleared disconnect timer for ${userReferenceId}`);
+      logger.debug(`Cleared disconnect timer for ${userReferenceId}`);
     }
 
     // Update socket references
@@ -625,7 +601,7 @@ export class GameSession {
       
       if (opponent) {
         opponent.socket.emit("opponent_reconnected", {});
-        console.log(`Notified opponent of reconnection`);
+        logger.debug("Notified opponent of reconnection");
       }
 
       // Send current game state to reconnected player
@@ -641,7 +617,7 @@ export class GameSession {
         blackPlayer: this.blackPlayer!.playerInfo,
         positionInfo: positionInfo || undefined,
       });
-      console.log(`Sent game state to reconnected player`);
+      logger.debug("Sent game state to reconnected player");
     } else {
       // Game hasn't started yet, just send waiting status
       socket.emit("waiting_for_opponent", { 
@@ -658,7 +634,7 @@ export class GameSession {
     this.disconnectTimers.forEach((timer) => clearTimeout(timer));
     this.disconnectTimers.clear();
     this.analysisCompleteFrom.clear();
-    console.log(`GameSession destroyed for game ${this.gameData.referenceId}`);
+    logger.info(`GameSession destroyed for game ${this.gameData.referenceId}`);
   }
 
   /**
@@ -692,26 +668,26 @@ export class GameSession {
    */
   public handleAnalysisComplete(userReferenceId: string): void {
     if (!this.isAnalysisPhase) {
-      console.log(`Ignoring analysis_complete from ${userReferenceId} - not in analysis phase`);
+      logger.debug(`Ignoring analysis_complete from ${userReferenceId} - not in analysis phase`);
       return;
     }
 
     this.analysisCompleteFrom.add(userReferenceId);
-    console.log(`Analysis complete ACK from ${userReferenceId} in game ${this.gameData.referenceId}`);
+    logger.info(`Analysis complete ACK from ${userReferenceId} in game ${this.gameData.referenceId}`);
 
     if (this.isAIGame) {
       // AI game: start immediately when human player ACKs
-      console.log(`AI game - starting immediately after human ACK`);
+      logger.info("AI game - starting immediately after human ACK");
       this.endAnalysisPhaseForAI();
     } else {
       // PvP game: wait for both players to ACK
       const hasWhite = this.analysisCompleteFrom.has(this.whitePlayer?.userReferenceId || '');
       const hasBlack = this.analysisCompleteFrom.has(this.blackPlayer?.userReferenceId || '');
 
-      console.log(`PvP game - ACKs: white=${hasWhite}, black=${hasBlack}`);
+      logger.debug(`PvP game - ACKs: white=${hasWhite}, black=${hasBlack}`);
 
       if (hasWhite && hasBlack) {
-        console.log(`Both players ready - starting game`);
+        logger.info("Both players ready - starting game");
         this.endAnalysisPhase();
       }
     }
@@ -810,8 +786,7 @@ export class GameSession {
     this.whitePlayer!.socket.emit("game_started", whitePayload);
     this.blackPlayer!.socket.emit("game_started", { ...whitePayload, yourColor: "b" as const });
 
-    console.log(`Analysis phase ended, game ${this.gameData.referenceId} started - clock started for ${currentTurn === "w" ? "white" : "black"}`);
-    Sentry.logger.info(Sentry.logger.fmt`Game ${this.gameData.referenceId} started`);
+    logger.info(`Analysis phase ended, game ${this.gameData.referenceId} started - clock started for ${currentTurn === "w" ? "white" : "black"}`);
   }
 
   /**
@@ -834,7 +809,7 @@ export class GameSession {
     // Get current socket from player reference (handles reconnection)
     const humanPlayer = this.humanPlayerColor === "w" ? this.whitePlayer : this.blackPlayer;
     if (!humanPlayer) {
-      console.error("No human player found when ending analysis phase");
+      logger.error("No human player found when ending analysis phase");
       return;
     }
 
@@ -854,14 +829,11 @@ export class GameSession {
     };
 
     humanPlayer.socket.emit("game_started", payload);
-    console.log(`AI Game ${this.gameData.referenceId} analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`);
-    Sentry.logger.info(Sentry.logger.fmt`AI Game ${this.gameData.referenceId} started`);
+    logger.info(`AI Game ${this.gameData.referenceId} analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`);
   }
 
   private async handleTimeout(color: Color): Promise<void> {
-    console.log(
-      `Timeout for ${color === "w" ? "White" : "Black"} in game ${this.gameData.referenceId}`
-    );
+    logger.info(`Timeout for ${color === "w" ? "White" : "Black"} in game ${this.gameData.referenceId}`);
 
     const winner = color === "w" ? "b" : "w";
     const result: GameResult = this.getGameResult(winner);
@@ -936,10 +908,7 @@ export class GameSession {
 
     this.broadcast("game_over", gameOverPayload);
 
-    console.log(
-      `Game ${this.gameData.referenceId} ended: ${result} by ${method}`
-    );
-    Sentry.logger.info(Sentry.logger.fmt`Game ${this.gameData.referenceId} ended: ${result} by ${method}`);
+    logger.info(`Game ${this.gameData.referenceId} ended: ${result} by ${method}`);
 
     // Persist game result to database
     const winnerId =
@@ -958,8 +927,7 @@ export class GameSession {
       whiteTime: this.clockManager.getTimeInSeconds("w"),
       blackTime: this.clockManager.getTimeInSeconds("b"),
     }).catch((error) => {
-      console.error("Error completing game in DB:", error);
-      Sentry.logger.error(Sentry.logger.fmt`Error completing game in DB for game ${this.gameData.referenceId}`);
+      logger.error(`Error completing game in DB for game ${this.gameData.referenceId}`, error);
       captureSocketError(error, {
         event: "complete_game_api",
         gameReferenceId: this.gameData.referenceId,

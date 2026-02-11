@@ -21,6 +21,7 @@ import {
   trackActiveGames,
   flushSentry,
 } from "./utils/sentry";
+import { logger } from "./utils/logger";
 
 const app = express();
 
@@ -53,8 +54,7 @@ const metricsInterval = setInterval(() => {
 
 // Socket.IO connection handler
 io.on("connection", (socket) => {
-  console.log("Client connected, socket id:", socket.id);
-  Sentry.logger.info(Sentry.logger.fmt`Client connected, socket id: ${socket.id}`);
+  logger.info(`Client connected, socket id: ${socket.id}`);
   addSocketBreadcrumb("client_connected", { socketId: socket.id });
   trackActiveConnections(io.engine.clientsCount);
 
@@ -74,15 +74,12 @@ io.on("connection", (socket) => {
         trackSocketEvent("join_game");
         try {
           const { gameReferenceId, userReferenceId } = payload;
-          console.log(
-            `join_game event: gameRef=${gameReferenceId}, user=${userReferenceId}`
-          );
+          logger.info(`join_game event: gameRef=${gameReferenceId}, user=${userReferenceId}`);
           addSocketBreadcrumb("join_game", { gameReferenceId, userReferenceId });
 
           await gameManager.handleJoinGame(socket, gameReferenceId, userReferenceId);
         } catch (error) {
-          console.error("Error in join_game handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in join_game handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in join_game handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "join_game",
             gameReferenceId: payload.gameReferenceId,
@@ -114,9 +111,7 @@ io.on("connection", (socket) => {
         trackSocketEvent("make_move");
         try {
           const { gameReferenceId, from, to, promotion } = payload;
-          console.log(
-            `make_move event: game=${gameReferenceId}, from=${from}, to=${to}`
-          );
+          logger.info(`make_move event: game=${gameReferenceId}, from=${from}, to=${to}`);
 
           await gameManager.handleMove(
             socket,
@@ -126,8 +121,7 @@ io.on("connection", (socket) => {
             promotion
           );
         } catch (error) {
-          console.error("Error in make_move handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in make_move handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in make_move handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "make_move",
             gameReferenceId: payload.gameReferenceId,
@@ -158,12 +152,11 @@ io.on("connection", (socket) => {
         addSocketBreadcrumb("resign", { gameReferenceId: payload.gameReferenceId });
         try {
           const { gameReferenceId } = payload;
-          console.log(`resign event: game=${gameReferenceId}`);
+          logger.info(`resign event: game=${gameReferenceId}`);
 
           await gameManager.handleResign(socket, gameReferenceId);
         } catch (error) {
-          console.error("Error in resign handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in resign handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in resign handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "resign",
             gameReferenceId: payload.gameReferenceId,
@@ -193,12 +186,11 @@ io.on("connection", (socket) => {
         addSocketBreadcrumb("offer_draw", { gameReferenceId: payload.gameReferenceId });
         try {
           const { gameReferenceId } = payload;
-          console.log(`offer_draw event: game=${gameReferenceId}`);
+          logger.info(`offer_draw event: game=${gameReferenceId}`);
 
           gameManager.handleOfferDraw(socket, gameReferenceId);
         } catch (error) {
-          console.error("Error in offer_draw handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in offer_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in offer_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "offer_draw",
             gameReferenceId: payload.gameReferenceId,
@@ -228,12 +220,11 @@ io.on("connection", (socket) => {
         addSocketBreadcrumb("accept_draw", { gameReferenceId: payload.gameReferenceId });
         try {
           const { gameReferenceId } = payload;
-          console.log(`accept_draw event: game=${gameReferenceId}`);
+          logger.info(`accept_draw event: game=${gameReferenceId}`);
 
           await gameManager.handleAcceptDraw(socket, gameReferenceId);
         } catch (error) {
-          console.error("Error in accept_draw handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in accept_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in accept_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "accept_draw",
             gameReferenceId: payload.gameReferenceId,
@@ -262,12 +253,11 @@ io.on("connection", (socket) => {
         trackSocketEvent("decline_draw");
         try {
           const { gameReferenceId } = payload;
-          console.log(`decline_draw event: game=${gameReferenceId}`);
+          logger.info(`decline_draw event: game=${gameReferenceId}`);
 
           gameManager.handleDeclineDraw(socket, gameReferenceId);
         } catch (error) {
-          console.error("Error in decline_draw handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in decline_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in decline_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "decline_draw",
             gameReferenceId: payload.gameReferenceId,
@@ -293,7 +283,7 @@ io.on("connection", (socket) => {
         trackSocketEvent("analysis_complete");
         try {
           const { gameReferenceId, userReferenceId } = payload;
-          console.log(`analysis_complete event: game=${gameReferenceId}, user=${userReferenceId}`);
+          logger.info(`analysis_complete event: game=${gameReferenceId}, user=${userReferenceId}`);
 
           if (!userReferenceId) {
             socket.emit("error", { message: "userReferenceId required for analysis_complete" });
@@ -302,8 +292,7 @@ io.on("connection", (socket) => {
 
           gameManager.handleAnalysisComplete(socket, gameReferenceId, userReferenceId);
         } catch (error) {
-          console.error("Error in analysis_complete handler:", error);
-          Sentry.logger.error(Sentry.logger.fmt`Error in analysis_complete handler: ${error instanceof Error ? error.message : "Unknown error"}`);
+          logger.error(`Error in analysis_complete handler: ${error instanceof Error ? error.message : "Unknown error"}`, error);
           captureSocketError(error, {
             event: "analysis_complete",
             gameReferenceId: payload.gameReferenceId,
@@ -327,8 +316,7 @@ io.on("connection", (socket) => {
         attributes: { "socket.id": socket.id },
       },
       () => {
-        console.log("Client disconnected, socket id:", socket.id);
-        Sentry.logger.info(Sentry.logger.fmt`Client disconnected, socket id: ${socket.id}`);
+        logger.info(`Client disconnected, socket id: ${socket.id}`);
         addSocketBreadcrumb("client_disconnected", { socketId: socket.id });
         trackActiveConnections(io.engine.clientsCount);
         trackSocketEvent("disconnect");
@@ -340,11 +328,11 @@ io.on("connection", (socket) => {
 
 // Graceful shutdown
 async function gracefulShutdown(signal: string): Promise<void> {
-  console.log(`${signal} received, shutting down gracefully`);
+  logger.info(`${signal} received, shutting down gracefully`);
   clearInterval(metricsInterval);
   gameManager.destroy();
   server.close(async () => {
-    console.log("Server closed");
+    logger.info("Server closed");
     await flushSentry(2000);
     process.exit(0);
   });
@@ -355,6 +343,6 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {
-  console.log(`WebSocket server running at http://localhost:${PORT}`);
-  console.log(`Active games: ${gameManager.getActiveGameCount()}`);
+  logger.info(`WebSocket server running at http://localhost:${PORT}`);
+  logger.info(`Active games: ${gameManager.getActiveGameCount()}`);
 });

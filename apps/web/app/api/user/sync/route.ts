@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import * as Sentry from "@sentry/nextjs";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/user/sync
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     // Get the authenticated user's ID from Clerk
     const { userId } = await auth();
 
-    Sentry.logger.info(`POST /api/user/sync - clerkUserId ${userId}`);
+    logger.info(`POST /api/user/sync - clerkUserId ${userId}`);
 
     // Check if user is authenticated
     if (!userId) {
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
       } : null,
     };
 
-    Sentry.logger.info(`User synced: ${user?.referenceId}, ${existingUser ? "updated" : "created"}`);
+    logger.info(`User synced: ${user?.referenceId}, ${existingUser ? "updated" : "created"}`);
 
     return NextResponse.json(
       {
@@ -200,8 +200,7 @@ export async function POST(req: NextRequest) {
       { status: existingUser ? 200 : 201 }
     );
   } catch (error) {
-    Sentry.logger.error(`POST /api/user/sync failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    console.error("Error syncing user:", error);
+    logger.error(`POST /api/user/sync failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       {
         error: "Internal server error",

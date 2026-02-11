@@ -1,5 +1,6 @@
 import { Color } from "chess.js";
 import { ClockConfig, ClockState } from "./types";
+import { logger } from "./utils/logger";
 
 export type ClockEventHandler = (whiteTime: number, blackTime: number) => void;
 export type TimeoutEventHandler = (color: Color) => void;
@@ -63,7 +64,7 @@ export class ClockManager {
       this.tick();
     }, this.TICK_INTERVAL);
 
-    console.log(`Clock started for ${color === "w" ? "White" : "Black"}`);
+    logger.debug(`Clock started for ${color === "w" ? "White" : "Black"}`);
   }
 
   /**
@@ -85,7 +86,7 @@ export class ClockManager {
       this.updateTimeForColor(wasActive);
     }
 
-    console.log("Clock stopped");
+    logger.debug("Clock stopped");
   }
 
   /**
@@ -96,10 +97,10 @@ export class ClockManager {
 
     if (color === "w") {
       this.whiteTime += incrementMs;
-      console.log(`Added ${this.config.increment}s increment to White`);
+      logger.debug(`Added ${this.config.increment}s increment to White`);
     } else {
       this.blackTime += incrementMs;
-      console.log(`Added ${this.config.increment}s increment to Black`);
+      logger.debug(`Added ${this.config.increment}s increment to Black`);
     }
 
     // Emit update after adding increment
@@ -206,7 +207,7 @@ export class ClockManager {
    * Handle clock timeout
    */
   private handleTimeout(color: Color): void {
-    console.log(`Clock timeout for ${color === "w" ? "White" : "Black"}`);
+    logger.info(`Clock timeout for ${color === "w" ? "White" : "Black"}`);
 
     // Emit final update
     this.emitUpdate();

@@ -1,9 +1,9 @@
-import * as Sentry from "@sentry/node";
 import { Socket } from "socket.io";
 import { GameSession } from "./GameSession";
 import { GameData } from "./types";
 import { fetchGameByRef } from "./utils/apiClient";
 import { captureSocketError, addGameBreadcrumb, trackActiveGames } from "./utils/sentry";
+import { logger } from "./utils/logger";
 
 /**
  * GameManager manages all active game sessions
@@ -23,10 +23,7 @@ export class GameManager {
     userReferenceId: string
   ): Promise<void> {
     try {
-      console.log(
-        `Player ${userReferenceId} attempting to join game ${gameReferenceId}`
-      );
-      Sentry.logger.info(Sentry.logger.fmt`Player ${userReferenceId} joining game ${gameReferenceId}`);
+      logger.info(`Player ${userReferenceId} attempting to join game ${gameReferenceId}`);
 
       // Get or create game session
       let gameSession = this.games.get(gameReferenceId);
@@ -36,10 +33,7 @@ export class GameManager {
         // Fetch game data from API
         const gameData : GameData = await fetchGameByRef(gameReferenceId);
 
-        console.log("=== GAME MANAGER FETCHED GAME DATA ===");
-        console.log("gameData.gameData:", gameData.gameData);
-        console.log("gameData.gameData?.gameMode:", gameData.gameData?.gameMode);
-        console.log("=======================================");
+        logger.debug(`=== GAME MANAGER FETCHED GAME DATA === gameData.gameData: ${JSON.stringify(gameData.gameData)}, gameMode: ${gameData.gameData?.gameMode}`);
 
         // Validate game status
         if (
@@ -58,12 +52,11 @@ export class GameManager {
         addGameBreadcrumb("game_session_created", { gameReferenceId });
         trackActiveGames(this.games.size);
 
-        console.log(`Created new game session for ${gameReferenceId}`);
-        Sentry.logger.info(Sentry.logger.fmt`Created new game session for ${gameReferenceId}`);
+        logger.info(`Created new game session for ${gameReferenceId}`);
       } else {
         // Check if this player is already in the game (reconnection)
         isReconnection = gameSession.isPlayerInGame(userReferenceId);
-        console.log(`Is reconnection: ${isReconnection}`);
+        logger.debug(`Is reconnection: ${isReconnection}`);
       }
 
       //TODO: do we need to validate game status again here, check what can go wrong if we don't.
@@ -78,11 +71,10 @@ export class GameManager {
 
       // Handle reconnection vs new join
       if (isReconnection) {
-        console.log(`Handling reconnection for ${userReferenceId}`);
-        Sentry.logger.info(Sentry.logger.fmt`Handling reconnection for ${userReferenceId} in game ${gameReferenceId}`);
+        logger.info(`Handling reconnection for ${userReferenceId} in game ${gameReferenceId}`);
         gameSession.handleReconnect(socket, userReferenceId);
       } else {
-        console.log(`Handling new player join for ${userReferenceId}`);
+        logger.debug(`Handling new player join for ${userReferenceId}`);
         // Add player to session
         await gameSession.addPlayer(socket, userReferenceId);
 
@@ -92,12 +84,11 @@ export class GameManager {
           !gameSession.hasBothPlayers()
         ) {
           socket.emit("waiting_for_opponent", { gameReferenceId });
-          console.log(`Player waiting for opponent in game ${gameReferenceId}`);
+          logger.debug(`Player waiting for opponent in game ${gameReferenceId}`);
         }
       }
     } catch (error) {
-      console.error("Error handling join game:", error);
-      Sentry.logger.error(Sentry.logger.fmt`Error handling join game: ${error instanceof Error ? error.message : "Unknown error"}`);
+      logger.error(`Error handling join game: ${error instanceof Error ? error.message : "Unknown error"}`, error);
       captureSocketError(error, {
         event: "join_game",
         gameReferenceId,
@@ -200,7 +191,7 @@ export class GameManager {
     }
 
     gameSession.handleDrawDecline(socket);
-    console.log(`Draw declined in game ${gameReferenceId}`);
+    logger.info(`Draw declined in game ${gameReferenceId}`);
   }
 
   /**
@@ -231,8 +222,7 @@ export class GameManager {
       return;
     }
 
-    console.log(`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
-    Sentry.logger.warn(Sentry.logger.fmt`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
+    logger.warn(`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
 
     // Notify all games this socket was part of
     gameIds.forEach((gameReferenceId) => {
@@ -280,8 +270,7 @@ export class GameManager {
       gameSession.destroy();
       this.games.delete(gameReferenceId);
       trackActiveGames(this.games.size);
-      console.log(`Removed game session ${gameReferenceId}`);
-      Sentry.logger.info(Sentry.logger.fmt`Removed game session ${gameReferenceId}`);
+      logger.info(`Removed game session ${gameReferenceId}`);
     }
   }
 
@@ -308,7 +297,7 @@ export class GameManager {
     });
     this.games.clear();
     this.socketToGames.clear();
-    console.log("GameManager destroyed");
+    logger.info("GameManager destroyed");
   }
 }
 

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMatchStatus } from "@/lib/services/matchmaking";
-import * as Sentry from "@sentry/nextjs";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const referenceId = searchParams.get("referenceId");
 
-    Sentry.logger.info(`GET /api/matchmaking/match-status - referenceId ${referenceId}`);
+    logger.info(`GET /api/matchmaking/match-status - referenceId ${referenceId}`);
 
     if (!referenceId) {
       return NextResponse.json(
@@ -35,8 +35,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    Sentry.logger.error(`GET /api/matchmaking/match-status failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    console.error("Error getting match status:", error);
+    logger.error(`GET /api/matchmaking/match-status failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       {
         success: false,

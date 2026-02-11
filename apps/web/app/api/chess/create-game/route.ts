@@ -6,7 +6,7 @@ import {getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlay
 import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser, validateSufficientBalance } from "@/lib/services/user-validation.service";
-import * as Sentry from "@sentry/nextjs";
+import { logger } from "@/lib/logger";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createGameSchema.parse(body);
 
-    Sentry.logger.info(`POST /api/chess/create-game - user ${validatedData.userReferenceId}, mode ${validatedData.gameMode}, stake ${validatedData.stakeAmount}`);
+    logger.info(`POST /api/chess/create-game - user ${validatedData.userReferenceId}, mode ${validatedData.gameMode}, stake ${validatedData.stakeAmount}`);
 
     // 2. Validate user and fetch with wallet
     const user = await validateAndFetchUser(validatedData.userReferenceId);
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
-    Sentry.logger.info(`Game created: ${result.game.referenceId} by user ${validatedData.userReferenceId}`);
+    logger.info(`Game created: ${result.game.referenceId} by user ${validatedData.userReferenceId}`);
 
     // 8. Return success response
     return NextResponse.json(
@@ -267,8 +267,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    Sentry.logger.error(`POST /api/chess/create-game failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    console.error("Error creating game:", error);
+    logger.error(`POST /api/chess/create-game failed: ${error instanceof Error ? error.message : "Unknown error"}`, error);
     return NextResponse.json(
       {
         error: "Failed to create game",

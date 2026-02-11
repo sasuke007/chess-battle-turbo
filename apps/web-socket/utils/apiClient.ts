@@ -6,7 +6,7 @@ import {
   GameData,
 } from "../types";
 import { addApiBreadcrumb, captureSocketError, trackApiLatency, trackApiError } from "./sentry";
-import * as Sentry from "@sentry/node";
+import { logger } from "./logger";
 
 // Configuration
 const API_BASE_URL = process.env.WEB_APP_URL || "http://localhost:3000";
@@ -37,8 +37,7 @@ export async function fetchGameByRef(
     trackApiLatency("fetch_game_by_ref", Date.now() - startTime);
     return result.data;
   } catch (error) {
-    console.error("Error fetching game by ref:", error);
-    Sentry.logger.error(Sentry.logger.fmt`Error fetching game by ref: ${gameReferenceId}`);
+    logger.error(`Error fetching game by ref: ${gameReferenceId}`, error);
     trackApiError("fetch_game_by_ref");
     trackApiLatency("fetch_game_by_ref", Date.now() - startTime);
     captureSocketError(error, {
@@ -77,7 +76,7 @@ export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
 
     trackApiLatency("persist_move", Date.now() - startTime);
   } catch (error) {
-    console.error("Error persisting move:", error);
+    logger.error(`Error persisting move for game ${moveData.gameReferenceId}`, error);
     trackApiError("persist_move");
     trackApiLatency("persist_move", Date.now() - startTime);
     captureSocketError(error, {
@@ -97,7 +96,7 @@ export async function completeGame(
   const startTime = Date.now();
   try {
     addApiBreadcrumb("complete_game", { gameReferenceId: gameOverData.gameReferenceId });
-    console.log("Calling game-over API with data:", gameOverData);
+    logger.debug(`Calling game-over API with data: ${JSON.stringify(gameOverData)}`);
 
     const response = await fetch(`${API_BASE_URL}/api/chess/game-over`, {
       method: "POST",
@@ -107,11 +106,11 @@ export async function completeGame(
       body: JSON.stringify(gameOverData),
     });
 
-    console.log("Game-over API response status:", response.status);
+    logger.debug(`Game-over API response status: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.json() as { error?: string; details?: any };
-      console.error("Game-over API error response:", errorData);
+      logger.error(`Game-over API error response: ${JSON.stringify(errorData)}`);
       const errorMessage = errorData.details
         ? `${errorData.error}: ${JSON.stringify(errorData.details)}`
         : errorData.error || `HTTP error! status: ${response.status}`;
@@ -119,10 +118,10 @@ export async function completeGame(
     }
 
     const result = await response.json() as { success: boolean; error?: string; details?: any };
-    console.log("Game-over API result:", result);
+    logger.debug(`Game-over API result: ${JSON.stringify(result)}`);
 
     if (!result.success) {
-      console.error("Game-over API returned success: false", result);
+      logger.error(`Game-over API returned success: false - ${JSON.stringify(result)}`);
       const errorMessage = result.details
         ? `${result.error}: ${JSON.stringify(result.details)}`
         : result.error || "Failed to complete game";
@@ -130,11 +129,9 @@ export async function completeGame(
     }
 
     trackApiLatency("complete_game", Date.now() - startTime);
-    console.log("Game completed successfully in database");
-    Sentry.logger.info(Sentry.logger.fmt`Game completed successfully: ${gameOverData.gameReferenceId}`);
+    logger.info(`Game completed successfully in database: ${gameOverData.gameReferenceId}`);
   } catch (error) {
-    console.error("Error completing game:", error);
-    Sentry.logger.error(Sentry.logger.fmt`Error completing game: ${gameOverData.gameReferenceId}`);
+    logger.error(`Error completing game: ${gameOverData.gameReferenceId}`, error);
     trackApiError("complete_game");
     trackApiLatency("complete_game", Date.now() - startTime);
     captureSocketError(error, {
@@ -176,8 +173,7 @@ export async function updateGameState(
 
     trackApiLatency("update_game_state", Date.now() - startTime);
   } catch (error) {
-    console.error("Error updating game state:", error);
-    Sentry.logger.error(Sentry.logger.fmt`Error updating game state: ${stateData.gameReferenceId}`);
+    logger.error(`Error updating game state: ${stateData.gameReferenceId}`, error);
     trackApiError("update_game_state");
     trackApiLatency("update_game_state", Date.now() - startTime);
     captureSocketError(error, {
@@ -185,6 +181,6 @@ export async function updateGameState(
       gameReferenceId: stateData.gameReferenceId,
     });
     // Non-critical error, log but don't throw
-    console.warn("Continuing despite game state update failure");
+    logger.warn("Continuing despite game state update failure");
   }
 }
