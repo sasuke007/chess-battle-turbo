@@ -195,3 +195,18 @@ Github. Setup
 
 
 
+
+Put FAQ's on front page , not on a seperate page.
+
+
+Add reviews section on the page.
+
+
+
+We can creaate a changelog page.(Datafast)
+
+
+
+
+
+

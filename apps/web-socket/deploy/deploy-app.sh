@@ -8,7 +8,7 @@
 set -e
 
 
-REPO_DIR="/var/www/chess-websocket"
+REPO_DIR="/var/www/chess-websocket/chess-battle-turbo"
 APP_DIR="$REPO_DIR/apps/web-socket"
 
 # Colors
@@ -44,7 +44,7 @@ if [ ! -f ".env" ]; then
     echo "Create one with:"
     echo "  PORT=3002"
     echo "  NODE_ENV=production"
-    echo "  WEB_APP_URL=https://your-vercel-app.vercel.app"
+    echo "  WEB_APP_URL=https://playchess.tech"
     exit 1
 fi
 

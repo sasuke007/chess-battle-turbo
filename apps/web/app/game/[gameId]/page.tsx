@@ -694,7 +694,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         style={backgroundGridStyle}
       />
 
-      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:pt-4 h-[100dvh] lg:h-auto flex flex-col lg:block">
+      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:py-4 h-[100dvh] lg:min-h-screen flex flex-col lg:flex lg:flex-col lg:justify-center">
         {!gameStarted && !isAnalysisPhase ? (
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex flex-col items-center">
@@ -721,7 +721,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8"
+            className="flex-1 lg:flex-none flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8"
           >
             {/* Left - Game Info (hidden on mobile) */}
             <div className="lg:col-span-3 space-y-4 order-2 lg:order-1 hidden lg:flex lg:flex-col lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden">
@@ -822,7 +822,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Move History */}
-              <div className="border border-white/10 p-5 min-h-0 flex-1 flex flex-col">
+              <div className="border border-white/10 p-5 min-h-0 flex flex-col max-h-48">
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}
                   className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3 shrink-0"

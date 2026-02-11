@@ -88,7 +88,7 @@ PORT=3002
 NODE_ENV=production
 
 # Your Next.js app URL (for API calls)
-WEB_APP_URL=https://chess-battle-turbo-web.vercel.app
+WEB_APP_URL=https://playchess.tech
 EOF
     print_status "Environment file created at $APP_DIR/.env"
 else
