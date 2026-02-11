@@ -2,6 +2,7 @@ import { Socket } from "socket.io";
 import { GameSession } from "./GameSession";
 import { GameData } from "./types";
 import { fetchGameByRef } from "./utils/apiClient";
+import { captureSocketError, addGameBreadcrumb, trackActiveGames } from "./utils/sentry";
 
 /**
  * GameManager manages all active game sessions
@@ -52,6 +53,8 @@ export class GameManager {
         // Create new game session
         gameSession = new GameSession(gameData);
         this.games.set(gameReferenceId, gameSession);
+        addGameBreadcrumb("game_session_created", { gameReferenceId });
+        trackActiveGames(this.games.size);
 
         console.log(`Created new game session for ${gameReferenceId}`);
       } else {
@@ -90,6 +93,12 @@ export class GameManager {
       }
     } catch (error) {
       console.error("Error handling join game:", error);
+      captureSocketError(error, {
+        event: "join_game",
+        gameReferenceId,
+        userReferenceId,
+        socketId: socket.id,
+      });
       socket.emit("error", {
         message: error instanceof Error ? error.message : "Failed to join game",
       });
@@ -264,6 +273,7 @@ export class GameManager {
     if (gameSession) {
       gameSession.destroy();
       this.games.delete(gameReferenceId);
+      trackActiveGames(this.games.size);
       console.log(`Removed game session ${gameReferenceId}`);
     }
   }

@@ -14,6 +14,7 @@ import {
   AnalysisPhaseStartedPayload,
 } from "./types";
 import { persistMove, completeGame } from "./utils/apiClient";
+import { addGameBreadcrumb, captureSocketError, trackGameDuration } from "./utils/sentry";
 
 /**
  * GameSession manages the state and logic for a single chess game
@@ -44,6 +45,7 @@ export class GameSession {
   // Analysis phase
   private isAnalysisPhase: boolean = false;
   private analysisCompleteFrom: Set<string> = new Set();
+  private gameStartTime: number = 0;
 
   constructor(gameData: GameData) {
     this.gameData = gameData;
@@ -376,6 +378,11 @@ export class GameSession {
     try {
       move = this.chess.move({ from, to, promotion: promotion || "q" });
     } catch (error) {
+      addGameBreadcrumb("invalid_move", {
+        gameReferenceId: this.gameData.referenceId,
+        from,
+        to,
+      }, "warning");
       socket.emit("move_error", { message: "Invalid move", fen: this.chess.fen() });
       return;
     }
@@ -423,6 +430,11 @@ export class GameSession {
 
     this.persistMoveToDb(movePlayerId, move).catch((error) => {
       console.error("Error persisting move to DB:", error);
+      captureSocketError(error, {
+        event: "persist_move_api",
+        gameReferenceId: this.gameData.referenceId,
+        extra: { from: move.from, to: move.to, san: move.san },
+      });
     });
   }
 
@@ -508,6 +520,11 @@ export class GameSession {
     console.log(
       `Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`
     );
+    addGameBreadcrumb("player_disconnected", {
+      gameReferenceId: this.gameData.referenceId,
+      userReferenceId: player.userReferenceId,
+      color: player.color,
+    });
 
     // In AI games, if the human disconnects, end the game (bot wins)
     if (this.isAIGame && this.gameStarted && !this.gameEnded) {
@@ -551,6 +568,11 @@ export class GameSession {
    * Handle player reconnection
    */
   public handleReconnect(socket: Socket, userReferenceId: string): void {
+    addGameBreadcrumb("player_reconnected", {
+      gameReferenceId: this.gameData.referenceId,
+      userReferenceId,
+    });
+
     const isCreator = userReferenceId === this.gameData.creator.userReferenceId;
     const isOpponent = userReferenceId === this.gameData.opponent?.userReferenceId;
 
@@ -755,6 +777,11 @@ export class GameSession {
   private endAnalysisPhase(): void {
     this.isAnalysisPhase = false;
     this.gameStarted = true;
+    this.gameStartTime = Date.now();
+    addGameBreadcrumb("game_started", {
+      gameReferenceId: this.gameData.referenceId,
+      isAIGame: this.isAIGame,
+    });
 
     // Start clock for whoever's turn (from FEN)
     const currentTurn = this.chess.turn();
@@ -786,6 +813,12 @@ export class GameSession {
   private endAnalysisPhaseForAI(): void {
     this.isAnalysisPhase = false;
     this.gameStarted = true;
+    this.gameStartTime = Date.now();
+    addGameBreadcrumb("ai_game_started", {
+      gameReferenceId: this.gameData.referenceId,
+      difficulty: this.aiDifficulty,
+      humanColor: this.humanPlayerColor,
+    });
 
     // Start the clock for whoever's turn it is according to the FEN
     const currentTurn = this.chess.turn();
@@ -869,6 +902,21 @@ export class GameSession {
     this.gameEnded = true;
     this.clockManager.stopClock();
 
+    if (this.gameStartTime > 0) {
+      const durationSeconds = Math.round((Date.now() - this.gameStartTime) / 1000);
+      trackGameDuration(durationSeconds, {
+        method,
+        result,
+        isAIGame: String(this.isAIGame),
+      });
+    }
+    addGameBreadcrumb("game_ended", {
+      gameReferenceId: this.gameData.referenceId,
+      result,
+      method,
+      winner,
+    });
+
     const gameOverPayload: GameOverPayload = {
       result,
       winner,
@@ -902,6 +950,10 @@ export class GameSession {
       blackTime: this.clockManager.getTimeInSeconds("b"),
     }).catch((error) => {
       console.error("Error completing game in DB:", error);
+      captureSocketError(error, {
+        event: "complete_game_api",
+        gameReferenceId: this.gameData.referenceId,
+      });
     });
   }
 

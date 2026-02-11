@@ -1,6 +1,8 @@
+import "./instrument";
 import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
+import * as Sentry from "@sentry/node";
 import { GameManager } from "./GameManager";
 import {
   JoinGamePayload,
@@ -11,6 +13,14 @@ import {
   DeclineDrawPayload,
   AnalysisCompletePayload,
 } from "./types";
+import {
+  captureSocketError,
+  addSocketBreadcrumb,
+  trackSocketEvent,
+  trackActiveConnections,
+  trackActiveGames,
+  flushSentry,
+} from "./utils/sentry";
 
 const app = express();
 
@@ -18,6 +28,9 @@ const app = express();
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "WebSocket server is running" });
 });
+
+// Sentry error handler for Express (must be after all routes)
+Sentry.setupExpressErrorHandler(app);
 
 const server = createServer(app);
 
@@ -33,152 +46,303 @@ const io = new Server(server, {
 // Initialize GameManager
 const gameManager = new GameManager();
 
+// Periodically report active game count
+const metricsInterval = setInterval(() => {
+  trackActiveGames(gameManager.getActiveGameCount());
+}, 30_000);
+
 // Socket.IO connection handler
 io.on("connection", (socket) => {
   console.log("Client connected, socket id:", socket.id);
+  addSocketBreadcrumb("client_connected", { socketId: socket.id });
+  trackActiveConnections(io.engine.clientsCount);
 
   // Handle player joining a game
   socket.on("join_game", async (payload: JoinGamePayload) => {
-    try {
-      const { gameReferenceId, userReferenceId } = payload;
-      console.log(
-        `join_game event: gameRef=${gameReferenceId}, user=${userReferenceId}`
-      );
+    await Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "join_game",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "user.referenceId": payload.userReferenceId,
+          "socket.id": socket.id,
+        },
+      },
+      async () => {
+        trackSocketEvent("join_game");
+        try {
+          const { gameReferenceId, userReferenceId } = payload;
+          console.log(
+            `join_game event: gameRef=${gameReferenceId}, user=${userReferenceId}`
+          );
+          addSocketBreadcrumb("join_game", { gameReferenceId, userReferenceId });
 
-      await gameManager.handleJoinGame(socket, gameReferenceId, userReferenceId);
-    } catch (error) {
-      console.error("Error in join_game handler:", error);
-      socket.emit("error", {
-        message: error instanceof Error ? error.message : "Failed to join game",
-      });
-    }
+          await gameManager.handleJoinGame(socket, gameReferenceId, userReferenceId);
+        } catch (error) {
+          console.error("Error in join_game handler:", error);
+          captureSocketError(error, {
+            event: "join_game",
+            gameReferenceId: payload.gameReferenceId,
+            userReferenceId: payload.userReferenceId,
+            socketId: socket.id,
+          });
+          socket.emit("error", {
+            message: error instanceof Error ? error.message : "Failed to join game",
+          });
+        }
+      }
+    );
   });
 
   // Handle move attempts
   socket.on("make_move", async (payload: MakeMovePayload) => {
-    try {
-      const { gameReferenceId, from, to, promotion } = payload;
-      console.log(
-        `make_move event: game=${gameReferenceId}, from=${from}, to=${to}`
-      );
+    await Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "make_move",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "socket.id": socket.id,
+          "move.from": payload.from,
+          "move.to": payload.to,
+        },
+      },
+      async () => {
+        trackSocketEvent("make_move");
+        try {
+          const { gameReferenceId, from, to, promotion } = payload;
+          console.log(
+            `make_move event: game=${gameReferenceId}, from=${from}, to=${to}`
+          );
 
-      await gameManager.handleMove(
-        socket,
-        gameReferenceId,
-        from,
-        to,
-        promotion
-      );
-    } catch (error) {
-      console.error("Error in make_move handler:", error);
-      socket.emit("move_error", {
-        message: error instanceof Error ? error.message : "Failed to make move",
-      });
-    }
+          await gameManager.handleMove(
+            socket,
+            gameReferenceId,
+            from,
+            to,
+            promotion
+          );
+        } catch (error) {
+          console.error("Error in make_move handler:", error);
+          captureSocketError(error, {
+            event: "make_move",
+            gameReferenceId: payload.gameReferenceId,
+            socketId: socket.id,
+            extra: { from: payload.from, to: payload.to },
+          });
+          socket.emit("move_error", {
+            message: error instanceof Error ? error.message : "Failed to make move",
+          });
+        }
+      }
+    );
   });
 
   // Handle resignation
   socket.on("resign", async (payload: ResignPayload) => {
-    try {
-      const { gameReferenceId } = payload;
-      console.log(`resign event: game=${gameReferenceId}`);
+    await Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "resign",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "socket.id": socket.id,
+        },
+      },
+      async () => {
+        trackSocketEvent("resign");
+        addSocketBreadcrumb("resign", { gameReferenceId: payload.gameReferenceId });
+        try {
+          const { gameReferenceId } = payload;
+          console.log(`resign event: game=${gameReferenceId}`);
 
-      await gameManager.handleResign(socket, gameReferenceId);
-    } catch (error) {
-      console.error("Error in resign handler:", error);
-      socket.emit("error", {
-        message: error instanceof Error ? error.message : "Failed to resign",
-      });
-    }
+          await gameManager.handleResign(socket, gameReferenceId);
+        } catch (error) {
+          console.error("Error in resign handler:", error);
+          captureSocketError(error, {
+            event: "resign",
+            gameReferenceId: payload.gameReferenceId,
+            socketId: socket.id,
+          });
+          socket.emit("error", {
+            message: error instanceof Error ? error.message : "Failed to resign",
+          });
+        }
+      }
+    );
   });
 
   // Handle draw offer
   socket.on("offer_draw", (payload: OfferDrawPayload) => {
-    try {
-      const { gameReferenceId } = payload;
-      console.log(`offer_draw event: game=${gameReferenceId}`);
+    Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "offer_draw",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "socket.id": socket.id,
+        },
+      },
+      () => {
+        trackSocketEvent("offer_draw");
+        addSocketBreadcrumb("offer_draw", { gameReferenceId: payload.gameReferenceId });
+        try {
+          const { gameReferenceId } = payload;
+          console.log(`offer_draw event: game=${gameReferenceId}`);
 
-      gameManager.handleOfferDraw(socket, gameReferenceId);
-    } catch (error) {
-      console.error("Error in offer_draw handler:", error);
-      socket.emit("error", {
-        message: error instanceof Error ? error.message : "Failed to offer draw",
-      });
-    }
+          gameManager.handleOfferDraw(socket, gameReferenceId);
+        } catch (error) {
+          console.error("Error in offer_draw handler:", error);
+          captureSocketError(error, {
+            event: "offer_draw",
+            gameReferenceId: payload.gameReferenceId,
+            socketId: socket.id,
+          });
+          socket.emit("error", {
+            message: error instanceof Error ? error.message : "Failed to offer draw",
+          });
+        }
+      }
+    );
   });
 
   // Handle draw acceptance
   socket.on("accept_draw", async (payload: AcceptDrawPayload) => {
-    try {
-      const { gameReferenceId } = payload;
-      console.log(`accept_draw event: game=${gameReferenceId}`);
+    await Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "accept_draw",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "socket.id": socket.id,
+        },
+      },
+      async () => {
+        trackSocketEvent("accept_draw");
+        addSocketBreadcrumb("accept_draw", { gameReferenceId: payload.gameReferenceId });
+        try {
+          const { gameReferenceId } = payload;
+          console.log(`accept_draw event: game=${gameReferenceId}`);
 
-      await gameManager.handleAcceptDraw(socket, gameReferenceId);
-    } catch (error) {
-      console.error("Error in accept_draw handler:", error);
-      socket.emit("error", {
-        message: error instanceof Error ? error.message : "Failed to accept draw",
-      });
-    }
+          await gameManager.handleAcceptDraw(socket, gameReferenceId);
+        } catch (error) {
+          console.error("Error in accept_draw handler:", error);
+          captureSocketError(error, {
+            event: "accept_draw",
+            gameReferenceId: payload.gameReferenceId,
+            socketId: socket.id,
+          });
+          socket.emit("error", {
+            message: error instanceof Error ? error.message : "Failed to accept draw",
+          });
+        }
+      }
+    );
   });
 
   // Handle draw decline
   socket.on("decline_draw", (payload: DeclineDrawPayload) => {
-    try {
-      const { gameReferenceId } = payload;
-      console.log(`decline_draw event: game=${gameReferenceId}`);
+    Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "decline_draw",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "socket.id": socket.id,
+        },
+      },
+      () => {
+        trackSocketEvent("decline_draw");
+        try {
+          const { gameReferenceId } = payload;
+          console.log(`decline_draw event: game=${gameReferenceId}`);
 
-      gameManager.handleDeclineDraw(socket, gameReferenceId);
-    } catch (error) {
-      console.error("Error in decline_draw handler:", error);
-    }
+          gameManager.handleDeclineDraw(socket, gameReferenceId);
+        } catch (error) {
+          console.error("Error in decline_draw handler:", error);
+          captureSocketError(error, {
+            event: "decline_draw",
+            gameReferenceId: payload.gameReferenceId,
+            socketId: socket.id,
+          });
+        }
+      }
+    );
   });
 
   // Handle analysis phase completion (client countdown finished)
   socket.on("analysis_complete", (payload: AnalysisCompletePayload & { userReferenceId?: string }) => {
-    try {
-      const { gameReferenceId, userReferenceId } = payload;
-      console.log(`analysis_complete event: game=${gameReferenceId}, user=${userReferenceId}`);
+    Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "analysis_complete",
+        attributes: {
+          "game.referenceId": payload.gameReferenceId,
+          "socket.id": socket.id,
+        },
+      },
+      () => {
+        trackSocketEvent("analysis_complete");
+        try {
+          const { gameReferenceId, userReferenceId } = payload;
+          console.log(`analysis_complete event: game=${gameReferenceId}, user=${userReferenceId}`);
 
-      if (!userReferenceId) {
-        socket.emit("error", { message: "userReferenceId required for analysis_complete" });
-        return;
+          if (!userReferenceId) {
+            socket.emit("error", { message: "userReferenceId required for analysis_complete" });
+            return;
+          }
+
+          gameManager.handleAnalysisComplete(socket, gameReferenceId, userReferenceId);
+        } catch (error) {
+          console.error("Error in analysis_complete handler:", error);
+          captureSocketError(error, {
+            event: "analysis_complete",
+            gameReferenceId: payload.gameReferenceId,
+            userReferenceId: payload.userReferenceId,
+            socketId: socket.id,
+          });
+          socket.emit("error", {
+            message: error instanceof Error ? error.message : "Failed to handle analysis complete",
+          });
+        }
       }
-
-      gameManager.handleAnalysisComplete(socket, gameReferenceId, userReferenceId);
-    } catch (error) {
-      console.error("Error in analysis_complete handler:", error);
-      socket.emit("error", {
-        message: error instanceof Error ? error.message : "Failed to handle analysis complete",
-      });
-    }
+    );
   });
 
   // Handle disconnection
   socket.on("disconnect", () => {
-    console.log("Client disconnected, socket id:", socket.id);
-    gameManager.handleDisconnect(socket);
+    Sentry.startSpan(
+      {
+        op: "websocket.event",
+        name: "disconnect",
+        attributes: { "socket.id": socket.id },
+      },
+      () => {
+        console.log("Client disconnected, socket id:", socket.id);
+        addSocketBreadcrumb("client_disconnected", { socketId: socket.id });
+        trackActiveConnections(io.engine.clientsCount);
+        trackSocketEvent("disconnect");
+        gameManager.handleDisconnect(socket);
+      }
+    );
   });
 });
 
 // Graceful shutdown
-process.on("SIGTERM", () => {
-  console.log("SIGTERM received, shutting down gracefully");
+async function gracefulShutdown(signal: string): Promise<void> {
+  console.log(`${signal} received, shutting down gracefully`);
+  clearInterval(metricsInterval);
   gameManager.destroy();
-  server.close(() => {
+  server.close(async () => {
     console.log("Server closed");
+    await flushSentry(2000);
     process.exit(0);
   });
-});
+}
 
-process.on("SIGINT", () => {
-  console.log("SIGINT received, shutting down gracefully");
-  gameManager.destroy();
-  server.close(() => {
-    console.log("Server closed");
-    process.exit(0);
-  });
-});
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {
