@@ -170,6 +170,14 @@ button,
   body {
     @apply bg-background text-foreground;
   }
+  ::selection {
+    background: rgba(0, 0, 0, 0.10);
+    color: #444;
+  }
+  .dark ::selection {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+  }
 }
 
 /* Dynamic viewport height for mobile Safari */

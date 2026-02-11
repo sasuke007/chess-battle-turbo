@@ -308,7 +308,7 @@ export default function AboutPage() {
                   src="/rohit-pandit.jpeg"
                   alt="Rohit Pandit"
                   fill
-                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                  className="object-cover"
                 />
               </div>
               <h3
