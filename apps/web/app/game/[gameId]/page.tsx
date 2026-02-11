@@ -626,7 +626,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }
         onAnalysisClick={() => {
           setShowGameEndOverlay(false);
-          router.push(`/analysis/${gameId}`);
+          router.replace(`/analysis/${gameId}`);
         }}
         onBackClick={() => {
           setShowGameEndOverlay(false);
@@ -804,7 +804,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   </p>
                   {positionInfo && (
                     <button
-                      onClick={() => router.push(`/analysis/${gameId}`)}
+                      onClick={() => router.replace(`/analysis/${gameId}`)}
                       className="w-full py-2.5 bg-white text-black hover:bg-white/90 transition-colors"
                       style={{ fontFamily: "'Geist', sans-serif" }}
                     >
@@ -996,7 +996,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 >
                   {positionInfo && (
                     <button
-                      onClick={() => router.push(`/analysis/${gameId}`)}
+                      onClick={() => router.replace(`/analysis/${gameId}`)}
                       className="h-10 px-5 text-sm bg-white text-black hover:bg-white/90 transition-colors"
                       style={{ fontFamily: "'Geist', sans-serif" }}
                     >

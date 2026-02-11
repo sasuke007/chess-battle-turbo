@@ -8,8 +8,11 @@
 
 set -e  # Exit on error
 
+DOMAIN="ws-chess.playchess.tech"
+
 echo "=========================================="
 echo "Chess WebSocket Server Setup"
+echo "Domain: $DOMAIN"
 echo "=========================================="
 
 # Colors for output
@@ -96,20 +99,114 @@ else
 fi
 
 # =============================================================================
-# STEP 5: Configure Firewall (UFW)
+# STEP 5: Install Nginx and Certbot
 # =============================================================================
 echo ""
-echo "Step 5: Configuring firewall..."
-$SUDO ufw allow 22/tcp    # SSH
-$SUDO ufw allow 3002/tcp  # WebSocket server
-$SUDO ufw --force enable
-print_status "Firewall configured (ports 22, 3002)"
+echo "Step 5: Installing Nginx and Certbot..."
+$SUDO apt install -y nginx certbot python3-certbot-nginx
+print_status "Nginx and Certbot installed"
 
 # =============================================================================
-# STEP 6: Create systemd service for the WebSocket server
+# STEP 6: Configure Nginx for WebSocket reverse proxy
 # =============================================================================
 echo ""
-echo "Step 6: Creating systemd service..."
+echo "Step 6: Configuring Nginx for $DOMAIN..."
+NGINX_CONF="/etc/nginx/sites-available/chess-websocket.conf"
+
+$SUDO tee $NGINX_CONF > /dev/null << NGINXEOF
+upstream websocket_backend {
+    server 127.0.0.1:3002;
+    keepalive 64;
+}
+
+server {
+    listen 80;
+    server_name $DOMAIN;
+
+    location / {
+        return 301 https://\$server_name\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name $DOMAIN;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+
+    location /health {
+        proxy_pass http://websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location / {
+        proxy_pass http://websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+        proxy_buffering off;
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+        proxy_buffering off;
+    }
+}
+NGINXEOF
+
+print_status "Nginx config created for $DOMAIN"
+
+# Enable site and remove default
+$SUDO ln -sf $NGINX_CONF /etc/nginx/sites-enabled/chess-websocket.conf
+$SUDO rm -f /etc/nginx/sites-enabled/default
+print_status "Nginx site enabled"
+
+# =============================================================================
+# STEP 7: Configure Firewall (UFW)
+# =============================================================================
+echo ""
+echo "Step 7: Configuring firewall..."
+$SUDO ufw allow 22/tcp    # SSH
+$SUDO ufw allow 80/tcp    # HTTP (for Certbot verification + redirect)
+$SUDO ufw allow 443/tcp   # HTTPS (Nginx SSL termination)
+$SUDO ufw --force enable
+print_status "Firewall configured (ports 22, 80, 443)"
+
+# =============================================================================
+# STEP 8: Create systemd service for the WebSocket server
+# =============================================================================
+echo ""
+echo "Step 8: Creating systemd service..."
 $SUDO tee /etc/systemd/system/chess-websocket.service > /dev/null << EOF
 [Unit]
 Description=Chess WebSocket Server
@@ -137,6 +234,67 @@ $SUDO systemctl enable chess-websocket
 print_status "Systemd service created and enabled"
 
 # =============================================================================
+# STEP 9: Install dependencies, build, and start WebSocket server
+# =============================================================================
+echo ""
+echo "Step 9: Installing dependencies and building..."
+cd $APP_DIR
+pnpm install
+pnpm run build
+print_status "Dependencies installed and app built"
+
+$SUDO systemctl start chess-websocket
+print_status "WebSocket server started"
+
+# Verify it's running before getting SSL
+sleep 2
+if curl -s http://localhost:3002/health > /dev/null 2>&1; then
+    print_status "WebSocket server health check passed"
+else
+    print_error "WebSocket server health check failed — check logs: sudo journalctl -u chess-websocket -n 50"
+    exit 1
+fi
+
+# =============================================================================
+# STEP 10: Get SSL certificate with Certbot
+# =============================================================================
+echo ""
+echo "Step 10: Getting SSL certificate for $DOMAIN..."
+echo ""
+print_warning "Make sure the DNS A record for $DOMAIN points to this server's IP"
+print_warning "Certbot will ask for your email and to agree to terms"
+echo ""
+
+# Start nginx on port 80 only first (certbot needs it)
+$SUDO systemctl start nginx
+
+$SUDO certbot --nginx -d $DOMAIN
+
+# Restart nginx with the new SSL config
+$SUDO nginx -t && $SUDO systemctl restart nginx
+print_status "SSL certificate installed and Nginx restarted"
+
+# =============================================================================
+# STEP 11: Verify everything
+# =============================================================================
+echo ""
+echo "Step 11: Running verification checks..."
+
+# Check WebSocket server
+if curl -s http://localhost:3002/health > /dev/null 2>&1; then
+    print_status "WebSocket server (direct): OK"
+else
+    print_error "WebSocket server (direct): FAILED"
+fi
+
+# Check through Nginx + SSL
+if curl -s https://$DOMAIN/health > /dev/null 2>&1; then
+    print_status "Nginx + SSL ($DOMAIN): OK"
+else
+    print_warning "Nginx + SSL ($DOMAIN): could not verify (DNS may still be propagating)"
+fi
+
+# =============================================================================
 # SUMMARY
 # =============================================================================
 echo ""
@@ -144,18 +302,17 @@ echo "=========================================="
 echo "Setup Complete!"
 echo "=========================================="
 echo ""
-echo "Next Steps:"
+echo "Your WebSocket server is running at: wss://$DOMAIN"
 echo ""
-echo "1. Install dependencies and build:"
-echo "   cd $APP_DIR"
-echo "   pnpm install"
-echo "   pnpm run build"
+echo "Remaining manual step:"
 echo ""
-echo "2. Start the server:"
-echo "   sudo systemctl start chess-websocket"
-echo "   sudo systemctl status chess-websocket"
+echo "  1. Make sure your EC2 Security Group allows inbound ports 80 and 443"
+echo "     (AWS Console → EC2 → Security Groups → Edit inbound rules)"
 echo ""
-echo "3. Verify health check:"
-echo "   curl http://localhost:3002/health"
+echo "  2. Set Vercel env var:"
+echo "     NEXT_PUBLIC_WEBSOCKET_URL=wss://$DOMAIN"
+echo "     (must be wss://, not ws://)"
 echo ""
-print_status "Server setup complete!"
+echo "  3. Redeploy your Vercel app"
+echo ""
+print_status "All done!"
