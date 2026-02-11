@@ -113,6 +113,7 @@ echo ""
 echo "Step 6: Configuring Nginx for $DOMAIN..."
 NGINX_CONF="/etc/nginx/sites-available/chess-websocket.conf"
 
+# Start with HTTP-only config — Certbot will add the SSL server block automatically
 $SUDO tee $NGINX_CONF > /dev/null << NGINXEOF
 upstream websocket_backend {
     server 127.0.0.1:3002;
@@ -122,25 +123,6 @@ upstream websocket_backend {
 server {
     listen 80;
     server_name $DOMAIN;
-
-    location / {
-        return 301 https://\$server_name\$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name $DOMAIN;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
 
     location /health {
         proxy_pass http://websocket_backend;
@@ -184,12 +166,15 @@ server {
 }
 NGINXEOF
 
-print_status "Nginx config created for $DOMAIN"
+print_status "Nginx HTTP config created for $DOMAIN"
 
 # Enable site and remove default
 $SUDO ln -sf $NGINX_CONF /etc/nginx/sites-enabled/chess-websocket.conf
 $SUDO rm -f /etc/nginx/sites-enabled/default
-print_status "Nginx site enabled"
+
+# Test and start Nginx (HTTP only — no SSL yet)
+$SUDO nginx -t && $SUDO systemctl restart nginx
+print_status "Nginx started (HTTP only, SSL will be added by Certbot)"
 
 # =============================================================================
 # STEP 7: Configure Firewall (UFW)
@@ -263,11 +248,14 @@ echo "Step 10: Getting SSL certificate for $DOMAIN..."
 echo ""
 print_warning "Make sure the DNS A record for $DOMAIN points to this server's IP"
 print_warning "Certbot will ask for your email and to agree to terms"
+print_warning "When asked about redirect, choose option 2 (redirect HTTP to HTTPS)"
 echo ""
 
-# Start nginx on port 80 only first (certbot needs it)
-$SUDO systemctl start nginx
-
+# Certbot will:
+# 1. Verify domain ownership via HTTP challenge (needs port 80 + Nginx running)
+# 2. Obtain SSL certificate from Let's Encrypt
+# 3. Automatically modify Nginx config to add 443 SSL server block
+# 4. Add HTTP→HTTPS redirect
 $SUDO certbot --nginx -d $DOMAIN
 
 # Restart nginx with the new SSL config
