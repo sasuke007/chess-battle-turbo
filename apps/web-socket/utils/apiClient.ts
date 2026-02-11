@@ -6,6 +6,7 @@ import {
   GameData,
 } from "../types";
 import { addApiBreadcrumb, captureSocketError, trackApiLatency, trackApiError } from "./sentry";
+import * as Sentry from "@sentry/node";
 
 // Configuration
 const API_BASE_URL = process.env.WEB_APP_URL || "http://localhost:3000";
@@ -37,6 +38,7 @@ export async function fetchGameByRef(
     return result.data;
   } catch (error) {
     console.error("Error fetching game by ref:", error);
+    Sentry.logger.error(Sentry.logger.fmt`Error fetching game by ref: ${gameReferenceId}`);
     trackApiError("fetch_game_by_ref");
     trackApiLatency("fetch_game_by_ref", Date.now() - startTime);
     captureSocketError(error, {
@@ -129,8 +131,10 @@ export async function completeGame(
 
     trackApiLatency("complete_game", Date.now() - startTime);
     console.log("Game completed successfully in database");
+    Sentry.logger.info(Sentry.logger.fmt`Game completed successfully: ${gameOverData.gameReferenceId}`);
   } catch (error) {
     console.error("Error completing game:", error);
+    Sentry.logger.error(Sentry.logger.fmt`Error completing game: ${gameOverData.gameReferenceId}`);
     trackApiError("complete_game");
     trackApiLatency("complete_game", Date.now() - startTime);
     captureSocketError(error, {
@@ -173,6 +177,7 @@ export async function updateGameState(
     trackApiLatency("update_game_state", Date.now() - startTime);
   } catch (error) {
     console.error("Error updating game state:", error);
+    Sentry.logger.error(Sentry.logger.fmt`Error updating game state: ${stateData.gameReferenceId}`);
     trackApiError("update_game_state");
     trackApiLatency("update_game_state", Date.now() - startTime);
     captureSocketError(error, {

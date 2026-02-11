@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { Chess, Color, Move, Square } from "chess.js";
 import { Socket } from "socket.io";
 import { ClockManager } from "./ClockManager";
@@ -91,6 +92,7 @@ export class GameSession {
     });
 
     console.log(`GameSession created for game ${gameData.referenceId} with starting FEN: ${gameData.startingFen}`);
+    Sentry.logger.info(Sentry.logger.fmt`GameSession created for game ${gameData.referenceId}`);
   }
 
   public async setGameData(gameData: GameData): Promise<void> {
@@ -388,6 +390,7 @@ export class GameSession {
     }
 
     console.log(`Move made: ${move.san} in game ${this.gameData.referenceId}${this.isAIGame ? " (AI game)" : ""}`);
+    Sentry.logger.info(Sentry.logger.fmt`Move made: ${move.san} in game ${this.gameData.referenceId}`);
 
     // Stop current player's clock and add increment
     this.clockManager.stopClock();
@@ -430,6 +433,7 @@ export class GameSession {
 
     this.persistMoveToDb(movePlayerId, move).catch((error) => {
       console.error("Error persisting move to DB:", error);
+      Sentry.logger.error(Sentry.logger.fmt`Error persisting move to DB in game ${this.gameData.referenceId}`);
       captureSocketError(error, {
         event: "persist_move_api",
         gameReferenceId: this.gameData.referenceId,
@@ -520,6 +524,7 @@ export class GameSession {
     console.log(
       `Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`
     );
+    Sentry.logger.warn(Sentry.logger.fmt`Player ${player.userReferenceId} disconnected from game ${this.gameData.referenceId}`);
     addGameBreadcrumb("player_disconnected", {
       gameReferenceId: this.gameData.referenceId,
       userReferenceId: player.userReferenceId,
@@ -580,6 +585,7 @@ export class GameSession {
       `Player ${userReferenceId} reconnecting to game ${this.gameData.referenceId}`,
       { isCreator, isOpponent, gameStarted: this.gameStarted }
     );
+    Sentry.logger.info(Sentry.logger.fmt`Player ${userReferenceId} reconnected to game ${this.gameData.referenceId}`);
 
     // Clear disconnect timer if exists
     const timer = this.disconnectTimers.get(userReferenceId);
@@ -805,6 +811,7 @@ export class GameSession {
     this.blackPlayer!.socket.emit("game_started", { ...whitePayload, yourColor: "b" as const });
 
     console.log(`Analysis phase ended, game ${this.gameData.referenceId} started - clock started for ${currentTurn === "w" ? "white" : "black"}`);
+    Sentry.logger.info(Sentry.logger.fmt`Game ${this.gameData.referenceId} started`);
   }
 
   /**
@@ -848,6 +855,7 @@ export class GameSession {
 
     humanPlayer.socket.emit("game_started", payload);
     console.log(`AI Game ${this.gameData.referenceId} analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`);
+    Sentry.logger.info(Sentry.logger.fmt`AI Game ${this.gameData.referenceId} started`);
   }
 
   private async handleTimeout(color: Color): Promise<void> {
@@ -931,6 +939,7 @@ export class GameSession {
     console.log(
       `Game ${this.gameData.referenceId} ended: ${result} by ${method}`
     );
+    Sentry.logger.info(Sentry.logger.fmt`Game ${this.gameData.referenceId} ended: ${result} by ${method}`);
 
     // Persist game result to database
     const winnerId =
@@ -950,6 +959,7 @@ export class GameSession {
       blackTime: this.clockManager.getTimeInSeconds("b"),
     }).catch((error) => {
       console.error("Error completing game in DB:", error);
+      Sentry.logger.error(Sentry.logger.fmt`Error completing game in DB for game ${this.gameData.referenceId}`);
       captureSocketError(error, {
         event: "complete_game_api",
         gameReferenceId: this.gameData.referenceId,

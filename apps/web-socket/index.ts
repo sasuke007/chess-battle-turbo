@@ -54,6 +54,7 @@ const metricsInterval = setInterval(() => {
 // Socket.IO connection handler
 io.on("connection", (socket) => {
   console.log("Client connected, socket id:", socket.id);
+  Sentry.logger.info(Sentry.logger.fmt`Client connected, socket id: ${socket.id}`);
   addSocketBreadcrumb("client_connected", { socketId: socket.id });
   trackActiveConnections(io.engine.clientsCount);
 
@@ -81,6 +82,7 @@ io.on("connection", (socket) => {
           await gameManager.handleJoinGame(socket, gameReferenceId, userReferenceId);
         } catch (error) {
           console.error("Error in join_game handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in join_game handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "join_game",
             gameReferenceId: payload.gameReferenceId,
@@ -125,6 +127,7 @@ io.on("connection", (socket) => {
           );
         } catch (error) {
           console.error("Error in make_move handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in make_move handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "make_move",
             gameReferenceId: payload.gameReferenceId,
@@ -160,6 +163,7 @@ io.on("connection", (socket) => {
           await gameManager.handleResign(socket, gameReferenceId);
         } catch (error) {
           console.error("Error in resign handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in resign handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "resign",
             gameReferenceId: payload.gameReferenceId,
@@ -194,6 +198,7 @@ io.on("connection", (socket) => {
           gameManager.handleOfferDraw(socket, gameReferenceId);
         } catch (error) {
           console.error("Error in offer_draw handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in offer_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "offer_draw",
             gameReferenceId: payload.gameReferenceId,
@@ -228,6 +233,7 @@ io.on("connection", (socket) => {
           await gameManager.handleAcceptDraw(socket, gameReferenceId);
         } catch (error) {
           console.error("Error in accept_draw handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in accept_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "accept_draw",
             gameReferenceId: payload.gameReferenceId,
@@ -261,6 +267,7 @@ io.on("connection", (socket) => {
           gameManager.handleDeclineDraw(socket, gameReferenceId);
         } catch (error) {
           console.error("Error in decline_draw handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in decline_draw handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "decline_draw",
             gameReferenceId: payload.gameReferenceId,
@@ -296,6 +303,7 @@ io.on("connection", (socket) => {
           gameManager.handleAnalysisComplete(socket, gameReferenceId, userReferenceId);
         } catch (error) {
           console.error("Error in analysis_complete handler:", error);
+          Sentry.logger.error(Sentry.logger.fmt`Error in analysis_complete handler: ${error instanceof Error ? error.message : "Unknown error"}`);
           captureSocketError(error, {
             event: "analysis_complete",
             gameReferenceId: payload.gameReferenceId,
@@ -320,6 +328,7 @@ io.on("connection", (socket) => {
       },
       () => {
         console.log("Client disconnected, socket id:", socket.id);
+        Sentry.logger.info(Sentry.logger.fmt`Client disconnected, socket id: ${socket.id}`);
         addSocketBreadcrumb("client_disconnected", { socketId: socket.id });
         trackActiveConnections(io.engine.clientsCount);
         trackSocketEvent("disconnect");

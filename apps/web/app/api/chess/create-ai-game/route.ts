@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getRandomChessPosition, getRandomPositionByLegend, incrementPositionPlayCount } from "@/lib/services/chess-position.service";
 import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
+import * as Sentry from "@sentry/nextjs";
 
 // Bot user constants - must match the seeded bot user
 const BOT_USER_CODE = "CHESS_BOT_001";
@@ -147,6 +148,8 @@ export async function POST(request: NextRequest) {
     // 1. Parse and validate request body
     const body = await request.json();
     const validatedData = createAIGameSchema.parse(body);
+
+    Sentry.logger.info(`POST /api/chess/create-ai-game - user ${validatedData.userReferenceId}, time ${validatedData.initialTimeSeconds}+${validatedData.incrementSeconds}`);
 
     // 2. Validate user and fetch with rating
     const user = await validateAndFetchUserWithRating(validatedData.userReferenceId);
@@ -311,6 +314,8 @@ export async function POST(request: NextRequest) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
+    Sentry.logger.info(`AI game created: ${game.referenceId}, difficulty ${difficulty}, color ${resolvedPlayerColor}`);
+
     // 10. Return success response
     return NextResponse.json(
       {
@@ -358,6 +363,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
+    Sentry.logger.error(`POST /api/chess/create-ai-game failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     console.error("Error creating AI game:", error);
     return NextResponse.json(
       {

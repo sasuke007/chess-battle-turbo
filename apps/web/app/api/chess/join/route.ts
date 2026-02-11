@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser } from "@/lib/services/user-validation.service";
+import * as Sentry from "@sentry/nextjs";
 
 const joinGameSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -153,6 +154,8 @@ export async function POST(request: NextRequest) {
     const validatedData = joinGameSchema.parse(body);
     console.log("validatedData", validatedData);
 
+    Sentry.logger.info(`POST /api/chess/join - game ${validatedData.gameReferenceId}, opponent ${validatedData.opponentReferenceId}`);
+
     // 2. Fetch and validate game
     const game = await validateAndFetchGame(validatedData.gameReferenceId);
 
@@ -171,6 +174,8 @@ export async function POST(request: NextRequest) {
       new Decimal(opponent.wallet!.balance),
       new Decimal(opponent.wallet!.lockedAmount)
     );
+
+    Sentry.logger.info(`Game joined: ${validatedData.gameReferenceId} by opponent ${validatedData.opponentReferenceId}`);
 
     // 6. Return success response
     return NextResponse.json(
@@ -233,6 +238,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
+    Sentry.logger.error(`POST /api/chess/join failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     console.error("Error joining game:", error);
     return NextResponse.json(
       {

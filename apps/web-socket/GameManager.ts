@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { Socket } from "socket.io";
 import { GameSession } from "./GameSession";
 import { GameData } from "./types";
@@ -25,6 +26,7 @@ export class GameManager {
       console.log(
         `Player ${userReferenceId} attempting to join game ${gameReferenceId}`
       );
+      Sentry.logger.info(Sentry.logger.fmt`Player ${userReferenceId} joining game ${gameReferenceId}`);
 
       // Get or create game session
       let gameSession = this.games.get(gameReferenceId);
@@ -57,6 +59,7 @@ export class GameManager {
         trackActiveGames(this.games.size);
 
         console.log(`Created new game session for ${gameReferenceId}`);
+        Sentry.logger.info(Sentry.logger.fmt`Created new game session for ${gameReferenceId}`);
       } else {
         // Check if this player is already in the game (reconnection)
         isReconnection = gameSession.isPlayerInGame(userReferenceId);
@@ -76,6 +79,7 @@ export class GameManager {
       // Handle reconnection vs new join
       if (isReconnection) {
         console.log(`Handling reconnection for ${userReferenceId}`);
+        Sentry.logger.info(Sentry.logger.fmt`Handling reconnection for ${userReferenceId} in game ${gameReferenceId}`);
         gameSession.handleReconnect(socket, userReferenceId);
       } else {
         console.log(`Handling new player join for ${userReferenceId}`);
@@ -93,6 +97,7 @@ export class GameManager {
       }
     } catch (error) {
       console.error("Error handling join game:", error);
+      Sentry.logger.error(Sentry.logger.fmt`Error handling join game: ${error instanceof Error ? error.message : "Unknown error"}`);
       captureSocketError(error, {
         event: "join_game",
         gameReferenceId,
@@ -227,6 +232,7 @@ export class GameManager {
     }
 
     console.log(`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
+    Sentry.logger.warn(Sentry.logger.fmt`Socket ${socket.id} disconnected from ${gameIds.size} game(s)`);
 
     // Notify all games this socket was part of
     gameIds.forEach((gameReferenceId) => {
@@ -275,6 +281,7 @@ export class GameManager {
       this.games.delete(gameReferenceId);
       trackActiveGames(this.games.size);
       console.log(`Removed game session ${gameReferenceId}`);
+      Sentry.logger.info(Sentry.logger.fmt`Removed game session ${gameReferenceId}`);
     }
   }
 
