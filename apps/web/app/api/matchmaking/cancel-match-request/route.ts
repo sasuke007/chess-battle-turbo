@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { cancelMatchRequest } from "@/lib/services/matchmaking";
+import { logger } from "@/lib/logger";
 
 const cancelMatchRequestSchema = z.object({
   queueReferenceId: z.string().min(1, "Queue reference ID is required"),
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.error("Error cancelling match request:", error);
+    logger.error("Error cancelling match request", error);
     return NextResponse.json(
       {
         success: false,

@@ -12,6 +12,7 @@ import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 import { useChessSound } from "@/lib/hooks/useChessSound";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { computePositionAtMove, getLastMoveForDisplay } from "@/lib/utils/chess-navigation";
 import { motion } from "motion/react";
 import { PlayerInfoCard } from "./PlayerInfoCard";
@@ -544,9 +545,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           });
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Error computing bot move:", error);
-        }
+        logger.error("Error computing bot move:", error);
         if (legalMoves.length > 0 && socketRef.current) {
           const fallbackMove = legalMoves[0]!;
           socketRef.current.emit("make_move", {

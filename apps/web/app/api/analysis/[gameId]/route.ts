@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { Chess, Move } from "chess.js";
+import { logger } from "@/lib/logger";
 
 interface AnalysisData {
   // Game info
@@ -113,7 +114,7 @@ function parsePgnFromMoveNumber(
     // Return moves from startPly onwards
     return allMoves.slice(startPly);
   } catch (error) {
-    console.error("Error parsing PGN:", error);
+    logger.error("Error parsing PGN:", error);
     return [];
   }
 }
@@ -276,7 +277,7 @@ export async function GET(
       data: analysisData,
     });
   } catch (error) {
-    console.error("Error fetching analysis data:", error);
+    logger.error("Error fetching analysis data:", error);
     return NextResponse.json(
       {
         success: false,

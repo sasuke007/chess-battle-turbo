@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { ArrowRight, ExternalLink, Search } from "lucide-react";
 import { ChessComPreviewCard } from "../components/ChessComPreviewCard";
 import type { ChessComPreviewData } from "@/lib/types/chess-com";
@@ -50,9 +51,7 @@ export default function OnboardingPage() {
       setPreviewData(data.data);
       setStep("preview");
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Preview error:", err);
-      }
+      logger.error("Preview error", err);
       setError(
         err instanceof Error ? err.message : "Something went wrong. Please try again."
       );
@@ -80,9 +79,7 @@ export default function OnboardingPage() {
 
       router.push("/");
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Confirm error:", err);
-      }
+      logger.error("Confirm error", err);
       setError(
         err instanceof Error ? err.message : "Something went wrong. Please try again."
       );

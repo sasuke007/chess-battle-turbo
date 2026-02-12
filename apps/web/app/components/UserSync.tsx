@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
+import { logger } from "@/lib/logger";
 
 /**
  * UserSync Component
@@ -35,18 +36,14 @@ export const UserSync = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          if (process.env.NODE_ENV === "development") {
-            console.error("Failed to sync user:", errorData);
-          }
+          logger.error("Failed to sync user:", errorData);
           hasSynced.current = false;
           return;
         }
 
         const data = await response.json();
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("User synced successfully:", data.message);
-        }
+        logger.debug("User synced successfully: " + data.message);
 
         // Redirect new users to onboarding if they haven't completed it
         if (
@@ -57,9 +54,7 @@ export const UserSync = () => {
           router.push("/onboarding");
         }
       } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Error syncing user:", error);
-        }
+        logger.error("Error syncing user:", error);
         hasSynced.current = false;
       }
     };

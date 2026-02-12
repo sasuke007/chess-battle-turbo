@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma";
+import { logger } from "@/lib/logger";
 
 const updateLegendSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
@@ -119,7 +120,7 @@ export async function PUT(
       );
     }
 
-    console.error("Error updating legend:", error);
+    logger.error("Error updating legend", error);
     return NextResponse.json(
       {
         error: "Failed to update legend",
@@ -175,7 +176,7 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching legend:", error);
+    logger.error("Error fetching legend", error);
     return NextResponse.json(
       {
         error: "Failed to fetch legend",
@@ -256,7 +257,7 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error deleting legend:", error);
+    logger.error("Error deleting legend", error);
     return NextResponse.json(
       {
         error: "Failed to delete legend",

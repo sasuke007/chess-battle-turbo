@@ -12,6 +12,7 @@ import { useAnalysisBoard } from "@/lib/hooks/useAnalysisBoard";
 import { usePlayFromPosition } from "@/lib/hooks/usePlayFromPosition";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { motion } from "motion/react";
 
 type AnalysisTab = "your-moves" | "legend-moves" | "practice";
@@ -82,7 +83,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         setData(result.data);
       } catch (err) {
         setError("Failed to load analysis data");
-        console.error(err);
+        logger.error("Failed to load analysis data", err);
       } finally {
         setLoading(false);
       }

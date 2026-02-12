@@ -8,7 +8,7 @@ import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/o
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser, validateSufficientBalance } from "@/lib/services/user-validation.service";
 import { captureGameTraceData } from "@/lib/sentry/game-trace";
-import { logger } from "@/lib/sentry/logger";
+import { logger } from "@/lib/logger";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),

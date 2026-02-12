@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
 import { Plus, Edit2, Save, X, Trash2, Crown, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
@@ -72,18 +73,18 @@ export default function LegendsAdmin() {
 
   const fetchLegends = async () => {
     try {
-      console.log("Fetching legends...");
+      logger.debug("Fetching legends...");
       const response = await fetch("/api/legends");
       const data = await response.json();
-      console.log("API Response:", data);
+      logger.debug("API Response: " + JSON.stringify(data));
       if (data.success) {
-        console.log("Setting legends:", data.data.legends);
+        logger.debug("Setting legends: " + JSON.stringify(data.data.legends));
         setLegends(data.data.legends);
       } else {
-        console.error("API returned unsuccessful:", data);
+        logger.error("API returned unsuccessful:", data);
       }
     } catch (error) {
-      console.error("Error fetching legends:", error);
+      logger.error("Error fetching legends:", error);
       alert("Failed to fetch legends");
     } finally {
       setIsLoading(false);
@@ -133,7 +134,7 @@ export default function LegendsAdmin() {
 
       if (!response.ok) {
         const text = await response.text();
-        console.error("Server error response:", text);
+        logger.error("Server error response: " + text);
         throw new Error(`Server error: ${response.status} - ${text}`);
       }
 
@@ -143,11 +144,11 @@ export default function LegendsAdmin() {
         alert(`Legend deleted successfully. ${data.data.deletedLegend.gamesAffected} chess positions were unlinked.`);
         fetchLegends();
       } else {
-        console.error("API Error:", data);
+        logger.error("API Error:", data);
         alert(data.error || "Failed to delete legend");
       }
     } catch (error) {
-      console.error("Error deleting legend:", error);
+      logger.error("Error deleting legend:", error);
       alert(`Failed to delete legend: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   };
@@ -185,7 +186,7 @@ export default function LegendsAdmin() {
 
       if (!response.ok) {
         const text = await response.text();
-        console.error("Server error response:", text);
+        logger.error("Server error response: " + text);
         throw new Error(`Server error: ${response.status} - ${text}`);
       }
 
@@ -196,14 +197,14 @@ export default function LegendsAdmin() {
         handleCancel();
         fetchLegends();
       } else {
-        console.error("API Error:", data);
+        logger.error("API Error:", data);
         const errorMsg = data.details
           ? `${data.error}: ${JSON.stringify(data.details)}`
           : data.error;
         alert(errorMsg || "Failed to save legend");
       }
     } catch (error) {
-      console.error("Error saving legend:", error);
+      logger.error("Error saving legend:", error);
       alert(`Failed to save legend: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsSaving(false);

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { X, Search, ExternalLink } from "lucide-react";
 import { ChessComPreviewCard } from "../../components/ChessComPreviewCard";
 import type { ChessComPreviewData } from "@/lib/types/chess-com";
@@ -70,9 +71,7 @@ export function ChessComConnectModal({
       setPreviewData(data.data);
       setStep("preview");
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Preview error:", err);
-      }
+      logger.error("Preview error:", err);
       setError(
         err instanceof Error
           ? err.message
@@ -103,9 +102,7 @@ export function ChessComConnectModal({
       resetState();
       onSuccess();
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Confirm error:", err);
-      }
+      logger.error("Confirm error:", err);
       setError(
         err instanceof Error
           ? err.message

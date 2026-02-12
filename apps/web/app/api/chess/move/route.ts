@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "../../../../lib/prisma";
-import { logger } from "@/lib/sentry/logger";
+import { logger } from "@/lib/logger";
 
 const moveSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),

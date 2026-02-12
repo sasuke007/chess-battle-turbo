@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/user/onboarding-skip
@@ -35,9 +36,7 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("Error skipping onboarding:", error);
-    }
+    logger.error("Error skipping onboarding", error);
 
     return NextResponse.json(
       { error: "Internal server error" },

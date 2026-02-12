@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cleanupExpiredEntries } from "@/lib/services/matchmaking";
+import { logger } from "@/lib/logger";
 
 export async function POST() {
   try {
@@ -13,7 +14,7 @@ export async function POST() {
       },
     });
   } catch (error) {
-    console.error("Error cleaning up expired entries:", error);
+    logger.error("Error cleaning up expired entries", error);
     return NextResponse.json(
       {
         success: false,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { ValidationError } from "@/lib/errors/validation-error";
+import { logger } from "@/lib/logger";
 
 const GAME_PLAYER_SELECT = {
   referenceId: true,
@@ -149,7 +150,7 @@ export async function GET(
       );
     }
 
-    console.error("Error fetching profile:", error);
+    logger.error("Error fetching profile", error);
     return NextResponse.json(
       {
         error: "Failed to fetch profile",

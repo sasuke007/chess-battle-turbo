@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma";
+import { logger } from "@/lib/logger";
 
 const createChessPositionSchema = z.object({
   // Required fields
@@ -43,10 +44,10 @@ const createChessPositionSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log("Received chess position data:", body);
+    logger.debug("Received chess position data: " + JSON.stringify(body));
 
     const validatedData = createChessPositionSchema.parse(body);
-    console.log("Validated data:", validatedData);
+    logger.debug("Validated data: " + JSON.stringify(validatedData));
 
     // Create the chess position
     const position = await prisma.chessPosition.create({
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("Chess position created successfully:", position.id);
+    logger.info("Chess position created successfully: " + position.id);
 
     return NextResponse.json(
       {
@@ -125,8 +126,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.error("Error creating chess position:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    logger.error("Error creating chess position:", error);
     return NextResponse.json(
       {
         error: "Failed to create chess position",

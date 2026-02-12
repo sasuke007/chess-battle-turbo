@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 import {
   fetchChessComProfile,
   fetchChessComStats,
@@ -43,9 +44,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.log(`Fetching chess.com data for: ${chessComHandle}`);
-    }
+    logger.debug(`Fetching chess.com data for: ${chessComHandle}`);
 
     const [profileData, statsData] = await Promise.all([
       fetchChessComProfile(chessComHandle),
@@ -121,11 +120,9 @@ export async function POST(req: NextRequest) {
       return chessComProfile;
     });
 
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `Chess.com profile ${isNewProfile ? "created" : "updated"} for user ${user.referenceId}`
-      );
-    }
+    logger.debug(
+      `Chess.com profile ${isNewProfile ? "created" : "updated"} for user ${user.referenceId}`
+    );
 
     return NextResponse.json(
       {
@@ -141,9 +138,7 @@ export async function POST(req: NextRequest) {
       { status: isNewProfile ? 201 : 200 }
     );
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("Error saving chess.com profile:", error);
-    }
+    logger.error("Error saving chess.com profile", error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

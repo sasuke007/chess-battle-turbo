@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "../../../../lib/prisma";
 import { ValidationError } from "@/lib/errors/validation-error";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -102,7 +103,7 @@ export async function GET(
     }
 
     // Handle unexpected errors
-    console.error("Error fetching user:", error);
+    logger.error("Error fetching user", error);
     return NextResponse.json(
       {
         error: "Failed to fetch user details",

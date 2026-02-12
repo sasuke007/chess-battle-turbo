@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
 import ChessBoard from "@/app/components/ChessBoard";
 import { Chess } from "chess.js";
@@ -162,7 +163,7 @@ function LegendSearchDropdown({
         setSearchResults(data.data.legends);
       }
     } catch (error) {
-      console.error("Error searching legends:", error);
+      logger.error("Error searching legends:", error);
     } finally {
       setIsSearching(false);
     }
@@ -527,10 +528,10 @@ export default function ChessPositionsAdmin() {
       if (data.success) {
         setPositions(data.data.positions);
       } else {
-        console.error("API returned unsuccessful:", data);
+        logger.error("API returned unsuccessful:", data);
       }
     } catch (error) {
-      console.error("Error fetching positions:", error);
+      logger.error("Error fetching positions:", error);
       alert("Failed to fetch chess positions");
     } finally {
       setIsLoading(false);
@@ -623,7 +624,7 @@ export default function ChessPositionsAdmin() {
         alert(data.error || "Failed to delete position");
       }
     } catch (error) {
-      console.error("Error deleting position:", error);
+      logger.error("Error deleting position:", error);
       alert(
         `Failed to delete position: ${error instanceof Error ? error.message : "Unknown error"}`
       );
@@ -767,7 +768,7 @@ export default function ChessPositionsAdmin() {
         }
       }
     } catch (error) {
-      console.error("Error saving position:", error);
+      logger.error("Error saving position:", error);
       setErrors({
         general: `Failed to save position: ${error instanceof Error ? error.message : "Unknown error"}`,
       });

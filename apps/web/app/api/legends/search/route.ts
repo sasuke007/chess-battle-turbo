@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Convert search term to lowercase for comparison
     const searchTerm = name.toLowerCase().trim();
 
-    console.log("Searching for legend:", searchTerm);
+    logger.debug("Searching for legend: " + searchTerm);
 
     // Use Prisma's case-insensitive search
     // This uses PostgreSQL's ILIKE operator under the hood
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log(`Found ${legends.length} legends matching "${searchTerm}"`);
+    logger.debug(`Found ${legends.length} legends matching "${searchTerm}"`);
 
     // Convert BigInt IDs to strings for JSON serialization
     const legendsWithStringIds = legends.map(legend => ({
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error searching legends:", error);
+    logger.error("Error searching legends:", error);
     return NextResponse.json(
       {
         error: "Failed to search legends",

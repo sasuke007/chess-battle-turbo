@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma";
+import { logger } from "@/lib/logger";
 
 // Schema for updating chess position (all fields optional for partial updates)
 const updateChessPositionSchema = z.object({
@@ -151,7 +152,7 @@ export async function GET(
       data: { position: positionWithStringIds },
     });
   } catch (error) {
-    console.error("Error fetching chess position:", error);
+    logger.error("Error fetching chess position:", error);
     return NextResponse.json(
       {
         error: "Failed to fetch chess position",
@@ -332,7 +333,7 @@ export async function PUT(
       );
     }
 
-    console.error("Error updating chess position:", error);
+    logger.error("Error updating chess position:", error);
     return NextResponse.json(
       {
         error: "Failed to update chess position",
@@ -376,7 +377,7 @@ export async function DELETE(
       },
     });
   } catch (error) {
-    console.error("Error deleting chess position:", error);
+    logger.error("Error deleting chess position:", error);
     return NextResponse.json(
       {
         error: "Failed to delete chess position",
