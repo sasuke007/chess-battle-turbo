@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser } from "@/lib/services/user-validation.service";
-import { logger } from "@/lib/logger";
+import { logger } from "@/lib/sentry/logger";
 
 const joinGameSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),

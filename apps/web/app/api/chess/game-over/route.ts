@@ -4,7 +4,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "../../../../lib/prisma";
-import { logger } from "@/lib/logger";
+import { logger } from "@/lib/sentry/logger";
 
 type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
