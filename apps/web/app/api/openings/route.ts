@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -24,7 +25,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching openings:", error);
+    logger.error("Error fetching openings", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch openings" },
       { status: 500 }

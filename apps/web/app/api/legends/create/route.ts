@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma";
+import { logger } from "@/lib/logger";
 
 const createLegendSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -25,9 +26,9 @@ const createLegendSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log("Received legend data:", body);
+    logger.debug("Received legend data: " + JSON.stringify(body));
     const validatedData = createLegendSchema.parse(body);
-    console.log("Validated data:", validatedData);
+    logger.debug("Validated data: " + JSON.stringify(validatedData));
 
     // Create the legend
     const legend = await prisma.legend.create({
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("Legend created successfully:", legend.id);
+    logger.info("Legend created successfully: " + legend.id);
 
     return NextResponse.json(
       {
@@ -90,8 +91,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.error("Error creating legend:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    logger.error("Error creating legend", error);
     return NextResponse.json(
       {
         error: "Failed to create legend",

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
 import { Crown, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
@@ -144,7 +145,7 @@ export default function AdminDashboard() {
           positions: positionsData.data?.positions?.length || 0,
         });
       } catch (error) {
-        console.error("Failed to fetch stats:", error);
+        logger.error("Failed to fetch stats:", error);
       } finally {
         setIsLoading(false);
       }

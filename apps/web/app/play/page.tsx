@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
 import SearchableDropdown from "../components/SearchableDropdown";
@@ -97,15 +98,15 @@ export default function Play() {
 
       if (legendsResult.status === "fulfilled" && legendsResult.value.success && legendsResult.value.data?.legends) {
         setLegends(legendsResult.value.data.legends);
-      } else if (process.env.NODE_ENV === 'development' && legendsResult.status === "rejected") {
-        console.error("Failed to fetch legends:", legendsResult.reason);
+      } else if (legendsResult.status === "rejected") {
+        logger.error("Failed to fetch legends", legendsResult.reason);
       }
       setLegendsLoading(false);
 
       if (openingsResult.status === "fulfilled" && openingsResult.value.success && openingsResult.value.data?.openings) {
         setOpenings(openingsResult.value.data.openings);
-      } else if (process.env.NODE_ENV === 'development' && openingsResult.status === "rejected") {
-        console.error("Failed to fetch openings:", openingsResult.reason);
+      } else if (openingsResult.status === "rejected") {
+        logger.error("Failed to fetch openings", openingsResult.reason);
       }
       setOpeningsLoading(false);
     }
@@ -161,9 +162,7 @@ export default function Play() {
 
         router.push(`/game/${data.data.game.referenceId}`);
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Error creating AI game:", error);
-        }
+        logger.error("Error creating AI game", error);
         alert(error instanceof Error ? error.message : "Failed to create AI game");
         setIsCreatingGame(false);
       }
@@ -197,9 +196,7 @@ export default function Play() {
         await navigator.clipboard.writeText(`${window.location.origin}/join/${gameRef}`);
         router.push(`/game/${gameRef}`);
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Error creating game:", error);
-        }
+        logger.error("Error creating game", error);
         setIsCreatingGame(false);
       }
     }

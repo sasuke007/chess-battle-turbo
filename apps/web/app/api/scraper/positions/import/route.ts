@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma";
 import { validateScraperApiKey } from "@/lib/auth/api-key";
+import { logger } from "@/lib/logger";
 
 // Schema for player/legend data embedded in the request
 const playerSchema = z.object({
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.error("Prisma error:", error.code, error.message);
+      logger.error("Prisma error: " + error.code + " " + error.message, error);
       return NextResponse.json(
         {
           error: "Database error",
@@ -256,7 +257,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle unexpected errors
-    console.error("Error importing position:", error);
+    logger.error("Error importing position:", error);
     return NextResponse.json(
       {
         error: "Failed to import position",

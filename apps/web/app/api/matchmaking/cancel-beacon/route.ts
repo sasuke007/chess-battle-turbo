@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cancelMatchRequest } from "@/lib/services/matchmaking";
+import { logger } from "@/lib/logger";
 
 /**
  * Beacon-compatible cancel endpoint
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     // Log but don't fail - beacons are fire-and-forget
-    console.error("Beacon cancel error:", error);
+    logger.error("Beacon cancel error", error);
     return NextResponse.json({ success: false }, { status: 200 });
   }
 }

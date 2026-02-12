@@ -4,6 +4,7 @@ import React, { useEffect, useState, use } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn, getInitials } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { motion } from "motion/react";
 import { Navbar } from "@/app/components/Navbar";
@@ -61,7 +62,7 @@ export default function JoinPage({
 
         setGameDetails(data.data);
       } catch (err) {
-        console.error("Error fetching game:", err);
+        logger.error("Error fetching game:", err);
         setError("Failed to load game details");
       } finally {
         setLoading(false);
@@ -96,7 +97,7 @@ export default function JoinPage({
 
       router.push(`/game/${gameDetails.referenceId}`);
     } catch (err) {
-      console.error("Error joining game:", err);
+      logger.error("Error joining game:", err);
       alert(
         err instanceof Error
           ? err.message

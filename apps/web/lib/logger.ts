@@ -2,29 +2,57 @@ import * as Sentry from "@sentry/nextjs";
 
 const isDev = process.env.NODE_ENV === "development";
 
-export const logger = {
-  info(message: string): void {
-    console.log(message);
-    Sentry.logger.info(message);
-  },
+function getTraceId(): string | undefined {
+  const span = Sentry.getActiveSpan();
+  if (!span) return undefined;
+  const rootSpan = Sentry.getRootSpan(span);
+  return rootSpan?.spanContext().traceId ?? span.spanContext().traceId;
+}
 
-  warn(message: string): void {
-    console.warn(message);
-    Sentry.logger.warn(message);
-  },
-
-  error(message: string, error?: unknown): void {
-    if (error !== undefined) {
-      console.error(message, error);
-    } else {
-      console.error(message);
+function formatPrefix(context?: Record<string, string>): string {
+  const parts: string[] = [];
+  const traceId = getTraceId();
+  if (traceId) parts.push(`trace=${traceId}`);
+  if (context) {
+    for (const [key, value] of Object.entries(context)) {
+      parts.push(`${key}=${value}`);
     }
-    Sentry.logger.error(message);
+  }
+  return parts.length > 0 ? `[${parts.join(" ")}]` : "";
+}
+
+function prefixed(message: string, context?: Record<string, string>): string {
+  const prefix = formatPrefix(context);
+  return prefix ? `${prefix} ${message}` : message;
+}
+
+export const logger = {
+  info(message: string, context?: Record<string, string>): void {
+    const formatted = prefixed(message, context);
+    console.log(formatted);
+    Sentry.logger.info(formatted);
   },
 
-  debug(message: string): void {
+  warn(message: string, context?: Record<string, string>): void {
+    const formatted = prefixed(message, context);
+    console.warn(formatted);
+    Sentry.logger.warn(formatted);
+  },
+
+  error(message: string, err?: unknown, context?: Record<string, string>): void {
+    const formatted = prefixed(message, context);
+    if (err !== undefined) {
+      console.error(formatted, err);
+    } else {
+      console.error(formatted);
+    }
+    Sentry.logger.error(formatted);
+  },
+
+  debug(message: string, context?: Record<string, string>): void {
     if (isDev) {
-      console.log(message);
+      const formatted = prefixed(message, context);
+      console.log(formatted);
     }
   },
 };
