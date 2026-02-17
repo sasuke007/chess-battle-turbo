@@ -40,6 +40,7 @@ export const Navbar = () => {
 
   return (
     <nav
+      aria-label="Main navigation"
       className={cn(
         "fixed top-0 left-0 right-0 w-full z-50",
         "flex justify-between items-center",

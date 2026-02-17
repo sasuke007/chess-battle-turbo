@@ -26,14 +26,34 @@ const instrumentSerif = Instrument_Serif({
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: '#171717',
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://playchess.tech'),
   title: "Chess Battle - The Ultimate Chess Experience",
   description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+  openGraph: {
+    title: "Chess Battle - The Ultimate Chess Experience",
+    description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+    url: "https://playchess.tech",
+    siteName: "Chess Battle",
+    images: [{ url: "/chess_logo_share.png", width: 2048, height: 2048, alt: "Chess Battle" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Chess Battle - The Ultimate Chess Experience",
+    description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+    images: ["/chess_logo_share.png"],
+  },
+  alternates: {
+    canonical: "https://playchess.tech",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

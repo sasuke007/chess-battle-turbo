@@ -7,9 +7,10 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative h-full w-full flex items-center justify-center overflow-hidden bg-black">
+    <section aria-label="Hero" className="relative h-full w-full flex items-center justify-center overflow-hidden bg-black">
       {/* Video Background */}
       <video
+        aria-hidden="true"
         autoPlay
         loop
         muted
