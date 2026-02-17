@@ -1,4 +1,4 @@
-import { createMetadata } from "@/lib/seo";
+import { createMetadata, safeJsonLd } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "Pricing",
@@ -46,12 +46,28 @@ const faqJsonLd = {
   ],
 };
 
+const softwareAppJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "ReplayChess",
+  applicationCategory: "GameApplication",
+  operatingSystem: "Web",
+  offers: [
+    { "@type": "Offer", name: "Basic", price: "8", priceCurrency: "USD", availability: "https://schema.org/InStock" },
+    { "@type": "Offer", name: "Creator", price: "25", priceCurrency: "USD", availability: "https://schema.org/InStock" },
+  ],
+};
+
 export default function PricingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(softwareAppJsonLd) }}
       />
       {children}
     </>
