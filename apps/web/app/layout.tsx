@@ -41,14 +41,14 @@ export const metadata: Metadata = {
     description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
     url: "https://playchess.tech",
     siteName: "Chess Battle",
-    images: [{ url: "/chess_logo_share.png", width: 1200, height: 630, alt: "Chess Battle" }],
+    images: [{ url: "/og-image.jpg", width: 1200, height: 800, alt: "Chess Battle" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Chess Battle - The Ultimate Chess Experience",
     description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
-    images: ["/chess_logo_share.png"],
+    images: ["/og-image.jpg"],
   },
   alternates: {
     canonical: "https://playchess.tech",

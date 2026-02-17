@@ -14,7 +14,7 @@ export function createMetadata({
   title,
   description,
   path,
-  ogImage = "/chess_logo_share.png",
+  ogImage = "/og-image.jpg",
   noIndex = false,
 }: CreateMetadataOptions): Metadata {
   const url = `${BASE_URL}${path}`;
@@ -28,7 +28,7 @@ export function createMetadata({
       description,
       url,
       siteName: "Chess Battle",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: "Chess Battle" }],
+      images: [{ url: ogImage, width: 1200, height: 800, alt: "Chess Battle" }],
       type: "website",
     },
     twitter: {
