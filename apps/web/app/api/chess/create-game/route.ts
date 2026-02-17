@@ -9,6 +9,7 @@ import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser, validateSufficientBalance } from "@/lib/services/user-validation.service";
 import { captureGameTraceData } from "@/lib/sentry/game-trace";
 import { logger } from "@/lib/logger";
+import { trackUserAction } from "@/lib/metrics";
 
 const createGameSchema = z.object({
   userReferenceId: z.string().min(1, "User reference ID is required"),
@@ -216,6 +217,7 @@ export async function POST(request: NextRequest) {
 
     // 8. Tag for Sentry filtering
     Sentry.setTag("game.referenceId", result.game.referenceId);
+    trackUserAction("create_game");
 
     // 9. Return success response
     return NextResponse.json(

@@ -13,6 +13,7 @@ import { usePlayFromPosition } from "@/lib/hooks/usePlayFromPosition";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { trackApiResponseTime } from "@/lib/metrics";
 import { motion } from "motion/react";
 
 type AnalysisTab = "your-moves" | "legend-moves" | "practice";
@@ -72,8 +73,10 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         const url = userReferenceId
           ? `/api/analysis/${gameId}?userReferenceId=${userReferenceId}`
           : `/api/analysis/${gameId}`;
+        const start = Date.now();
         const response = await fetch(url);
         const result = await response.json();
+        trackApiResponseTime("analysis.fetch", Date.now() - start);
 
         if (!result.success) {
           setError(result.error || "Failed to load analysis data");

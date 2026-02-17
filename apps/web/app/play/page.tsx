@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { trackApiResponseTime } from "@/lib/metrics";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
 import SearchableDropdown from "../components/SearchableDropdown";
@@ -91,9 +92,17 @@ export default function Play() {
 
   useEffect(() => {
     async function fetchData() {
+      const legendsStart = Date.now();
+      const openingsStart = Date.now();
       const [legendsResult, openingsResult] = await Promise.allSettled([
-        fetch("/api/legends?isVisible=true&isActive=true").then(r => r.json()),
-        fetch("/api/openings").then(r => r.json()),
+        fetch("/api/legends?isVisible=true&isActive=true").then(r => {
+          trackApiResponseTime("legends.fetch", Date.now() - legendsStart);
+          return r.json();
+        }),
+        fetch("/api/openings").then(r => {
+          trackApiResponseTime("openings.fetch", Date.now() - openingsStart);
+          return r.json();
+        }),
       ]);
 
       if (legendsResult.status === "fulfilled" && legendsResult.value.success && legendsResult.value.data?.legends) {
@@ -148,6 +157,7 @@ export default function Play() {
       };
 
       try {
+        const start = Date.now();
         const response = await fetch("/api/chess/create-ai-game", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -155,6 +165,7 @@ export default function Play() {
         });
 
         const data = await response.json();
+        trackApiResponseTime("chess.createAiGame", Date.now() - start);
 
         if (!data.success) {
           throw new Error(data.error || "Failed to create AI game");
@@ -180,6 +191,7 @@ export default function Play() {
       };
 
       try {
+        const start = Date.now();
         const response = await fetch("/api/chess/create-game", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -187,6 +199,7 @@ export default function Play() {
         });
 
         const data = await response.json();
+        trackApiResponseTime("chess.createGame", Date.now() - start);
 
         if (!data.success) {
           throw new Error(data.error || "Failed to create game");

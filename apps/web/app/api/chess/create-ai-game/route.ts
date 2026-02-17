@@ -6,6 +6,7 @@ import { getRandomChessPosition, getRandomPositionByLegend, incrementPositionPla
 import { getOpeningByReferenceId, getOpeningPlayerColor } from "@/lib/services/opening.service";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { logger } from "@/lib/logger";
+import { trackUserAction } from "@/lib/metrics";
 
 // Bot user constants - must match the seeded bot user
 const BOT_USER_CODE = "CHESS_BOT_001";
@@ -295,6 +296,7 @@ export async function POST(request: NextRequest) {
       await incrementPositionPlayCount(chessPositionId);
     }
 
+    trackUserAction("create_ai_game");
     logger.info(`AI game created: ${game.referenceId}, difficulty ${difficulty}, color ${resolvedPlayerColor}`);
 
     // 10. Return success response

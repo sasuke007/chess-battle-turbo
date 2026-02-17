@@ -11,8 +11,4 @@ export function trackApiResponseTime(endpoint: string, durationMs: number) {
   });
 }
 
-export function trackActiveGames(count: number) {
-  Sentry.metrics.gauge("active_games", count);
-}
-
 export const metrics = Sentry.metrics;

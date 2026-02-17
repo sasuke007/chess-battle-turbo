@@ -15,6 +15,7 @@ import {
 } from "./types";
 import { persistMove, completeGame } from "./utils/apiClient";
 import { logger } from "./utils/logger";
+import { trackGameDuration } from "./utils/sentry";
 
 /**
  * GameSession manages the state and logic for a single chess game
@@ -37,6 +38,9 @@ export class GameSession {
   private humanPlayerColor: Color | null = null;
   private botColor: Color | null = null;
   private aiDifficulty: "easy" | "medium" | "hard" | "expert" = "medium";
+
+  // Timing
+  private readonly sessionCreatedAt: number = Date.now();
 
   // Disconnect handling
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -929,6 +933,10 @@ export class GameSession {
 
     this.gameEnded = true;
     this.clockManager.stopClock();
+
+    // Track game duration
+    const durationSeconds = Math.round((Date.now() - this.sessionCreatedAt) / 1000);
+    trackGameDuration(durationSeconds, { result, method });
 
     const gameOverPayload: GameOverPayload = {
       result,

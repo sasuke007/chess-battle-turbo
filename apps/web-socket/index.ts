@@ -16,6 +16,9 @@ import {
 } from "./types";
 import { withGameTrace } from "./utils/traceContext";
 import { logger } from "./utils/logger";
+import { trackSocketEvent, trackActiveConnections } from "./utils/sentry";
+
+let activeConnectionCount = 0;
 
 const app = express();
 
@@ -40,10 +43,13 @@ const gameManager = new GameManager();
 
 // Socket.IO connection handler
 io.on("connection", (socket) => {
+  activeConnectionCount++;
+  trackActiveConnections(activeConnectionCount);
   logger.info(`Client connected, socket id: ${socket.id}`);
 
   // Handle player joining a game
   socket.on("join_game", async (payload: JoinGamePayload) => {
+    trackSocketEvent("join_game");
     const { gameReferenceId, userReferenceId } = payload;
 
     await withGameTrace(
@@ -72,6 +78,7 @@ io.on("connection", (socket) => {
 
   // Handle move attempts
   socket.on("make_move", async (payload: MakeMovePayload) => {
+    trackSocketEvent("make_move");
     const { gameReferenceId, from, to, promotion } = payload;
 
     await withGameTrace(
@@ -106,6 +113,7 @@ io.on("connection", (socket) => {
 
   // Handle resignation
   socket.on("resign", async (payload: ResignPayload) => {
+    trackSocketEvent("resign");
     const { gameReferenceId } = payload;
 
     await withGameTrace(
@@ -134,6 +142,7 @@ io.on("connection", (socket) => {
 
   // Handle draw offer
   socket.on("offer_draw", (payload: OfferDrawPayload) => {
+    trackSocketEvent("offer_draw");
     const { gameReferenceId } = payload;
 
     withGameTrace(
@@ -162,6 +171,7 @@ io.on("connection", (socket) => {
 
   // Handle draw acceptance
   socket.on("accept_draw", async (payload: AcceptDrawPayload) => {
+    trackSocketEvent("accept_draw");
     const { gameReferenceId } = payload;
 
     await withGameTrace(
@@ -190,6 +200,7 @@ io.on("connection", (socket) => {
 
   // Handle draw decline
   socket.on("decline_draw", (payload: DeclineDrawPayload) => {
+    trackSocketEvent("decline_draw");
     const { gameReferenceId } = payload;
 
     withGameTrace(
@@ -215,6 +226,9 @@ io.on("connection", (socket) => {
 
   // Handle disconnection (no gameReferenceId — stays as isolated span)
   socket.on("disconnect", () => {
+    trackSocketEvent("disconnect");
+    activeConnectionCount--;
+    trackActiveConnections(activeConnectionCount);
     Sentry.startSpan(
       { name: "websocket.disconnect", op: "websocket.event" },
       () => {

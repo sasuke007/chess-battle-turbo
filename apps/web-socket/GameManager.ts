@@ -7,6 +7,7 @@ import {
   removeGameTraceContext,
 } from "./utils/traceContext";
 import { logger } from "./utils/logger";
+import { trackActiveGames } from "./utils/sentry";
 
 /**
  * GameManager manages all active game sessions
@@ -61,6 +62,7 @@ export class GameManager {
         // Create new game session
         gameSession = new GameSession(gameData);
         this.games.set(gameReferenceId, gameSession);
+        trackActiveGames(this.games.size);
 
         logger.info(`Created new game session`, { game: gameReferenceId });
       } else {
@@ -255,6 +257,7 @@ export class GameManager {
     if (gameSession) {
       gameSession.destroy();
       this.games.delete(gameReferenceId);
+      trackActiveGames(this.games.size);
       removeGameTraceContext(gameReferenceId);
       logger.info(`Removed game session`, { game: gameReferenceId });
     }
