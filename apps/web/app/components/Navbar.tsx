@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { ArrowRight, User } from "lucide-react";
+import { ArrowRight, CreditCard, Receipt, User } from "lucide-react";
 import { usePWAInstall } from "@/lib/hooks";
 import { InstallAppPopover } from "./InstallAppPopover";
 
@@ -15,6 +15,7 @@ export const Navbar = () => {
   const router = useRouter();
   const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
   const [userReferenceId, setUserReferenceId] = useState<string | null>(null);
+  const [subInfo, setSubInfo] = useState<{ customerId: string; plan: string } | null>(null);
 
   useEffect(() => {
     if (!isSignedIn || !user?.emailAddresses[0]?.emailAddress) return;
@@ -25,6 +26,15 @@ export const Navbar = () => {
       .then((data) => {
         if (data.success && data.data?.user?.referenceId) {
           setUserReferenceId(data.data.user.referenceId);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/subscription")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.plan && data.customerId) {
+          setSubInfo({ customerId: data.customerId, plan: data.plan });
         }
       })
       .catch(() => {});
@@ -105,34 +115,22 @@ export const Navbar = () => {
           <SignInButton>
             <button
               className={cn(
+                "group relative overflow-hidden",
                 "h-9 px-4",
                 "border border-white/20 hover:border-white/40",
-                "bg-white/5 hover:bg-white/10",
-                "text-white/70 hover:text-white",
+                "bg-white/5",
                 "text-sm font-medium tracking-wide",
                 "transition-all duration-300",
                 "backdrop-blur-sm"
               )}
               style={{ fontFamily: "'Geist', sans-serif" }}
             >
-              Sign In
+              <span className="absolute inset-0 bg-white origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+              <span className="relative text-white/70 group-hover:text-black transition-colors duration-300">
+                Sign In
+              </span>
             </button>
           </SignInButton>
-          <SignUpButton>
-            <button
-              className={cn(
-                "hidden sm:block",
-                "h-9 px-4",
-                "border border-white/10 hover:border-white/20",
-                "text-white/50 hover:text-white/70",
-                "text-sm font-medium tracking-wide",
-                "transition-all duration-300"
-              )}
-              style={{ fontFamily: "'Geist', sans-serif" }}
-            >
-              Sign Up
-            </button>
-          </SignUpButton>
         </SignedOut>
 
         <SignedIn>
@@ -194,6 +192,19 @@ export const Navbar = () => {
                   userButtonPopoverActionButtonIcon: {
                     color: 'rgba(255, 255, 255, 0.5)',
                   },
+                  userButtonPopoverCustomItemButton: {
+                    fontFamily: "'Geist', sans-serif",
+                    fontSize: '13px',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    borderRadius: '0px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: '#ffffff',
+                    },
+                  },
+                  userButtonPopoverCustomItemButtonIconBox: {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                  },
                   userButtonPopoverFooter: {
                     display: 'none',
                   },
@@ -213,7 +224,22 @@ export const Navbar = () => {
                   },
                 },
               }}
-            />
+            >
+              <UserButton.MenuItems>
+                <UserButton.Link
+                  label="Subscription"
+                  labelIcon={<CreditCard className="w-4 h-4" />}
+                  href="/pricing"
+                />
+                {subInfo?.customerId && (
+                  <UserButton.Action
+                    label="Manage Billing"
+                    labelIcon={<Receipt className="w-4 h-4" />}
+                    onClick={() => window.open(`/api/customer-portal?customer_id=${subInfo.customerId}`, '_blank')}
+                  />
+                )}
+              </UserButton.MenuItems>
+            </UserButton>
           </div>
         </SignedIn>
       </div>

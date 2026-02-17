@@ -199,10 +199,10 @@ function PricingContent() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-8"
               >
-                <div className="border border-green-500/30 bg-green-500/10 p-4 text-center">
+                <div className="border border-amber-500/30 bg-amber-500/10 p-4 text-center">
                   <p
                     style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-sm text-green-400"
+                    className="text-sm text-amber-400"
                   >
                     Payment successful! Your subscription is now active.
                   </p>
@@ -220,12 +220,12 @@ function PricingContent() {
               <div className="p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
                   </span>
                   <span
                     style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-xs font-medium text-emerald-400 uppercase tracking-widest"
+                    className="text-xs font-medium text-amber-400 uppercase tracking-widest"
                   >
                     Active
                   </span>
@@ -271,7 +271,7 @@ function PricingContent() {
                   </p>
                   <p
                     style={{ fontFamily: "'Geist Mono', monospace" }}
-                    className="text-sm text-emerald-400"
+                    className="text-sm text-amber-400"
                   >
                     {subInfo?.subscription?.status
                       ? subInfo.subscription.status.charAt(0).toUpperCase() + subInfo.subscription.status.slice(1)
@@ -307,8 +307,8 @@ function PricingContent() {
                     transition={{ duration: 0.5, delay: 0.4 + index * 0.06, ease: EASE }}
                     className="bg-black p-5"
                   >
-                    <div className="flex items-center justify-center w-8 h-8 border border-emerald-500/20 bg-emerald-500/5 mb-3">
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="flex items-center justify-center w-8 h-8 border border-amber-500/20 bg-amber-500/5 mb-3">
+                      <Check className="w-3.5 h-3.5 text-amber-400" />
                     </div>
                     <p
                       style={{ fontFamily: "'Geist', sans-serif" }}
@@ -517,10 +517,10 @@ function PricingContent() {
                 animate={{ opacity: 1, y: 0 }}
                 className="max-w-md mx-auto mb-8 px-4"
               >
-                <div className="border border-green-500/30 bg-green-500/10 p-4 text-center">
+                <div className="border border-amber-500/30 bg-amber-500/10 p-4 text-center">
                   <p
                     style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-sm text-green-400"
+                    className="text-sm text-amber-400"
                   >
                     Payment successful! Your subscription is being activated.
                   </p>
