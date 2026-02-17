@@ -15,7 +15,7 @@ export default function CareersPage() {
     e.preventDefault();
     if (!email) return;
     // Opens the user's mail client with a pre-filled subject
-    window.location.href = `mailto:careers@chessbattle.com?subject=Hiring Updates&body=Hi, I'd like to stay informed about future openings at ReplayChess. My email: ${encodeURIComponent(email)}`;
+    window.location.href = `mailto:careers@playchess.tech?subject=Hiring Updates&body=Hi, I'd like to stay informed about future openings at ReplayChess. My email: ${encodeURIComponent(email)}`;
     setSubmitted(true);
   };
 
@@ -362,7 +362,7 @@ export default function CareersPage() {
                 Prefer to reach out directly? Write to us anytime.
               </p>
               <a
-                href="mailto:careers@chessbattle.com"
+                href="mailto:careers@playchess.tech"
                 className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 group"
               >
                 <Mail className="w-4 h-4" strokeWidth={1.5} />
@@ -370,7 +370,7 @@ export default function CareersPage() {
                   style={{ fontFamily: "'Geist', sans-serif" }}
                   className="text-sm underline underline-offset-4 decoration-white/20 group-hover:decoration-white/50 transition-all duration-300"
                 >
-                  careers@chessbattle.com
+                  careers@playchess.tech
                 </span>
               </a>
             </div>

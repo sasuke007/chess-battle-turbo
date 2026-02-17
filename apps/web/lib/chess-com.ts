@@ -4,7 +4,7 @@ import type {
   ChessComPreviewData,
 } from "./types/chess-com";
 
-const USER_AGENT = "ChessBattle/1.0";
+const USER_AGENT = "ReplayChess/1.0";
 
 export async function fetchChessComProfile(
   handle: string

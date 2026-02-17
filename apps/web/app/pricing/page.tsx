@@ -31,7 +31,7 @@ const SUBSCRIBER_FAQS = [
   },
   {
     question: 'Can I get a refund?',
-    answer: 'Yes, we offer a 30-day money-back guarantee. If you are not satisfied, contact us at hello@chessbattle.com within 30 days of subscribing for a full refund, subject to a 5% processing fee.',
+    answer: 'Yes, we offer a 30-day money-back guarantee. If you are not satisfied, contact us at hello@playchess.tech within 30 days of subscribing for a full refund, subject to a 5% processing fee.',
   },
   {
     question: 'How do I update my payment method?',
@@ -357,7 +357,7 @@ function PricingContent() {
                   </p>
                 </a>
                 <a
-                  href="mailto:hello@chessbattle.com"
+                  href="mailto:hello@playchess.tech"
                   className="group border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-colors p-6 flex flex-col"
                 >
                   <div className="flex items-center justify-between mb-3">

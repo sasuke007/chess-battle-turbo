@@ -122,10 +122,10 @@ const sections = [
         <p className="mt-4">
           To exercise any of these rights, contact us at{" "}
           <a
-            href="mailto:privacy@chessbattle.com"
+            href="mailto:privacy@playchess.tech"
             className="text-white/60 hover:text-white underline transition-colors"
           >
-            privacy@chessbattle.com
+            privacy@playchess.tech
           </a>
           . We will respond within 30 days.
         </p>
@@ -238,10 +238,10 @@ const sections = [
           <p>
             Email:{" "}
             <a
-              href="mailto:privacy@chessbattle.com"
+              href="mailto:privacy@playchess.tech"
               className="text-white/60 hover:text-white underline transition-colors"
             >
-              privacy@chessbattle.com
+              privacy@playchess.tech
             </a>
           </p>
           <p>Response time: Within 30 business days</p>

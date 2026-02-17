@@ -5,12 +5,12 @@ async function main() {
 
   // Create bot user for AI games
   const botUser = await prisma.user.upsert({
-    where: { email: 'bot@chessbattle.local' },
+    where: { email: 'bot@replaychess.local' },
     update: {},
     create: {
       code: 'CHESS_BOT_001',
       googleId: 'bot_system_user',
-      email: 'bot@chessbattle.local',
+      email: 'bot@replaychess.local',
       name: 'Chess Bot',
       profilePictureUrl: null,
       isActive: true,
@@ -44,7 +44,7 @@ async function main() {
     {
       code: 'ALICE001',
       googleId: 'google_alice_123456',
-      email: 'alice@chessbattle.com',
+      email: 'alice@replaychess.local',
       name: 'Alice Johnson',
       profilePictureUrl: 'https://i.pravatar.cc/150?img=1',
       dateOfBirth: new Date('1995-03-15'),
@@ -53,7 +53,7 @@ async function main() {
     {
       code: 'BOB002',
       googleId: 'google_bob_789012',
-      email: 'bob@chessbattle.com',
+      email: 'bob@replaychess.local',
       name: 'Bob Smith',
       profilePictureUrl: 'https://i.pravatar.cc/150?img=2',
       dateOfBirth: new Date('1992-07-22'),
@@ -62,7 +62,7 @@ async function main() {
     {
       code: 'CHARLIE003',
       googleId: 'google_charlie_345678',
-      email: 'charlie@chessbattle.com',
+      email: 'charlie@replaychess.local',
       name: 'Charlie Davis',
       profilePictureUrl: 'https://i.pravatar.cc/150?img=3',
       dateOfBirth: new Date('1998-11-08'),
@@ -71,7 +71,7 @@ async function main() {
     {
       code: 'DIANA004',
       googleId: 'google_diana_901234',
-      email: 'diana@chessbattle.com',
+      email: 'diana@replaychess.local',
       name: 'Diana Martinez',
       profilePictureUrl: 'https://i.pravatar.cc/150?img=4',
       dateOfBirth: new Date('1994-05-30'),
@@ -80,7 +80,7 @@ async function main() {
     {
       code: 'EVAN005',
       googleId: 'google_evan_567890',
-      email: 'evan@chessbattle.com',
+      email: 'evan@replaychess.local',
       name: 'Evan Wilson',
       profilePictureUrl: 'https://i.pravatar.cc/150?img=5',
       dateOfBirth: new Date('1996-09-12'),

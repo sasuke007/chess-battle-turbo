@@ -10,7 +10,7 @@ import { trackUserAction } from "@/lib/metrics";
 
 // Bot user constants - must match the seeded bot user
 const BOT_USER_CODE = "CHESS_BOT_001";
-const BOT_USER_EMAIL = "bot@chessbattle.local";
+const BOT_USER_EMAIL = "bot@replaychess.local";
 
 // Difficulty and playerColor are now optional - auto-determined
 const createAIGameSchema = z.object({

@@ -268,11 +268,11 @@ export default function ContactPage() {
                   </p>
                 </div>
                 <a
-                  href="mailto:hello@chessbattle.com"
+                  href="mailto:hello@playchess.tech"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                   className="text-white/60 hover:text-white text-sm transition-colors"
                 >
-                  hello@chessbattle.com
+                  hello@playchess.tech
                 </a>
               </div>
 

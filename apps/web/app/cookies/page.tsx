@@ -229,10 +229,10 @@ const sections = [
           </a>{" "}
           or contact us at{" "}
           <a
-            href="mailto:privacy@chessbattle.com"
+            href="mailto:privacy@playchess.tech"
             className="text-white/60 hover:text-white underline transition-colors"
           >
-            privacy@chessbattle.com
+            privacy@playchess.tech
           </a>
           .
         </p>

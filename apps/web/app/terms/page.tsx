@@ -216,8 +216,8 @@ const sections = [
         </p>
         <p>
           If you have any questions about these Terms, please contact us at{" "}
-          <a href="mailto:legal@chessbattle.com" className="text-white/60 hover:text-white underline transition-colors">
-            legal@chessbattle.com
+          <a href="mailto:legal@playchess.tech" className="text-white/60 hover:text-white underline transition-colors">
+            legal@playchess.tech
           </a>
           .
         </p>
