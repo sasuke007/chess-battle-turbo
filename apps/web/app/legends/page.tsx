@@ -111,7 +111,7 @@ export default async function LegendsPage() {
                       href={`/legends/${legend.referenceId}`}
                       className="group bg-black p-6 hover:bg-white/[0.03] transition-colors duration-300"
                     >
-                      <div className="flex items-start gap-4">
+                      <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-4 mx-auto sm:mx-0">
                         {legend.profilePhotoUrl ? (
                           <img
                             src={legend.profilePhotoUrl}
@@ -123,14 +123,14 @@ export default async function LegendsPage() {
                             ♚
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
+                        <div className="sm:flex-1 min-w-0">
                           <h3
                             style={{ fontFamily: "'Instrument Serif', serif" }}
                             className="text-lg text-white group-hover:text-white/80 transition-colors"
                           >
                             {legend.name}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
                             {legend.nationality && (
                               <span
                                 style={{ fontFamily: "'Geist', sans-serif" }}

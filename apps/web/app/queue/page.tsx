@@ -42,6 +42,7 @@ function QueueContent() {
   const incrementSeconds = parseInt(searchParams.get("increment") || "5", 10);
   const legendReferenceId = searchParams.get("legend") || null;
   const legendName = searchParams.get("legendName") || null;
+  const openingReferenceId = searchParams.get("opening") || null;
 
   const getTimeControlLabel = () => {
     const mins = Math.floor(initialTimeSeconds / 60);
@@ -72,6 +73,7 @@ function QueueContent() {
         body: JSON.stringify({
           userReferenceId: userObject.user.referenceId,
           legendReferenceId,
+          openingReferenceId,
           initialTimeSeconds,
           incrementSeconds,
         }),
@@ -103,7 +105,7 @@ function QueueContent() {
     } finally {
       setIsCreating(false);
     }
-  }, [userObject?.user?.referenceId, legendReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
+  }, [userObject?.user?.referenceId, legendReferenceId, openingReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
 
   useEffect(() => {
     if (!isReady || !userObject?.user?.referenceId) return;

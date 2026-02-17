@@ -95,7 +95,7 @@ export default async function LegendDetailPage({ params }: Props) {
         </Link>
 
         {/* Hero */}
-        <div className="flex flex-col sm:flex-row items-start gap-6 mb-12">
+        <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-6 mb-12">
           {legend.profilePhotoUrl ? (
             <img
               src={legend.profilePhotoUrl}
@@ -109,13 +109,25 @@ export default async function LegendDetailPage({ params }: Props) {
           )}
 
           <div className="flex-1">
-            <h1
-              style={{ fontFamily: "'Instrument Serif', serif" }}
-              className="text-4xl sm:text-5xl text-white mb-2"
-            >
-              {legend.name}
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <h1
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+                className="text-4xl sm:text-5xl text-white"
+              >
+                {legend.name}
+              </h1>
+              <Link
+                href={`/play?legend=${legend.referenceId}`}
+                className="group relative inline-block overflow-hidden px-8 py-3 bg-white text-black transition-all duration-300 sm:flex-shrink-0"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                <span className="relative text-sm font-medium text-black group-hover:text-white transition-colors duration-300">
+                  Play as {legend.name}
+                </span>
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-4">
               <span
                 style={{ fontFamily: "'Geist', sans-serif" }}
                 className="text-[10px] px-2 py-0.5 border border-white/15 text-white/50 uppercase tracking-wider"
@@ -231,15 +243,6 @@ export default async function LegendDetailPage({ params }: Props) {
                       </p>
                     )}
                   </div>
-                  {game.fen && (
-                    <Link
-                      href={`/play?fen=${encodeURIComponent(game.fen)}`}
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-[10px] uppercase tracking-wider text-white/30 hover:text-white/60 border border-white/10 px-3 py-1.5 transition-colors"
-                    >
-                      Play
-                    </Link>
-                  )}
                 </div>
               ))}
             </div>
@@ -278,13 +281,6 @@ export default async function LegendDetailPage({ params }: Props) {
                       </p>
                     )}
                   </div>
-                  <Link
-                    href={`/play?fen=${encodeURIComponent(pos.fen)}`}
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-[10px] uppercase tracking-wider text-white/30 hover:text-white/60 border border-white/10 px-3 py-1.5 transition-colors"
-                  >
-                    Play
-                  </Link>
                 </div>
               ))}
             </div>

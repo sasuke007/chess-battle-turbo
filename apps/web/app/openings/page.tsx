@@ -1,12 +1,29 @@
 import Link from "next/link";
+import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { OpeningsSearch } from "./OpeningsSearch";
 
-export default async function OpeningsPage() {
+interface Props {
+  searchParams: Promise<{ q?: string }>;
+}
+
+export default async function OpeningsPage({ searchParams }: Props) {
+  const { q } = await searchParams;
+
+  const where: Prisma.OpeningWhereInput = { isActive: true };
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: "insensitive" } },
+      { eco: { contains: q, mode: "insensitive" } },
+      { pgn: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
   const openings = await prisma.opening.findMany({
-    where: { isActive: true },
+    where,
     orderBy: [{ eco: "asc" }, { name: "asc" }],
     select: {
       referenceId: true,
@@ -75,6 +92,7 @@ export default async function OpeningsPage() {
           >
             Browse openings by ECO code. Study the moves, then play from the position.
           </p>
+          <OpeningsSearch />
         </div>
       </section>
 
@@ -154,7 +172,7 @@ export default async function OpeningsPage() {
                 style={{ fontFamily: "'Instrument Serif', serif" }}
                 className="text-white/40 text-xl"
               >
-                Openings coming soon
+                {q ? "No openings match your search" : "Openings coming soon"}
               </p>
             </div>
           )}

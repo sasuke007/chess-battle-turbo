@@ -211,3 +211,7 @@ A game which is completed should redirect to analyze page should not remain on /
 http://localhost:3000/game/cmlifvbro0001va5f03iv2jnw
 
 
+cmlr4eaqv0001vbyvgslfp63y this game is incorrect the postition is not valid why is this happening.
+
+http://localhost:3000/analysis/cmlr4eaqv0001vbyvgslfp63y maybe the board was rendered wrong look at this analysis board. and fix the issue.
+

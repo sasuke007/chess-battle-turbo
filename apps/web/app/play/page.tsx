@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
@@ -9,7 +9,7 @@ import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
 import SearchableDropdown from "../components/SearchableDropdown";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
 import { Users, Zap, Crown, Bot, ArrowRight, Sparkles, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -50,10 +50,11 @@ const noiseTextureStyle = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
 } as const;
 
-export default function Play() {
+function PlayContent() {
   const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
   const userReferenceId = userObject?.user?.referenceId;
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [timeControl, setTimeControl] = useState<TimeControlValue>({
     mode: "Blitz",
@@ -121,6 +122,24 @@ export default function Play() {
     }
     fetchData();
   }, []);
+
+  // Pre-select legend from URL param (e.g. /play?legend=abc123)
+  const legendParam = searchParams.get("legend");
+  useEffect(() => {
+    if (legendParam) {
+      setPlayAsLegend(true);
+      setSelectedHero(legendParam);
+    }
+  }, [legendParam]);
+
+  // Pre-select opening from URL param (e.g. /play?opening=abc123)
+  const openingParam = searchParams.get("opening");
+  useEffect(() => {
+    if (openingParam) {
+      setPlayOpening(true);
+      setSelectedOpening(openingParam);
+    }
+  }, [openingParam]);
 
   const handleCreateGame = async () => {
     // TODO:  This error should ideally not Happen, because we dont load the page untill the auth state is ready, but just in case
@@ -631,5 +650,19 @@ export default function Play() {
         <div className="absolute bottom-6 right-6 w-16 h-16 border-r border-b border-white/10" />
       </div>
     </>
+  );
+}
+
+export default function Play() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen bg-black items-center justify-center">
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <PlayContent />
+    </Suspense>
   );
 }

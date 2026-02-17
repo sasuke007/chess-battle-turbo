@@ -37,6 +37,7 @@ pnpm --filter web prisma:seed:openings
 **Monorepo** (pnpm workspaces + Turbo) with two apps and shared packages:
 
 ### `apps/web` — Next.js 15 (App Router)
+
 - **React 19 + React Compiler** — memoization is automatic; do not use `React.memo`, `useMemo`, or `useCallback`
 - **Auth**: Clerk (`@clerk/nextjs`). Middleware at `middleware.ts` applies Clerk to all routes except `/api/scraper/*` (uses X-API-Key)
 - **Database**: PostgreSQL via Prisma. Client generated to `app/generated/prisma`. Singleton in `lib/prisma.ts`
@@ -47,6 +48,7 @@ pnpm --filter web prisma:seed:openings
 - **PWA**: `@ducanh2912/next-pwa` for offline support and install prompts
 
 ### `apps/web-socket` — Socket.IO Game Server
+
 - Express + Socket.IO server for real-time multiplayer chess
 - **Core classes**: `GameManager` (orchestrates all games), `GameSession` (individual game state/FEN/moves), `ClockManager` (per-game timers)
 - **Socket events**: Defined in `types.ts`. Client→Server: `join_game`, `make_move`, `resign`, `offer_draw`, `accept_draw`, `decline_draw`. Server→Client: `game_started`, `move_made`, `clock_update`, `game_over`, `analysis_phase_started`, `analysis_tick`, draw events
@@ -54,6 +56,7 @@ pnpm --filter web prisma:seed:openings
 - Deployed to EC2 via GitHub Actions (`.github/workflows/deploy-websocket.yml`)
 
 ### `packages/`
+
 - `eslint-config` — shared ESLint configs (base, next.js, react-internal)
 - `typescript-config` — shared tsconfig (base, nextjs)
 - `ui` — minimal React component library stub
