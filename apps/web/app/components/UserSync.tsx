@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { logger } from "@/lib/logger";
+import { trackApiResponseTime } from "@/lib/metrics";
 
 /**
  * UserSync Component
@@ -27,12 +28,14 @@ export const UserSync = () => {
       try {
         hasSynced.current = true;
 
+        const start = Date.now();
         const response = await fetch("/api/user/sync", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
         });
+        trackApiResponseTime("user.sync", Date.now() - start);
 
         if (!response.ok) {
           const errorData = await response.json();

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { trackApiResponseTime } from "@/lib/metrics";
 import { X, Search, ExternalLink } from "lucide-react";
 import { ChessComPreviewCard } from "../../components/ChessComPreviewCard";
 import type { ChessComPreviewData } from "@/lib/types/chess-com";
@@ -56,6 +57,7 @@ export function ChessComConnectModal({
     setError(null);
 
     try {
+      const start = Date.now();
       const response = await fetch("/api/user/chess-com-profile/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,6 +65,7 @@ export function ChessComConnectModal({
       });
 
       const data = await response.json();
+      trackApiResponseTime("chessCom.preview", Date.now() - start);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to look up chess.com profile");
@@ -87,6 +90,7 @@ export function ChessComConnectModal({
     setError(null);
 
     try {
+      const start = Date.now();
       const response = await fetch("/api/user/chess-com-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,6 +98,7 @@ export function ChessComConnectModal({
       });
 
       const data = await response.json();
+      trackApiResponseTime("chessCom.connect", Date.now() - start);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to save chess.com profile");

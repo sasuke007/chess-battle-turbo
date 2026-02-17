@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { CompleteUserObject } from "../types/user";
+import { trackApiResponseTime } from "@/lib/metrics";
 
 export interface UseRequireAuthReturn {
   isLoaded: boolean;
@@ -43,7 +44,9 @@ export function useRequireAuth(): UseRequireAuthReturn {
     setIsLoadingUserData(true);
 
     try {
+      const start = Date.now();
       const response = await fetch(`/api/user/email/${encodeURIComponent(email)}`);
+      trackApiResponseTime("user.fetchByEmail", Date.now() - start);
 
       if (!response.ok) {
         router.push("/sign-in");
@@ -97,8 +100,10 @@ export function useRequireAuth(): UseRequireAuthReturn {
     isFetchingRef.current = true;
     setIsLoadingUserData(true);
 
+    const fetchStart = Date.now();
     fetch(`/api/user/email/${encodeURIComponent(email)}`)
       .then((response) => {
+        trackApiResponseTime("user.fetchByEmail", Date.now() - fetchStart);
         if (!response.ok) {
           router.push("/sign-in");
           return null;

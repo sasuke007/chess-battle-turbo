@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { MatchmakingStatus } from "@/app/generated/prisma";
+import { trackApiResponseTime } from "@/lib/metrics";
 
 export interface OpponentInfo {
   name: string;
@@ -195,6 +196,7 @@ export function useCreateMatchRequest(
       setIsCreating(true);
 
       try {
+        const start = Date.now();
         const response = await fetch("/api/matchmaking/create-match-request", {
           method: "POST",
           headers: {
@@ -204,6 +206,7 @@ export function useCreateMatchRequest(
         });
 
         const data = await response.json();
+        trackApiResponseTime("matchmaking.create", Date.now() - start);
 
         if (!data.success) {
           throw new Error(data.error || "Failed to create match request");

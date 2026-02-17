@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "../../../../lib/prisma";
 import { logger } from "@/lib/sentry/logger";
+import { trackUserAction } from "@/lib/metrics";
 
 const moveSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
     const validatedData = moveSchema.parse(body);
 
     Sentry.setTag("game.referenceId", validatedData.gameReferenceId);
+    trackUserAction("make_move");
 
     // 2. Find game with user relations to get reference IDs
     const game = await prisma.game.findUnique({

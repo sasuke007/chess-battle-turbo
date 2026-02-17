@@ -7,6 +7,7 @@ import {
   GameData,
 } from "../types";
 import { logger } from "./logger";
+import { trackApiLatency, trackApiError } from "./sentry";
 
 // Configuration
 const API_BASE_URL = process.env.WEB_APP_URL || "http://localhost:3000";
@@ -34,6 +35,7 @@ function getSentryHeaders(): Record<string, string> {
 export async function fetchGameByRef(
   gameReferenceId: string
 ): Promise<GameData> {
+  const start = Date.now();
   try {
     const response = await fetch(
       `${API_BASE_URL}/api/chess/game-by-ref/${gameReferenceId}`,
@@ -54,8 +56,10 @@ export async function fetchGameByRef(
       throw new Error(result.error || "Failed to fetch game");
     }
 
+    trackApiLatency("fetchGameByRef", Date.now() - start);
     return result.data;
   } catch (error) {
+    trackApiError("fetchGameByRef");
     logger.error("Error fetching game by ref", error, { game: gameReferenceId });
     throw error;
   }
@@ -65,6 +69,7 @@ export async function fetchGameByRef(
  * Persist a move to the database
  */
 export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
+  const start = Date.now();
   try {
     const response = await fetch(`${API_BASE_URL}/api/chess/move`, {
       method: "POST",
@@ -85,7 +90,10 @@ export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
     if (!result.success) {
       throw new Error(result.error || "Failed to persist move");
     }
+
+    trackApiLatency("persistMove", Date.now() - start);
   } catch (error) {
+    trackApiError("persistMove");
     logger.error("Error persisting move", error, { game: moveData.gameReferenceId });
     throw error;
   }
@@ -97,6 +105,7 @@ export async function persistMove(moveData: ApiMoveRequest): Promise<void> {
 export async function completeGame(
   gameOverData: ApiGameOverRequest
 ): Promise<void> {
+  const start = Date.now();
   try {
     logger.info("Calling game-over API", { game: gameOverData.gameReferenceId, result: gameOverData.result });
 
@@ -130,8 +139,10 @@ export async function completeGame(
       throw new Error(errorMessage);
     }
 
+    trackApiLatency("completeGame", Date.now() - start);
     logger.info("Game completed successfully in database", { game: gameOverData.gameReferenceId });
   } catch (error) {
+    trackApiError("completeGame");
     logger.error("Error completing game", error, { game: gameOverData.gameReferenceId });
     throw error;
   }
@@ -143,6 +154,7 @@ export async function completeGame(
 export async function updateGameState(
   stateData: ApiGameStateRequest
 ): Promise<void> {
+  const start = Date.now();
   try {
     const response = await fetch(`${API_BASE_URL}/api/chess/game-state`, {
       method: "POST",
@@ -163,7 +175,10 @@ export async function updateGameState(
     if (!result.success) {
       throw new Error(result.error || "Failed to update game state");
     }
+
+    trackApiLatency("updateGameState", Date.now() - start);
   } catch (error) {
+    trackApiError("updateGameState");
     logger.error("Error updating game state", error, { game: stateData.gameReferenceId });
     logger.warn("Continuing despite game state update failure", { game: stateData.gameReferenceId });
   }

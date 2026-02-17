@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "../../../../lib/prisma";
 import { logger } from "@/lib/sentry/logger";
+import { trackUserAction } from "@/lib/metrics";
 
 type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
     const validatedData = gameOverSchema.parse(body);
 
     Sentry.setTag("game.referenceId", validatedData.gameReferenceId);
+    trackUserAction("game_over");
 
     // 2. Find game
     const game = await prisma.game.findUnique({

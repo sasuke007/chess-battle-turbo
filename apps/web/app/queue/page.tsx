@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { logger } from "@/lib/logger";
+import { trackApiResponseTime } from "@/lib/metrics";
 import { Navbar } from "@/app/components/Navbar";
 import {
   QueueSearching,
@@ -64,6 +65,7 @@ function QueueContent() {
 
     setIsCreating(true);
     try {
+      const start = Date.now();
       const response = await fetch("/api/matchmaking/create-match-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,6 +78,7 @@ function QueueContent() {
       });
 
       const data = await response.json();
+      trackApiResponseTime("matchmaking.create", Date.now() - start);
 
       if (!data.success) {
         throw new Error(data.error || "Failed to create match request");
@@ -247,6 +250,7 @@ function QueueContent() {
 
     setIsCreatingBotGame(true);
     try {
+      const start = Date.now();
       const response = await fetch("/api/chess/create-ai-game", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,6 +263,7 @@ function QueueContent() {
       });
 
       const data = await response.json();
+      trackApiResponseTime("chess.createAiGame", Date.now() - start);
 
       if (!data.success) {
         throw new Error(data.error || "Failed to create AI game");

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ValidationError } from "@/lib/errors/validation-error";
 import { validateAndFetchUser } from "@/lib/services/user-validation.service";
 import { logger } from "@/lib/sentry/logger";
+import { trackUserAction } from "@/lib/metrics";
 
 const joinGameSchema = z.object({
   gameReferenceId: z.string().min(1, "Game reference ID is required"),
@@ -162,6 +163,8 @@ export async function POST(request: NextRequest) {
     // 2b. Continue the game's distributed trace if trace context is available
     const traceContext = game.gameData?.traceContext;
     Sentry.setTag("game.referenceId", game.referenceId);
+
+    trackUserAction("join_game");
 
     const executeJoin = async () => {
       // 3. Fetch and validate opponent
