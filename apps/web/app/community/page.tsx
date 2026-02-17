@@ -63,7 +63,7 @@ export default function CommunityPage() {
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="text-5xl sm:text-6xl md:text-7xl text-white mb-4"
             >
-              Join the Chess Battle
+              Join the ReplayChess
               <br />
               <span className="text-white/40">Community</span>
             </h1>
@@ -412,7 +412,7 @@ export default function CommunityPage() {
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="text-white/40 text-sm mb-4"
             >
-              Please review our community guidelines to help keep Chess Battle a welcoming place for everyone.
+              Please review our community guidelines to help keep ReplayChess a welcoming place for everyone.
             </p>
             <Link
               href="/help"

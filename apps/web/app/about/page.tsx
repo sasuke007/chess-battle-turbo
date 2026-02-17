@@ -127,7 +127,7 @@ export default function AboutPage() {
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="text-white/40 text-base leading-relaxed mb-6"
             >
-              Chess Battle was born from a simple idea: the greatest moments in chess history shouldn&apos;t just be
+              ReplayChess was born from a simple idea: the greatest moments in chess history shouldn&apos;t just be
               studied — they should be experienced. We believe that stepping into the shoes of Kasparov, Fischer, or
               Carlsen at the critical moment of a legendary game is the most powerful way to learn and appreciate chess.
             </p>

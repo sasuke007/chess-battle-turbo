@@ -14,7 +14,7 @@ export default function PricingPage() {
   const faqs = [
     {
       question: "Do you offer refunds?",
-      answer: "Yes, we offer a 30-day money-back guarantee for all new subscriptions. If you're not satisfied with Chess Battle Turbo, you can request a full refund within the first 30 days of your subscription. Refunds are subject to a 5% processing fee and usage fees."
+      answer: "Yes, we offer a 30-day money-back guarantee for all new subscriptions. If you're not satisfied with ReplayChess, you can request a full refund within the first 30 days of your subscription. Refunds are subject to a 5% processing fee and usage fees."
     },
     {
       question: "What does early access include?",

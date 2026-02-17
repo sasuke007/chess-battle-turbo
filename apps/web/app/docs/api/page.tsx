@@ -71,7 +71,7 @@ export default function ApiDocsPage() {
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="text-5xl sm:text-6xl md:text-7xl text-white mb-4"
             >
-              Chess Battle API
+              ReplayChess API
             </h1>
 
             <span
@@ -111,7 +111,7 @@ export default function ApiDocsPage() {
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="text-sm text-white/40 leading-relaxed max-w-lg mx-auto"
             >
-              We&apos;re building a comprehensive REST API that will give developers full access to Chess Battle&apos;s
+              We&apos;re building a comprehensive REST API that will give developers full access to ReplayChess&apos;s
               platform — from game data and player stats to our legendary positions library and AI analysis engine.
             </p>
           </motion.div>

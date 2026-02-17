@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   websocket:
-    image: sasuke0007/chess-battle-websocket:latest
-    container_name: chess-battle-websocket
+    image: sasuke0007/replay-chess-websocket:latest
+    container_name: replay-chess-websocket
     ports:
       - "3002:3002"
     environment:
@@ -35,8 +35,8 @@ services:
 
     # Network
     networks:
-      - chess-battle-network
+      - replay-chess-network
 
 networks:
-  chess-battle-network:
+  replay-chess-network:
     driver: bridge

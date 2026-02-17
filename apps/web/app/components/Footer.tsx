@@ -65,7 +65,7 @@ export function Footer() {
                   style={{ fontFamily: "'Instrument Serif', serif" }}
                   className="text-xl text-white block"
                 >
-                  Chess Battle
+                  ReplayChess
                 </span>
                 <span
                   style={{ fontFamily: "'Geist', sans-serif" }}
@@ -253,7 +253,7 @@ export function Footer() {
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="text-xs text-white/30 tracking-wide"
             >
-              © {new Date().getFullYear()} Chess Battle. All rights reserved.
+              © {new Date().getFullYear()} ReplayChess. All rights reserved.
             </p>
 
             <div className="flex items-center gap-6">

@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: chess-battle-web-lb
-  namespace: chess-battle
+  name: replay-chess-web-lb
+  namespace: replay-chess
   labels:
-    app: chess-battle-web
+    app: replay-chess-web
   annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "chess-battle-web"
+    service.beta.kubernetes.io/do-loadbalancer-name: "replay-chess-web"
     service.beta.kubernetes.io/do-loadbalancer-size-slug: "lb-small"
 spec:
   type: LoadBalancer
@@ -16,17 +16,17 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: chess-battle-web
+    app: replay-chess-web
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: chess-battle-websocket-lb
-  namespace: chess-battle
+  name: replay-chess-websocket-lb
+  namespace: replay-chess
   labels:
-    app: chess-battle-websocket
+    app: replay-chess-websocket
   annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "chess-battle-websocket"
+    service.beta.kubernetes.io/do-loadbalancer-name: "replay-chess-websocket"
     service.beta.kubernetes.io/do-loadbalancer-size-slug: "lb-small"
     # Enable proxy protocol for websocket sticky sessions
     service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "true"
@@ -38,7 +38,7 @@ spec:
     protocol: TCP
     name: websocket
   selector:
-    app: chess-battle-websocket
+    app: replay-chess-websocket
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:

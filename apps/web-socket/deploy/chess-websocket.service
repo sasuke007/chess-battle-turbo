@@ -5,15 +5,15 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/var/www/chess-websocket/chess-battle-turbo/apps/web-socket
-ExecStart=/usr/bin/node /var/www/chess-websocket/chess-battle-turbo/apps/web-socket/dist/index.js
+WorkingDirectory=/var/www/chess-websocket/replay-chess/apps/web-socket
+ExecStart=/usr/bin/node /var/www/chess-websocket/replay-chess/apps/web-socket/dist/index.js
 Restart=on-failure
 RestartSec=10
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=chess-websocket
 Environment=NODE_ENV=production
-EnvironmentFile=/var/www/chess-websocket/chess-battle-turbo/apps/web-socket/.env
+EnvironmentFile=/var/www/chess-websocket/replay-chess/apps/web-socket/.env
 
 [Install]
 WantedBy=multi-user.target

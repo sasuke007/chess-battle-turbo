@@ -27,8 +27,8 @@ export function createMetadata({
       title,
       description,
       url,
-      siteName: "Chess Battle",
-      images: [{ url: ogImage, width: 1200, height: 800, alt: "Chess Battle" }],
+      siteName: "ReplayChess",
+      images: [{ url: ogImage, width: 1200, height: 800, alt: "ReplayChess" }],
       type: "website",
     },
     twitter: {

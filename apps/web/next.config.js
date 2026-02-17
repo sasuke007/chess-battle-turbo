@@ -31,8 +31,8 @@ const nextConfig = {
 };
 
 export default withSentryConfig(withPWA(nextConfig), {
-  org: "chess-battle",
-  project: "chess-battle",
+  org: "replay-chess",
+  project: "replay-chess",
   silent: !process.env.CI,
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",

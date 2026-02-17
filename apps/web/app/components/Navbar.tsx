@@ -57,7 +57,7 @@ export const Navbar = () => {
       <Link href="/" className="flex items-center gap-3 group">
         <Image
           src="/chess-logo-bnw.png"
-          alt="Chess Battle"
+          alt="ReplayChess"
           width={100}
           height={100}
           className={cn(
@@ -70,7 +70,7 @@ export const Navbar = () => {
           style={{ fontFamily: "'Instrument Serif', serif" }}
           className="hidden sm:block text-white text-lg tracking-tight"
         >
-          Chess Battle
+          ReplayChess
         </span>
       </Link>
 

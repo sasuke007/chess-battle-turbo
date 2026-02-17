@@ -15,7 +15,7 @@ export default function CareersPage() {
     e.preventDefault();
     if (!email) return;
     // Opens the user's mail client with a pre-filled subject
-    window.location.href = `mailto:careers@chessbattle.com?subject=Hiring Updates&body=Hi, I'd like to stay informed about future openings at Chess Battle. My email: ${encodeURIComponent(email)}`;
+    window.location.href = `mailto:careers@chessbattle.com?subject=Hiring Updates&body=Hi, I'd like to stay informed about future openings at ReplayChess. My email: ${encodeURIComponent(email)}`;
     setSubmitted(true);
   };
 
@@ -133,7 +133,7 @@ export default function CareersPage() {
                 style={{ fontFamily: "'Geist', sans-serif" }}
                 className="text-base sm:text-lg text-white/45 leading-[1.8]"
               >
-                Chess Battle is a solo venture right now — every line of code, every
+                ReplayChess is a solo venture right now — every line of code, every
                 pixel, every decision passes through a single pair of hands. That&apos;s
                 intentional. Before we grow the team, we&apos;re focused on getting the
                 foundation exactly right.
@@ -185,7 +185,7 @@ export default function CareersPage() {
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="text-base sm:text-lg text-white/45 leading-[1.8]"
             >
-              As Chess Battle expands into new markets and the platform grows beyond
+              As ReplayChess expands into new markets and the platform grows beyond
               what one person can carry, we&apos;ll be looking for people who care
               deeply about craft — engineers, designers, community builders, and chess
               minds who want to shape the future of how the world experiences this game.
@@ -202,7 +202,7 @@ export default function CareersPage() {
                 {
                   number: "02",
                   title: "New Markets",
-                  description: "Bring Chess Battle to players around the globe.",
+                  description: "Bring ReplayChess to players around the globe.",
                 },
                 {
                   number: "03",

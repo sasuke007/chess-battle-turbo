@@ -37,7 +37,7 @@ export default function Page() {
                             style={{ fontFamily: "'Instrument Serif', serif" }}
                             className="text-3xl text-white tracking-tight"
                         >
-                            Chess Battle
+                            ReplayChess
                         </h1>
                         <div className="flex items-center gap-3 mt-2">
                             <div className="h-px w-8 bg-white/20" />

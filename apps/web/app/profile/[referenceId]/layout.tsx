@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = `${user.name} (${user.code})`;
-  const description = `View ${user.name}'s chess profile, stats, and game history on Chess Battle.`;
+  const description = `View ${user.name}'s chess profile, stats, and game history on ReplayChess.`;
 
   return {
     title,
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url: `https://playchess.tech/profile/${referenceId}`,
-      siteName: "Chess Battle",
+      siteName: "ReplayChess",
       ...(user.profilePictureUrl && {
         images: [{ url: user.profilePictureUrl, width: 200, height: 200, alt: user.name }],
       }),

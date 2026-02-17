@@ -2,7 +2,7 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "Privacy Policy",
-  description: "How Chess Battle collects, uses, and protects your data.",
+  description: "How ReplayChess collects, uses, and protects your data.",
   path: "/privacy",
 });
 

@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/seo";
 export const metadata = createMetadata({
   title: "Careers",
   description:
-    "Join the team building the future of interactive chess at Chess Battle.",
+    "Join the team building the future of interactive chess at ReplayChess.",
   path: "/careers",
 });
 

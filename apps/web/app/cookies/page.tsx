@@ -13,7 +13,7 @@ const sections = [
           preferences, understand how you use the site, and improve your experience.
         </p>
         <p>
-          Chess Battle uses cookies and similar technologies (such as local storage and session storage) to operate the
+          ReplayChess uses cookies and similar technologies (such as local storage and session storage) to operate the
           Platform effectively.
         </p>
       </>

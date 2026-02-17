@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   web:
-    image: sasuke0007/chess-battle-web:latest
-    container_name: chess-battle-web
+    image: sasuke0007/replay-chess-web:latest
+    container_name: replay-chess-web
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -36,11 +36,11 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - chess-battle-network
+      - replay-chess-network
 
   websocket:
-    image: sasuke0007/chess-battle-websocket:latest
-    container_name: chess-battle-websocket
+    image: sasuke0007/replay-chess-websocket:latest
+    container_name: replay-chess-websocket
     build:
       context: .
       dockerfile: apps/web-socket/Dockerfile
@@ -67,8 +67,8 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - chess-battle-network
+      - replay-chess-network
 
 networks:
-  chess-battle-network:
+  replay-chess-network:
     driver: bridge

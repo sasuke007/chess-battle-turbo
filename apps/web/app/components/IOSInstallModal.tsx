@@ -92,7 +92,7 @@ export function IOSInstallModal({ isOpen, onClose }: IOSInstallModalProps) {
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="text-xl text-white mb-2"
             >
-              Install Chess Battle
+              Install ReplayChess
             </h2>
             <p
               style={{ fontFamily: "'Geist', sans-serif" }}
@@ -182,7 +182,7 @@ export function IOSInstallModal({ isOpen, onClose }: IOSInstallModalProps) {
                     style={{ fontFamily: "'Geist', sans-serif" }}
                     className="text-white/40 text-xs"
                   >
-                    Chess Battle will appear on your home screen
+                    ReplayChess will appear on your home screen
                   </p>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 {
-  "name": "Chess Battle - The Ultimate Chess Experience",
-  "short_name": "Chess Battle",
-  "description": "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+  "name": "ReplayChess - Master Chess Through Legendary Games",
+  "short_name": "ReplayChess",
+  "description": "Replay iconic chess positions from history's greatest games. Study grandmaster moves, challenge friends, and master the classics.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

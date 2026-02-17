@@ -234,7 +234,7 @@ const sections = [
       <>
         <p>If you have questions about this Privacy Policy or our data practices, contact us:</p>
         <div className="border border-white/10 p-4 mt-4 space-y-2">
-          <p className="text-white/50">Chess Battle Privacy Team</p>
+          <p className="text-white/50">ReplayChess Privacy Team</p>
           <p>
             Email:{" "}
             <a

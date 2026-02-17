@@ -2,7 +2,7 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "Admin",
-  description: "Chess Battle admin dashboard.",
+  description: "ReplayChess admin dashboard.",
   path: "/admin",
   noIndex: true,
 });

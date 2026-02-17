@@ -53,16 +53,16 @@ ssh -i your-key.pem ubuntu@<ELASTIC-IP>
 sudo mkdir -p /var/www/chess-websocket
 cd /var/www/chess-websocket
 sudo chown -R $USER:$USER /var/www
-git clone https://github.com/sasuke007/chess-battle-turbo.git
+git clone https://github.com/sasuke007/replay-chess.git
 
 # Run setup script (installs Node.js, pnpm, Nginx, Certbot, configures firewall and systemd)
-bash /var/www/chess-websocket/chess-battle-turbo/apps/web-socket/deploy/setup-server.sh
+bash /var/www/chess-websocket/replay-chess/apps/web-socket/deploy/setup-server.sh
 ```
 
 ### Step 5: Deploy Application
 
 ```bash
-cd /var/www/chess-websocket/chess-battle-turbo/apps/web-socket
+cd /var/www/chess-websocket/replay-chess/apps/web-socket
 
 # Install dependencies and build
 pnpm install

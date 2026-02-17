@@ -47,10 +47,10 @@ docker buildx build \
   --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL="$NEXT_PUBLIC_CLERK_SIGN_IN_URL" \
   --build-arg CLERK_SECRET_KEY="$CLERK_SECRET_KEY" \
   --build-arg NEXT_PUBLIC_WEBSOCKET_URL="$NEXT_PUBLIC_WEBSOCKET_URL" \
-  -t ${DOCKER_USERNAME}/chess-battle-web:latest \
+  -t ${DOCKER_USERNAME}/replay-chess-web:latest \
   -f apps/web/Dockerfile \
   --push \
   .
 
 echo -e "${GREEN}Build and push completed successfully!${NC}"
-echo -e "${GREEN}Image: ${DOCKER_USERNAME}/chess-battle-web:latest${NC}"
+echo -e "${GREEN}Image: ${DOCKER_USERNAME}/replay-chess-web:latest${NC}"

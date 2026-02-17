@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/seo";
 export const metadata = createMetadata({
   title: "Community",
   description:
-    "Join tournaments, rankings, and connect with chess players on Chess Battle.",
+    "Join tournaments, rankings, and connect with chess players on ReplayChess.",
   path: "/community",
 });
 

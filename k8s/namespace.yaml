@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: chess-battle
+  name: replay-chess
   labels:
-    name: chess-battle
+    name: replay-chess
 

@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/seo";
 export const metadata = createMetadata({
   title: "Pricing",
   description:
-    "Choose your Chess Battle plan — free to play with premium options for serious players and creators.",
+    "Choose your ReplayChess plan — free to play with premium options for serious players and creators.",
   path: "/pricing",
 });
 
@@ -16,7 +16,7 @@ const faqJsonLd = {
       name: "Do you offer refunds?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, we offer a 30-day money-back guarantee for all new subscriptions. If you're not satisfied with Chess Battle Turbo, you can request a full refund within the first 30 days of your subscription. Refunds are subject to a 5% processing fee and usage fees.",
+        text: "Yes, we offer a 30-day money-back guarantee for all new subscriptions. If you're not satisfied with ReplayChess, you can request a full refund within the first 30 days of your subscription. Refunds are subject to a 5% processing fee and usage fees.",
       },
     },
     {

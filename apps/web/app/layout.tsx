@@ -32,22 +32,22 @@ export const viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://playchess.tech'),
   title: {
-    default: "Chess Battle - The Ultimate Chess Experience",
-    template: "%s | Chess Battle",
+    default: "ReplayChess - Master Chess Through Legendary Games",
+    template: "%s | ReplayChess",
   },
-  description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+  description: "Replay iconic chess positions from history's greatest games. Study grandmaster moves, challenge friends, and master the classics.",
   openGraph: {
-    title: "Chess Battle - The Ultimate Chess Experience",
-    description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+    title: "ReplayChess - Master Chess Through Legendary Games",
+    description: "Replay iconic chess positions from history's greatest games. Study grandmaster moves, challenge friends, and master the classics.",
     url: "https://playchess.tech",
-    siteName: "Chess Battle",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 800, alt: "Chess Battle" }],
+    siteName: "ReplayChess",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 800, alt: "ReplayChess" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chess Battle - The Ultimate Chess Experience",
-    description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+    title: "ReplayChess - Master Chess Through Legendary Games",
+    description: "Replay iconic chess positions from history's greatest games. Study grandmaster moves, challenge friends, and master the classics.",
     images: ["/og-image.jpg"],
   },
   alternates: {
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Chess Battle",
+    title: "ReplayChess",
   },
   icons: {
     icon: "/icons/icon-384x384.png",

@@ -155,7 +155,7 @@ export default function OnboardingPage() {
                   style={{ fontFamily: "'Instrument Serif', serif" }}
                   className="text-3xl sm:text-4xl text-white mb-3"
                 >
-                  Welcome to Chess Battle
+                  Welcome to ReplayChess
                 </h1>
                 <p
                   style={{ fontFamily: "'Geist', sans-serif" }}

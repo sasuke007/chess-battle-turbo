@@ -26,7 +26,7 @@ const articles = [
     readTime: "5 min read",
   },
   {
-    title: "Chess Battle v2.4: New Analysis Engine",
+    title: "ReplayChess v2.4: New Analysis Engine",
     excerpt: "Our latest update brings a dramatically improved analysis engine with 3x faster evaluation and deeper search depth.",
     category: "Updates",
     date: "Jan 18, 2026",
@@ -117,13 +117,13 @@ export default function BlogPage() {
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="text-5xl sm:text-6xl md:text-7xl text-white mb-4"
             >
-              The Chess Battle Journal
+              The ReplayChess Journal
             </h1>
             <p
               style={{ fontFamily: "'Geist', sans-serif" }}
               className="text-lg text-white/40 max-w-xl mx-auto"
             >
-              Strategy, stories, and updates from the world of Chess Battle.
+              Strategy, stories, and updates from the world of ReplayChess.
             </p>
           </motion.div>
         </div>

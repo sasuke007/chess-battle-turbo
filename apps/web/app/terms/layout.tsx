@@ -2,7 +2,7 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "Terms of Service",
-  description: "Terms of service for the Chess Battle platform.",
+  description: "Terms of service for the ReplayChess platform.",
   path: "/terms",
 });
 

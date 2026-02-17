@@ -7,10 +7,10 @@ import { Footer } from "./components/Footer";
 const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "Chess Battle",
+  name: "ReplayChess",
   url: "https://playchess.tech",
   description:
-    "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
+    "Replay iconic chess positions from history's greatest games. Study grandmaster moves, challenge friends, and master the classics.",
   applicationCategory: "GameApplication",
   operatingSystem: "Any",
   offers: {
@@ -20,7 +20,7 @@ const webAppJsonLd = {
   },
   author: {
     "@type": "Organization",
-    name: "Chess Battle",
+    name: "ReplayChess",
     url: "https://playchess.tech",
   },
 };

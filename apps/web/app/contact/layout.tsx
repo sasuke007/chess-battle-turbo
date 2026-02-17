@@ -2,7 +2,7 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "Contact Us",
-  description: "Get in touch with the Chess Battle team for support, partnerships, or feedback.",
+  description: "Get in touch with the ReplayChess team for support, partnerships, or feedback.",
   path: "/contact",
 });
 

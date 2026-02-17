@@ -9,11 +9,11 @@ const sections = [
     content: (
       <>
         <p>
-          By accessing or using Chess Battle (&quot;the Platform&quot;), you agree to be bound by these Terms of Service
+          By accessing or using ReplayChess (&quot;the Platform&quot;), you agree to be bound by these Terms of Service
           (&quot;Terms&quot;). If you do not agree to all of these Terms, you may not access or use the Platform.
         </p>
         <p>
-          These Terms constitute a legally binding agreement between you and Chess Battle regarding your use of the
+          These Terms constitute a legally binding agreement between you and ReplayChess regarding your use of the
           Platform. We reserve the right to modify these Terms at any time, and such modifications shall be effective
           immediately upon posting.
         </p>
@@ -26,7 +26,7 @@ const sections = [
     content: (
       <>
         <p>
-          Chess Battle is an online chess platform that enables users to play chess games, relive legendary chess
+          ReplayChess is an online chess platform that enables users to play chess games, relive legendary chess
           positions, challenge friends, and analyze games using AI-powered tools. The Platform includes, but is not
           limited to:
         </p>
@@ -83,7 +83,7 @@ const sections = [
     content: (
       <>
         <p>
-          The Platform and its original content, features, and functionality are owned by Chess Battle and are protected
+          The Platform and its original content, features, and functionality are owned by ReplayChess and are protected
           by international copyright, trademark, patent, trade secret, and other intellectual property laws.
         </p>
         <p>
@@ -100,7 +100,7 @@ const sections = [
       <>
         <div className="border-l-2 border-white/20 pl-4 bg-white/[0.02] py-3">
           <p className="text-white/50">
-            Chess Battle is committed to maintaining a fair and competitive environment for all players. We employ
+            ReplayChess is committed to maintaining a fair and competitive environment for all players. We employ
             advanced statistical analysis and behavioral detection systems to identify cheating.
           </p>
         </div>
@@ -146,7 +146,7 @@ const sections = [
           Your use of such integrations is subject to the respective third-party terms of service.
         </p>
         <p>
-          Chess Battle is not responsible for the availability, accuracy, or content of third-party services. We do not
+          ReplayChess is not responsible for the availability, accuracy, or content of third-party services. We do not
           endorse and are not liable for any third-party services accessed through the Platform.
         </p>
       </>

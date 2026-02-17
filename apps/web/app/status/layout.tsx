@@ -2,7 +2,7 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "System Status",
-  description: "Real-time status of Chess Battle services and infrastructure.",
+  description: "Real-time status of ReplayChess services and infrastructure.",
   path: "/status",
 });
 

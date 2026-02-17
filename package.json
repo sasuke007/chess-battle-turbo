@@ -1,5 +1,5 @@
 {
-  "name": "chess-battle-turbo",
+  "name": "replay-chess",
   "private": true,
   "scripts": {
     "build": "turbo run build",

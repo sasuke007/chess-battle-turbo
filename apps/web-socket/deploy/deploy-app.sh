@@ -8,7 +8,7 @@
 set -e
 
 
-REPO_DIR="/var/www/chess-websocket/chess-battle-turbo"
+REPO_DIR="/var/www/chess-websocket/replay-chess"
 APP_DIR="$REPO_DIR/apps/web-socket"
 
 # Colors

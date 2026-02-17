@@ -2,7 +2,7 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title: "Matchmaking",
-  description: "Finding your next opponent on Chess Battle.",
+  description: "Finding your next opponent on ReplayChess.",
   path: "/queue",
   noIndex: true,
 });

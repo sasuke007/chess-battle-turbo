@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chess-battle-websocket
-  namespace: chess-battle
+  name: replay-chess-websocket
+  namespace: replay-chess
   labels:
-    app: chess-battle-websocket
+    app: replay-chess-websocket
     component: backend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: chess-battle-websocket
+      app: replay-chess-websocket
   template:
     metadata:
       labels:
-        app: chess-battle-websocket
+        app: replay-chess-websocket
         component: backend
     spec:
       containers:
       - name: websocket
-        image: sasuke0007/chess-battle-websocket:latest
+        image: sasuke0007/replay-chess-websocket:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3002
@@ -32,7 +32,7 @@ spec:
           value: "3002"
         # Web App URL for API calls (WebSocket does NOT connect to DB directly)
         - name: WEB_APP_URL
-          value: "http://chess-battle-web-service"
+          value: "http://replay-chess-web-service"
         resources:
           requests:
             memory: "256Mi"
@@ -61,10 +61,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: chess-battle-websocket-service
-  namespace: chess-battle
+  name: replay-chess-websocket-service
+  namespace: replay-chess
   labels:
-    app: chess-battle-websocket
+    app: replay-chess-websocket
 spec:
   type: ClusterIP
   ports:
@@ -73,7 +73,7 @@ spec:
     protocol: TCP
     name: websocket
   selector:
-    app: chess-battle-websocket
+    app: replay-chess-websocket
   # Enable session affinity for WebSocket connections
   sessionAffinity: ClientIP
   sessionAffinityConfig:
