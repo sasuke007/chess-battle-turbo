@@ -2,7 +2,21 @@ import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: '*', allow: '/' },
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: [
+        '/api/',
+        '/admin/',
+        '/queue',
+        '/onboarding',
+        '/sign-in',
+        '/sentry-example-page',
+        '/game/',
+        '/analysis/',
+        '/join/',
+      ],
+    },
     sitemap: 'https://playchess.tech/sitemap.xml',
   }
 }

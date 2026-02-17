@@ -31,18 +31,21 @@ export const viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://playchess.tech'),
-  title: "Chess Battle - The Ultimate Chess Experience",
+  title: {
+    default: "Chess Battle - The Ultimate Chess Experience",
+    template: "%s | Chess Battle",
+  },
   description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
   openGraph: {
     title: "Chess Battle - The Ultimate Chess Experience",
     description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
     url: "https://playchess.tech",
     siteName: "Chess Battle",
-    images: [{ url: "/chess_logo_share.png", width: 2048, height: 2048, alt: "Chess Battle" }],
+    images: [{ url: "/chess_logo_share.png", width: 1200, height: 630, alt: "Chess Battle" }],
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Chess Battle - The Ultimate Chess Experience",
     description: "Challenge friends to epic battles from legendary positions. Master the game. Claim victory.",
     images: ["/chess_logo_share.png"],
