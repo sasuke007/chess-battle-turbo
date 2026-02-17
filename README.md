@@ -1,135 +1,320 @@
-# Turborepo starter
+<div align="center">
+  <img src="apps/web/public/chess-logo-bnw.png" alt="ReplayChess Logo" width="120" />
 
-This Turborepo starter is maintained by the Turborepo core team.
+  # ReplayChess
 
-## Using this example
+  **Master Chess Through Legendary Games**
 
-Run the following command:
+  Replay iconic positions from the greatest chess games ever played. Inspired by Agadmator's "pause the video, find the best move" format — but interactive, competitive, and real-time.
 
-```sh
-npx create-turbo@latest
-```
+  [![Live Site](https://img.shields.io/badge/Live-playchess.tech-blue?style=for-the-badge)](https://playchess.tech)
 
-## What's inside?
+  ![Next.js](https://img.shields.io/badge/Next.js_15-black?style=flat-square&logo=next.js)
+  ![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black)
+  ![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?style=flat-square&logo=socket.io)
+  ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma)
+  ![Tailwind](https://img.shields.io/badge/Tailwind_v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+  ![Clerk](https://img.shields.io/badge/Clerk-6C47FF?style=flat-square&logo=clerk&logoColor=white)
+  ![Stockfish](https://img.shields.io/badge/Stockfish-589636?style=flat-square)
 
-This Turborepo includes the following packages/apps:
+  <img src="apps/web/public/og-image.jpg" alt="ReplayChess Preview" width="700" />
+</div>
 
-### Apps and Packages
+---
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## What is ReplayChess?
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+Chess history has always been passive — videos, books, databases. You watch a legendary game, but you never *play* it.
 
-### Utilities
+ReplayChess changes that. Pick a famous game from chess history, start from the critical position, and try to find the same moves the legend played. Then see how your moves compare in post-game analysis.
 
-This Turborepo has some additional tools already setup for you:
+- Play as **Bobby Fischer** in his immortal Game of the Century
+- Replay **Kasparov vs. Deep Blue** from the decisive position
+- Challenge friends to see who plays more like **Tal** under pressure
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+It's chess meets interactive history, with real-time multiplayer, ELO matchmaking, and browser-side Stockfish analysis.
 
-### Build
+---
 
-To build all apps and packages, run the following command:
+## Features
 
-```
-cd my-turborepo
+### Core Gameplay
+- **Play as a Legend** — Start from famous historical positions and try to match the legend's moves
+- **Play from Openings** — ECO-coded openings encyclopedia; play from any opening position
+- **Real-time Multiplayer** — Socket.IO matchmaking with ELO-based pairing and time controls
+- **Challenge Friends** — Private invite links for head-to-head games
+- **Play the Machine** — Browser-side Stockfish with four difficulty levels (easy, medium, hard, expert)
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+### Analysis & Learning
+- **Post-game Analysis** — Compare your moves vs the legend's, match rate percentage, move-by-move navigation
+- **Practice Mode** — Replay from any position against Stockfish after analysis
+- **Divergence Detection** — See exactly where your moves diverged from the legend's line
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+### Content
+- **Chess Legends Database** — Grouped by era, playing style, achievements, and famous games
+- **Openings Encyclopedia** — ECO-coded (A–E groups), play from any opening position
+- **Chess.com Integration** — Import your ratings and stats
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Platform
+- **PWA** — Installable on mobile and desktop with offline support
+- **Sound Design** — Distinct audio cues for moves, captures, checks, castling, game end, and time warnings
+- **Sentry Tracing** — Distributed tracing across web and websocket for full game lifecycle visibility
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+---
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+## Tech Stack
 
-### Develop
+| Technology | Version | Role |
+|---|---|---|
+| **Next.js** | 15.5 | App Router, SSR, API routes |
+| **React** | 19.1 | UI with React Compiler (auto-memoization) |
+| **Tailwind CSS** | 4.x | Styling |
+| **Motion** | 12.x | Animations (framer-motion) |
+| **Socket.IO** | 4.8 | Real-time multiplayer |
+| **chess.js** | 1.4 | Board logic and move validation |
+| **Stockfish.js** | 10.0 | Browser-side AI engine |
+| **PostgreSQL + Prisma** | 6.17 | Database and ORM |
+| **Clerk** | 6.33 | Authentication |
+| **Sentry** | 10.38 | Error tracking and distributed tracing |
+| **Zustand** | 5.0 | Client state management |
+| **Zod** | 4.1 | Schema validation |
+| **Docker** | — | Containerized deployment |
 
-To develop all apps and packages, run the following command:
+---
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+## Architecture
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+┌──────────────────────────────────────────────────────────────┐
+│                        Client (Browser)                       │
+│  Next.js App (React 19 + Compiler) ──── Stockfish.js (WASM)  │
+└───────────────┬──────────────────────────────┬───────────────┘
+                │ HTTP/SSR                     │ WebSocket
+                ▼                              ▼
+┌───────────────────────┐      ┌───────────────────────────────┐
+│    apps/web            │ ◄──►│     apps/web-socket            │
+│    Next.js 15          │ HTTP│     Express + Socket.IO        │
+│    API Routes          │     │     GameManager                │
+│    Prisma ORM          │     │     GameSession (per game)     │
+│    Clerk Auth          │     │     ClockManager (per game)    │
+└───────────┬────────────┘     └───────────────────────────────┘
+            │
+            ▼
+┌───────────────────────┐
+│     PostgreSQL         │
+│     (Neon / local)     │
+└────────────────────────┘
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+**Key design decisions:**
+- The WebSocket server is **database-free** — all DB operations go through HTTP calls to the web app
+- Matchmaking uses `FOR UPDATE SKIP LOCKED` for lock-free, concurrent queue processing
+- React Compiler handles all memoization — no manual `React.memo`, `useMemo`, or `useCallback`
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### Socket Event Flow
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+Client                    Server
+  │                         │
+  ├── join_game ──────────► │
+  │                         ├── waiting_for_opponent
+  │                         ├── analysis_phase_started
+  │                         ├── analysis_tick (countdown)
+  │                         ├── game_started
+  │                         │
+  ├── make_move ──────────► │
+  │                         ├── move_made
+  │                         ├── clock_update
+  │                         │
+  ├── resign / offer_draw ► │
+  │                         ├── game_over
+  │                         │
 ```
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## Getting Started
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+### Prerequisites
+
+- **Node.js** >= 22
+- **pnpm** >= 9
+- **PostgreSQL** (local or hosted, e.g. Neon)
+
+### Setup
+
+```bash
+# Clone
+git clone https://github.com/your-username/chess-battle-turbo.git
+cd chess-battle-turbo
+
+# Install dependencies
+pnpm install
+
+# Set up environment variables (see Environment Variables section below)
+cp apps/web-socket/.env.example apps/web-socket/.env
+# Create apps/web/.env.local with required variables
+
+# Generate Prisma client and run migrations
+pnpm --filter web prisma:generate
+pnpm --filter web prisma:migrate:deploy
+
+# Seed the database
+pnpm --filter web prisma:seed
+pnpm --filter web prisma:seed:openings
+
+# Start development servers
+pnpm dev
+```
+
+This starts:
+- **Web app** on `http://localhost:3000`
+- **WebSocket server** on `http://localhost:3002`
+
+### Docker Alternative
+
+```bash
+docker-compose up
+```
+
+Runs both services with internal networking. The WebSocket server communicates with the web app via Docker's internal network.
+
+---
+
+## Project Structure
+
+```
+chess-battle-turbo/
+├── apps/
+│   ├── web/                          # Next.js 15 application
+│   │   ├── app/
+│   │   │   ├── page.tsx              # Landing page
+│   │   │   ├── play/                 # Game creation (modes, legends, openings)
+│   │   │   ├── queue/                # Matchmaking queue
+│   │   │   ├── game/[gameId]/        # Live game + sub-components
+│   │   │   ├── analysis/[gameId]/    # Post-game analysis
+│   │   │   ├── legends/              # Legends database
+│   │   │   ├── openings/             # Openings encyclopedia
+│   │   │   ├── join/[gameReferenceId]/ # Private game invite
+│   │   │   └── api/                  # API routes
+│   │   │       ├── chess/            # Game CRUD, moves, AI games
+│   │   │       ├── matchmaking/      # Queue management
+│   │   │       ├── analysis/         # Post-game analysis data
+│   │   │       ├── legends/          # Legends CRUD + search
+│   │   │       ├── openings/         # Openings data
+│   │   │       ├── chess-positions/  # Historical positions
+│   │   │       ├── user/             # User sync, profiles, Chess.com
+│   │   │       └── scraper/          # Position import (API key auth)
+│   │   ├── components/               # Shared UI components
+│   │   ├── lib/
+│   │   │   ├── hooks/                # Custom hooks
+│   │   │   ├── stores/               # Zustand stores
+│   │   │   ├── types/                # TypeScript types
+│   │   │   └── prisma.ts             # Prisma singleton
+│   │   └── prisma/
+│   │       └── schema.prisma         # Database schema
+│   │
+│   └── web-socket/                   # Socket.IO game server
+│       ├── index.ts                  # Express + Socket.IO setup
+│       ├── GameManager.ts            # Orchestrates all games
+│       ├── GameSession.ts            # Individual game state
+│       ├── ClockManager.ts           # Per-game timer management
+│       └── types.ts                  # Socket event payloads
+│
+├── packages/
+│   ├── eslint-config/                # Shared ESLint configs
+│   ├── typescript-config/            # Shared tsconfig
+│   └── ui/                           # Shared component library
+│
+├── docker-compose.yml
+├── turbo.json
+└── pnpm-workspace.yaml
+```
+
+---
+
+## Environment Variables
+
+### `apps/web/.env.local`
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+| `CLERK_SECRET_KEY` | Clerk secret key |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in redirect path (e.g. `/sign-in`) |
+| `NEXT_PUBLIC_WEBSOCKET_URL` | WebSocket server URL (e.g. `ws://localhost:3002`) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN for error tracking |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token (build-time, for source maps) |
+| `SCRAPER_API_KEY` | API key for `/api/scraper/*` routes |
+
+### `apps/web-socket/.env`
+
+| Variable | Description |
+|---|---|
+| `PORT` | Server port (default: `3002`) |
+| `NODE_ENV` | Environment (`development` / `production`) |
+| `WEB_APP_URL` | Web app URL for HTTP API calls (e.g. `http://localhost:3000`) |
+
+---
+
+## Database Schema
+
+Key models in the Prisma schema:
+
+| Model | Purpose |
+|---|---|
+| `User` | Player accounts (synced from Clerk) |
+| `Game` | Game records with FEN, moves, results |
+| `Legend` | Chess legends (era, style, achievements, famous games) |
+| `Opening` | ECO-coded chess openings |
+| `ChessPosition` | Historical positions from legendary games |
+| `MatchmakingQueue` | Real-time matchmaking queue |
+| `UserStats` | Player statistics and ELO rating |
+| `ChessComProfile` | Imported Chess.com ratings |
+| `Wallet` | Player wallet balance |
+| `Transaction` | Wallet transaction history |
+
+Enums: `GameStatus`, `GameResult`, `MatchmakingStatus`, `TransactionType`, `TransactionStatus`
+
+---
+
+## Deployment
+
+| Component | Platform | Trigger |
+|---|---|---|
+| **Web** | Vercel | Auto-deploy from `main` |
+| **WebSocket** | AWS EC2 | GitHub Actions on `apps/web-socket/**` changes |
+| **Database** | Neon PostgreSQL | Managed |
+
+Docker images are available for self-hosting:
+- `sasuke0007/replay-chess-web`
+- `sasuke0007/replay-chess-websocket`
+
+---
+
+## Scripts Reference
+
+```bash
+pnpm dev                              # Run all apps in development
+pnpm --filter web dev                 # Web app only (port 3000)
+pnpm --filter web-socket dev          # WebSocket server only (port 3002)
+pnpm --filter web build               # Production build (runs prisma generate)
+pnpm --filter web check-types         # TypeScript type checking
+pnpm --filter web lint                # ESLint (zero warnings)
+pnpm format                           # Prettier across repo
+pnpm --filter web prisma:generate     # Generate Prisma client
+pnpm --filter web prisma:migrate:deploy  # Run migrations
+pnpm --filter web prisma:seed         # Seed database
+pnpm --filter web prisma:seed:openings   # Seed openings data
+```
+
+---
+
+<div align="center">
+
+**[playchess.tech](https://playchess.tech)**
+
+Built by [Rohit Pandit](https://github.com/sasuke0007)
+
+</div>
