@@ -92,48 +92,54 @@ function determineDifficulty(rating: number | null | undefined): Difficulty {
 }
 
 async function getOrCreateBotUser() {
-  // Try to find existing bot user
+  // Find by code (stable identifier) — email may have changed across deploys
   let botUser = await prisma.user.findUnique({
-    where: { email: BOT_USER_EMAIL },
+    where: { code: BOT_USER_CODE },
   });
 
-  if (!botUser) {
-    // Create bot user if it doesn't exist
-    botUser = await prisma.user.create({
-      data: {
-        code: BOT_USER_CODE,
-        googleId: "bot_system_user",
-        email: BOT_USER_EMAIL,
-        name: "Chess Bot",
-        profilePictureUrl: null,
-        isActive: true,
-        onboarded: true,
-        // Create wallet and stats for bot
-        wallet: {
-          create: {
-            balance: 0,
-            lockedAmount: 0,
-          },
-        },
-        stats: {
-          create: {
-            totalGamesPlayed: 0,
-            gamesWon: 0,
-            gamesLost: 0,
-            gamesDrawn: 0,
-            totalMoneyWon: 0,
-            totalMoneyLost: 0,
-            totalPlatformFeesPaid: 0,
-            netProfit: 0,
-            currentWinStreak: 0,
-            longestWinStreak: 0,
-          },
-        },
-      },
-    });
-    logger.debug(`Created bot user: ${botUser.referenceId}`);
+  if (botUser) {
+    // Update email if it changed
+    if (botUser.email !== BOT_USER_EMAIL) {
+      botUser = await prisma.user.update({
+        where: { code: BOT_USER_CODE },
+        data: { email: BOT_USER_EMAIL },
+      });
+    }
+    return botUser;
   }
 
+  botUser = await prisma.user.create({
+    data: {
+      code: BOT_USER_CODE,
+      googleId: "bot_system_user",
+      email: BOT_USER_EMAIL,
+      name: "Chess Bot",
+      profilePictureUrl: null,
+      isActive: true,
+      onboarded: true,
+      wallet: {
+        create: {
+          balance: 0,
+          lockedAmount: 0,
+        },
+      },
+      stats: {
+        create: {
+          totalGamesPlayed: 0,
+          gamesWon: 0,
+          gamesLost: 0,
+          gamesDrawn: 0,
+          totalMoneyWon: 0,
+          totalMoneyLost: 0,
+          totalPlatformFeesPaid: 0,
+          netProfit: 0,
+          currentWinStreak: 0,
+          longestWinStreak: 0,
+        },
+      },
+    },
+  });
+  logger.debug(`Created bot user: ${botUser.referenceId}`);
   return botUser;
 }
 
