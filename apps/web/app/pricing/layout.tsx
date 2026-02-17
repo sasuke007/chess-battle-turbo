@@ -40,7 +40,7 @@ const faqJsonLd = {
       name: "What payment methods do you accept?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "We accept all major credit cards (Visa, MasterCard, American Express, Discover) via Stripe. For yearly subscriptions for teams or clubs, we also offer wire transfer options.",
+        text: "We accept all major credit cards (Visa, MasterCard, American Express, Discover). For yearly subscriptions for teams or clubs, we also offer wire transfer options.",
       },
     },
   ],
@@ -53,8 +53,7 @@ const softwareAppJsonLd = {
   applicationCategory: "GameApplication",
   operatingSystem: "Web",
   offers: [
-    { "@type": "Offer", name: "Basic", price: "8", priceCurrency: "USD", availability: "https://schema.org/InStock" },
-    { "@type": "Offer", name: "Creator", price: "25", priceCurrency: "USD", availability: "https://schema.org/InStock" },
+    { "@type": "Offer", name: "Player", price: "8", priceCurrency: "USD", availability: "https://schema.org/InStock" },
   ],
 };
 

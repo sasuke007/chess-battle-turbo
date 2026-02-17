@@ -2,10 +2,11 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 // Scraper routes use API key authentication instead of Clerk
 const isScraperRoute = createRouteMatcher(['/api/scraper(.*)'])
+// Dodo webhooks use HMAC signature verification, not Clerk
+const isDodoWebhookRoute = createRouteMatcher(['/api/webhook/dodo-payments(.*)'])
 
 export default clerkMiddleware(async (auth, req) => {
-  // Skip Clerk auth for scraper routes (they use X-API-Key header)
-  if (isScraperRoute(req)) {
+  if (isScraperRoute(req) || isDodoWebhookRoute(req)) {
     return
   }
 })

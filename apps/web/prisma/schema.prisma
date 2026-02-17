@@ -22,6 +22,7 @@ model User {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   onboarded         Boolean          @default(false)
+  dodoCustomerId    String?          @unique
   chessComProfile      ChessComProfile?
   gamesAsCreator       Game[]             @relation("CreatorGames")
   gamesAsOpponent      Game[]             @relation("OpponentGames")
@@ -35,6 +36,7 @@ model User {
   @@index([email])
   @@index([code])
   @@index([referenceId])
+  @@index([dodoCustomerId])
   @@map("users")
 }
 
