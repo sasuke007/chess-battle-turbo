@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 const footerLinks = {
   product: [
     { name: "Play", href: "/play" },
+    { name: "Legends", href: "/legends" },
+    { name: "Openings", href: "/openings" },
     { name: "Pricing", href: "/pricing" },
   ],
   company: [

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Instrument_Serif } from "next/font/google";
+import { safeJsonLd } from "@/lib/seo";
 
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -692,6 +693,21 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
         <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href="https://img.clerk.com" />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: safeJsonLd({
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "ReplayChess",
+                url: "https://playchess.tech",
+                logo: "https://playchess.tech/chess-logo-bnw.png",
+              }),
+            }}
+          />
           {process.env.NODE_ENV === "development" && (
             <>
               <script

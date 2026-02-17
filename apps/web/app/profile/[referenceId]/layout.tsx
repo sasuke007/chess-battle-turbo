@@ -1,16 +1,23 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { safeJsonLd } from "@/lib/seo";
 
 interface Props {
   params: Promise<{ referenceId: string }>;
+  children: React.ReactNode;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { referenceId } = await params;
-  const user = await prisma.user.findUnique({
+const getUser = cache(async (referenceId: string) => {
+  return prisma.user.findUnique({
     where: { referenceId },
     select: { name: true, code: true, profilePictureUrl: true },
   });
+});
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { referenceId } = await params;
+  const user = await getUser(referenceId);
 
   if (!user) {
     return { title: "Player Not Found", robots: { index: false, follow: false } };
@@ -42,6 +49,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ProfileLayout({ children }: { children: React.ReactNode }) {
-  return children;
+async function ProfileJsonLd({ params }: { params: Promise<{ referenceId: string }> }) {
+  const { referenceId } = await params;
+  const user = await getUser(referenceId);
+
+  if (!user) return null;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: user.name,
+    url: `https://playchess.tech/profile/${referenceId}`,
+    ...(user.profilePictureUrl && { image: user.profilePictureUrl }),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
+    />
+  );
+}
+
+export default async function ProfileLayout({ params, children }: Props) {
+  return (
+    <>
+      <ProfileJsonLd params={params} />
+      {children}
+    </>
+  );
 }

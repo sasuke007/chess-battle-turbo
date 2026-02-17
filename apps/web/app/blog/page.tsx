@@ -4,63 +4,14 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
+import { blogPosts, featuredPost } from "@/lib/blog-data";
 
 const categories = ["All", "Strategy", "Updates", "Legends", "Community"];
 
-const featuredPost = {
-  title: "The Immortal Game: How Anderssen Changed Chess Forever",
-  excerpt: "In 1851, Adolf Anderssen played what many consider the most beautiful chess game ever recorded. We explore how this masterpiece shaped modern attacking chess.",
-  category: "Legends",
-  date: "Jan 28, 2026",
-  readTime: "8 min read",
-};
-
-const articles = [
-  {
-    title: "5 Opening Principles Every Player Should Know",
-    excerpt: "Control the center, develop your pieces, and castle early — but there's more nuance than you think.",
-    category: "Strategy",
-    date: "Jan 22, 2026",
-    readTime: "5 min read",
-  },
-  {
-    title: "ReplayChess v2.4: New Analysis Engine",
-    excerpt: "Our latest update brings a dramatically improved analysis engine with 3x faster evaluation and deeper search depth.",
-    category: "Updates",
-    date: "Jan 18, 2026",
-    readTime: "3 min read",
-  },
-  {
-    title: "Bobby Fischer's Endgame Mastery",
-    excerpt: "A deep dive into Fischer's legendary endgame technique and how you can apply his principles to your own games.",
-    category: "Legends",
-    date: "Jan 12, 2026",
-    readTime: "7 min read",
-  },
-  {
-    title: "Community Tournament Recap: Winter Open 2026",
-    excerpt: "Over 200 players competed in our biggest tournament yet. Here are the highlights, upsets, and brilliant games.",
-    category: "Community",
-    date: "Jan 8, 2026",
-    readTime: "4 min read",
-  },
-  {
-    title: "Understanding Pawn Structures",
-    excerpt: "The pawn skeleton defines the character of the position. Learn to read and manipulate pawn structures like a grandmaster.",
-    category: "Strategy",
-    date: "Jan 3, 2026",
-    readTime: "6 min read",
-  },
-  {
-    title: "New Feature: Voice-Guided Analysis",
-    excerpt: "Our AI coach can now walk you through your games with voice narration, explaining key moments and missed opportunities.",
-    category: "Updates",
-    date: "Dec 28, 2025",
-    readTime: "3 min read",
-  },
-];
+const articles = blogPosts.filter((p) => !p.featured);
 
 const gradients = [
   "from-white/[0.08] to-white/[0.02]",
@@ -156,61 +107,63 @@ export default function BlogPage() {
       {showFeatured && (
         <section className="relative py-12 sm:py-16 px-6">
           <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="group relative border border-white/10 overflow-hidden hover:border-white/20 transition-colors cursor-pointer"
-            >
-              <div className="aspect-[21/9] bg-gradient-to-br from-white/[0.06] via-transparent to-white/[0.03] relative">
-                {/* Decorative chess notation */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span
-                    style={{ fontFamily: "'Instrument Serif', serif" }}
-                    className="text-[120px] sm:text-[200px] text-white/[0.03] select-none"
-                  >
-                    1.e4 e5
-                  </span>
-                </div>
-
-                {/* Content overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 bg-gradient-to-t from-black via-black/80 to-transparent">
-                  <span
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="inline-block text-[10px] px-2 py-0.5 border border-white/20 text-white/60 uppercase tracking-wider mb-3"
-                  >
-                    {featuredPost.category}
-                  </span>
-                  <h2
-                    style={{ fontFamily: "'Instrument Serif', serif" }}
-                    className="text-2xl sm:text-4xl text-white mb-3 group-hover:text-white/80 transition-colors"
-                  >
-                    {featuredPost.title}
-                  </h2>
-                  <p
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-sm text-white/40 max-w-2xl mb-4 hidden sm:block"
-                  >
-                    {featuredPost.excerpt}
-                  </p>
-                  <div className="flex items-center gap-4">
+            <Link href={`/blog/${featuredPost.slug}`}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="group relative border border-white/10 overflow-hidden hover:border-white/20 transition-colors cursor-pointer"
+              >
+                <div className="aspect-[21/9] bg-gradient-to-br from-white/[0.06] via-transparent to-white/[0.03] relative">
+                  {/* Decorative chess notation */}
+                  <div className="absolute inset-0 flex items-center justify-center">
                     <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-xs text-white/30"
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-[120px] sm:text-[200px] text-white/[0.03] select-none"
                     >
-                      {featuredPost.date}
-                    </span>
-                    <span className="text-white/10">|</span>
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-xs text-white/30"
-                    >
-                      {featuredPost.readTime}
+                      1.e4 e5
                     </span>
                   </div>
+
+                  {/* Content overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 bg-gradient-to-t from-black via-black/80 to-transparent">
+                    <span
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="inline-block text-[10px] px-2 py-0.5 border border-white/20 text-white/60 uppercase tracking-wider mb-3"
+                    >
+                      {featuredPost.category}
+                    </span>
+                    <h2
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-2xl sm:text-4xl text-white mb-3 group-hover:text-white/80 transition-colors"
+                    >
+                      {featuredPost.title}
+                    </h2>
+                    <p
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-sm text-white/40 max-w-2xl mb-4 hidden sm:block"
+                    >
+                      {featuredPost.excerpt}
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-xs text-white/30"
+                      >
+                        {featuredPost.date}
+                      </span>
+                      <span className="text-white/10">|</span>
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-xs text-white/30"
+                      >
+                        {featuredPost.readTime}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           </div>
         </section>
       )}
@@ -220,71 +173,72 @@ export default function BlogPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
             {filteredArticles.map((article, index) => (
-              <motion.article
-                key={article.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.08 }}
-                className={cn(
-                  "group relative bg-black p-0 cursor-pointer",
-                  "hover:bg-white transition-colors duration-500"
-                )}
-              >
-                {/* Gradient placeholder */}
-                <div
+              <Link key={article.slug} href={`/blog/${article.slug}`}>
+                <motion.article
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.08 }}
                   className={cn(
-                    "aspect-[16/9] bg-gradient-to-br",
-                    gradients[index % gradients.length],
-                    "group-hover:opacity-80 transition-opacity duration-500"
+                    "group relative bg-black p-0 cursor-pointer",
+                    "hover:bg-white transition-colors duration-500"
                   )}
-                />
+                >
+                  {/* Gradient placeholder */}
+                  <div
+                    className={cn(
+                      "aspect-[16/9] bg-gradient-to-br",
+                      gradients[index % gradients.length],
+                      "group-hover:opacity-80 transition-opacity duration-500"
+                    )}
+                  />
 
-                <div className="p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-[10px] px-2 py-0.5 border border-white/10 group-hover:border-black/10 text-white/40 group-hover:text-black/40 uppercase tracking-wider transition-colors duration-500"
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-[10px] px-2 py-0.5 border border-white/10 group-hover:border-black/10 text-white/40 group-hover:text-black/40 uppercase tracking-wider transition-colors duration-500"
+                      >
+                        {article.category}
+                      </span>
+                      <span
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                        className="text-[10px] text-white/20 group-hover:text-black/20 transition-colors duration-500"
+                      >
+                        {article.readTime}
+                      </span>
+                    </div>
+
+                    <h3
+                      style={{ fontFamily: "'Instrument Serif', serif" }}
+                      className="text-xl text-white group-hover:text-black transition-colors duration-500 mb-2"
                     >
-                      {article.category}
-                    </span>
-                    <span
+                      {article.title}
+                    </h3>
+
+                    <p
                       style={{ fontFamily: "'Geist', sans-serif" }}
-                      className="text-[10px] text-white/20 group-hover:text-black/20 transition-colors duration-500"
+                      className="text-sm text-white/35 group-hover:text-black/50 transition-colors duration-500 leading-relaxed mb-4"
                     >
-                      {article.readTime}
-                    </span>
+                      {article.excerpt}
+                    </p>
+
+                    <p
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-xs text-white/20 group-hover:text-black/30 transition-colors duration-500"
+                    >
+                      {article.date}
+                    </p>
                   </div>
 
-                  <h3
-                    style={{ fontFamily: "'Instrument Serif', serif" }}
-                    className="text-xl text-white group-hover:text-black transition-colors duration-500 mb-2"
-                  >
-                    {article.title}
-                  </h3>
-
-                  <p
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-sm text-white/35 group-hover:text-black/50 transition-colors duration-500 leading-relaxed mb-4"
-                  >
-                    {article.excerpt}
-                  </p>
-
-                  <p
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                    className="text-xs text-white/20 group-hover:text-black/30 transition-colors duration-500"
-                  >
-                    {article.date}
-                  </p>
-                </div>
-
-                <div className={cn(
-                  "absolute top-4 right-4 w-8 h-8",
-                  "border-t border-r",
-                  "border-white/10 group-hover:border-black/10",
-                  "transition-colors duration-500"
-                )} />
-              </motion.article>
+                  <div className={cn(
+                    "absolute top-4 right-4 w-8 h-8",
+                    "border-t border-r",
+                    "border-white/10 group-hover:border-black/10",
+                    "transition-colors duration-500"
+                  )} />
+                </motion.article>
+              </Link>
             ))}
           </div>
         </div>
