@@ -932,6 +932,8 @@ export class GameSession {
     }
 
     this.gameEnded = true;
+    this.clearAnalysisTimers();
+    this.isAnalysisPhase = false;
     this.clockManager.stopClock();
 
     // Track game duration

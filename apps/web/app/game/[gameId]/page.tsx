@@ -446,6 +446,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     socketRef.current.on("game_over", (payload: GameOverPayload) => {
       setGameOver(true);
+      setIsAnalysisPhase(false);
       const resultText = payload.result === "DRAW"
         ? "Draw"
         : payload.winner === myColorRef.current
