@@ -913,7 +913,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               )}
 
               {/* Board - minimal margins on mobile, tighter on desktop */}
-              <div className="mx-0 my-1 lg:my-2">
+              <div className="mx-0 my-2 lg:my-2">
                 <ChessBoard
                   board={displayPosition.board()}
                   selectedSquare={isViewingHistory ? null : selectedSquare}
@@ -935,7 +935,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
 
               {/* Move Navigation - mobile only, desktop version is in right sidebar */}
-              <div className="flex items-center justify-center mt-2 px-2 lg:hidden">
+              <div className="flex items-center justify-center mt-3 px-2 lg:hidden">
                 <MoveNavigation
                   totalMoves={moveHistory.length}
                   viewingMoveIndex={viewingMoveIndex}
@@ -962,7 +962,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="lg:hidden flex items-center justify-center gap-2 mt-2 px-2"
+                  className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2"
                 >
                   {positionInfo && (
                     <button

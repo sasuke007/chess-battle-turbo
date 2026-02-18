@@ -79,7 +79,7 @@ export function PlayerInfoCard({
   return (
     <div className={cn(
       "flex items-center justify-between px-2",
-      isOpponent ? "mb-2 lg:mb-5" : "mt-2 lg:mt-5"
+      isOpponent ? "mb-3 lg:mb-5" : "mt-3 lg:mt-5"
     )}>
       <div className="flex items-center gap-3">
         <div className={cn("w-8 h-8 flex items-center justify-center", squareBg)}>

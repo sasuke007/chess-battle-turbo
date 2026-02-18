@@ -235,11 +235,11 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-8 md:px-12 lg:px-4 pb-12 md:pb-20 lg:pb-12 pt-20 md:pt-24 lg:pt-20 flex flex-col">
+      <div className="relative max-w-7xl mx-auto px-8 md:px-12 lg:px-4 pb-6 md:pb-12 lg:pb-8 pt-20 md:pt-24 lg:pt-20 min-h-[100dvh] flex flex-col justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8 min-h-0"
+          className="flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8 min-h-0"
         >
           {/* Left - Move List (hidden on mobile) */}
           <div className="lg:col-span-3 order-2 lg:order-1 hidden lg:flex lg:flex-col">
@@ -302,7 +302,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           </div>
 
           {/* Center - Chess Board */}
-          <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-between lg:justify-start lg:block">
+          <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col lg:block">
             {/* Compact Header */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -427,7 +427,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {(hasLegendMoves || isOpeningGame) && (
-              <div className="flex items-center justify-center gap-2 md:gap-3 mb-10 md:mb-14 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-2 md:gap-3 mb-5 md:mb-6 px-2 lg:hidden">
                 {hasLegendMoves && (
                   <button
                     onClick={() => setActiveTab("legend-moves")}
@@ -514,7 +514,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             />
 
             {/* Navigation Controls */}
-            <div className="flex flex-row items-center gap-2 md:gap-3 mt-10 md:mt-14 lg:mt-6 px-2 lg:px-0 justify-center">
+            <div className="flex flex-row items-center gap-2 md:gap-3 mt-4 md:mt-6 lg:mt-6 px-2 lg:px-0 justify-center">
               {/* Analysis Navigation Buttons — hidden during practice */}
               {activeTab !== "practice" && (
                 <div className="flex items-center gap-1 md:gap-2 lg:gap-1">

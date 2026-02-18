@@ -15,7 +15,7 @@ export function GameActionButtons({
 }: GameActionButtonsProps) {
   if (variant === "mobile") {
     return (
-      <div className="lg:hidden flex items-center justify-center gap-2 mt-2 px-2">
+      <div className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2">
         <button
           onClick={onOfferDraw}
           disabled={drawOffered}
