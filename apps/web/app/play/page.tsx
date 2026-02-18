@@ -8,6 +8,7 @@ import { trackApiResponseTime } from "@/lib/metrics";
 import ChessBoard from "../components/ChessBoard";
 import TimeControlSelector, { TimeControlValue } from "../components/TimeControlSelector";
 import SearchableDropdown from "../components/SearchableDropdown";
+import { toast } from "sonner";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
@@ -193,7 +194,7 @@ function PlayContent() {
         router.push(`/game/${data.data.game.referenceId}`);
       } catch (error) {
         logger.error("Error creating AI game", error);
-        alert(error instanceof Error ? error.message : "Failed to create AI game");
+        toast.error(error instanceof Error ? error.message : "Failed to create AI game");
         setIsCreatingGame(false);
       }
     }
@@ -225,7 +226,7 @@ function PlayContent() {
         }
 
         const gameRef = data.data.game.referenceId;
-        await navigator.clipboard.writeText(`${window.location.origin}/join/${gameRef}`);
+        navigator.clipboard.writeText(`${window.location.origin}/join/${gameRef}`).catch(() => {});
         router.push(`/game/${gameRef}`);
       } catch (error) {
         logger.error("Error creating game", error);
@@ -320,6 +321,7 @@ function PlayContent() {
                 return (
                   <motion.button
                     key={mode.id}
+                    data-testid={`mode-${mode.id}`}
                     initial={{ opacity: 0, y: -40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + index * 0.1, duration: 0.4 }}
@@ -586,6 +588,7 @@ function PlayContent() {
 
             {/* Start Button */}
             <motion.button
+              data-testid="start-game-button"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}

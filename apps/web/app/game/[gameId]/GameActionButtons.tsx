@@ -30,6 +30,7 @@ export function GameActionButtons({
           {drawOffered ? "Offered" : "Draw"}
         </button>
         <button
+          data-testid="resign-button"
           onClick={onResign}
           className="h-10 px-5 text-sm border border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 transition-colors"
           style={{ fontFamily: "'Geist', sans-serif" }}
@@ -62,6 +63,7 @@ export function GameActionButtons({
         {drawOffered ? "Draw Offered" : "Offer Draw"}
       </button>
       <button
+        data-testid="resign-button"
         onClick={onResign}
         className="w-full py-2 border border-red-500/30 text-red-400/60 hover:border-red-500/50 hover:text-red-400 transition-colors"
         style={{ fontFamily: "'Geist', sans-serif" }}

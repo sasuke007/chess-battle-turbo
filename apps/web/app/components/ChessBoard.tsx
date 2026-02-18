@@ -131,6 +131,7 @@ const ChessBoard = ({
                 return (
                   <div
                     key={columnIndex}
+                    data-square={squareNotation}
                     onClick={() => isInteractive && onSquareClick?.(squareNotation)}
                     className={cn(
                       sizeConfig[squareSize],

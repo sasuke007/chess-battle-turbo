@@ -22,6 +22,7 @@ export function QueueSearching({
 }: QueueSearchingProps) {
   return (
     <motion.div
+      data-testid="queue-searching"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center min-h-[400px] space-y-8"

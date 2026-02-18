@@ -13,7 +13,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
-    "prisma:seed:openings": "tsx prisma/opening-seed.ts"
+    "prisma:seed:openings": "tsx prisma/opening-seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",
@@ -34,12 +37,15 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "socket.io-client": "^4.8.1",
+    "sonner": "^2.0.7",
     "stockfish.js": "^10.0.2",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.12",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@clerk/testing": "^1.13.37",
+    "@playwright/test": "^1.58.2",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.14",

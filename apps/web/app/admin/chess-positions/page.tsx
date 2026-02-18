@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
@@ -532,7 +533,7 @@ export default function ChessPositionsAdmin() {
       }
     } catch (error) {
       logger.error("Error fetching positions:", error);
-      alert("Failed to fetch chess positions");
+      toast.error("Failed to fetch chess positions");
     } finally {
       setIsLoading(false);
     }
@@ -618,14 +619,14 @@ export default function ChessPositionsAdmin() {
       const data = await response.json();
 
       if (data.success) {
-        alert("Chess position deleted successfully");
+        toast.success("Chess position deleted successfully");
         fetchPositions();
       } else {
-        alert(data.error || "Failed to delete position");
+        toast.error(data.error || "Failed to delete position");
       }
     } catch (error) {
       logger.error("Error deleting position:", error);
-      alert(
+      toast.error(
         `Failed to delete position: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
@@ -747,7 +748,7 @@ export default function ChessPositionsAdmin() {
       const data = await response.json();
 
       if (data.success) {
-        alert(
+        toast.success(
           editingId
             ? "Chess position updated successfully"
             : "Chess position created successfully"

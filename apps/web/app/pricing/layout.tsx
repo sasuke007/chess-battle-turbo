@@ -1,6 +1,7 @@
 import { createMetadata, safeJsonLd } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = createMetadata({
+export const metadata: Metadata = createMetadata({
   title: "Pricing",
   description:
     "Choose your ReplayChess plan — free to play with premium options for serious players and creators.",
