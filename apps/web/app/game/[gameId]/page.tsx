@@ -55,6 +55,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [myColor, setMyColor] = useState<Color | null>(null);
   const myColorRef = useRef<Color | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
+  const gameStartedRef = useRef(false);
   const [whiteTime, setWhiteTime] = useState(300);
   const [blackTime, setBlackTime] = useState(300);
   const [whitePlayer, setWhitePlayer] = useState<Player | null>(null);
@@ -352,6 +353,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setIsAnalysisPhase(false);
       setAnalysisTimeRemaining(0);
       setGameStarted(true);
+      gameStartedRef.current = true;
       setMyColor(payload.yourColor);
       myColorRef.current = payload.yourColor;
       setWhiteTime(payload.whiteTime);
@@ -445,6 +447,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("game_over", (payload: GameOverPayload) => {
+      // If game ended during analysis phase, go straight back to /play
+      if (!gameStartedRef.current) {
+        router.push("/play");
+        return;
+      }
+
       setGameOver(true);
       setIsAnalysisPhase(false);
       const resultText = payload.result === "DRAW"
