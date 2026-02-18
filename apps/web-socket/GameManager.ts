@@ -40,31 +40,39 @@ export class GameManager {
         // Fetch game data from API
         const gameData : GameData = await fetchGameByRef(gameReferenceId);
 
-        // Extract and store trace context for distributed tracing
-        const traceContext = gameData.gameData?.traceContext;
-        if (traceContext) {
-          setGameTraceContext(gameReferenceId, traceContext);
+        // Re-check after async fetch — safe because Node.js is single-threaded;
+        // the only yield point is the await above, so no synchronous interleaving
+        gameSession = this.games.get(gameReferenceId);
+        if (gameSession) {
+          isReconnection = gameSession.isPlayerInGame(userReferenceId);
+          logger.info(`Session created by concurrent join, isReconnection: ${isReconnection}`, { game: gameReferenceId, user: userReferenceId });
+        } else {
+          // Extract and store trace context for distributed tracing
+          const traceContext = gameData.gameData?.traceContext;
+          if (traceContext) {
+            setGameTraceContext(gameReferenceId, traceContext);
+          }
+
+          logger.debug(`Fetched game data: gameMode=${gameData.gameData?.gameMode}`, { game: gameReferenceId });
+
+          // Validate game status
+          if (
+            gameData.status !== "WAITING_FOR_OPPONENT" &&
+            gameData.status !== "IN_PROGRESS"
+          ) {
+            socket.emit("error", {
+              message: `Game is not available (status: ${gameData.status})`,
+            });
+            return;
+          }
+
+          // Create new game session
+          gameSession = new GameSession(gameData);
+          this.games.set(gameReferenceId, gameSession);
+          trackActiveGames(this.games.size);
+
+          logger.info(`Created new game session`, { game: gameReferenceId });
         }
-
-        logger.debug(`Fetched game data: gameMode=${gameData.gameData?.gameMode}`, { game: gameReferenceId });
-
-        // Validate game status
-        if (
-          gameData.status !== "WAITING_FOR_OPPONENT" &&
-          gameData.status !== "IN_PROGRESS"
-        ) {
-          socket.emit("error", {
-            message: `Game is not available (status: ${gameData.status})`,
-          });
-          return;
-        }
-
-        // Create new game session
-        gameSession = new GameSession(gameData);
-        this.games.set(gameReferenceId, gameSession);
-        trackActiveGames(this.games.size);
-
-        logger.info(`Created new game session`, { game: gameReferenceId });
       } else {
         // Check if this player is already in the game (reconnection)
         isReconnection = gameSession.isPlayerInGame(userReferenceId);

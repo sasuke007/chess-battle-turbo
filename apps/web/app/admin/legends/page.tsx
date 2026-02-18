@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
@@ -85,7 +86,7 @@ export default function LegendsAdmin() {
       }
     } catch (error) {
       logger.error("Error fetching legends:", error);
-      alert("Failed to fetch legends");
+      toast.error("Failed to fetch legends");
     } finally {
       setIsLoading(false);
     }
@@ -141,15 +142,15 @@ export default function LegendsAdmin() {
       const data = await response.json();
 
       if (data.success) {
-        alert(`Legend deleted successfully. ${data.data.deletedLegend.gamesAffected} chess positions were unlinked.`);
+        toast.success(`Legend deleted successfully. ${data.data.deletedLegend.gamesAffected} chess positions were unlinked.`);
         fetchLegends();
       } else {
         logger.error("API Error:", data);
-        alert(data.error || "Failed to delete legend");
+        toast.error(data.error || "Failed to delete legend");
       }
     } catch (error) {
       logger.error("Error deleting legend:", error);
-      alert(`Failed to delete legend: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error(`Failed to delete legend: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   };
 
@@ -193,7 +194,7 @@ export default function LegendsAdmin() {
       const data = await response.json();
 
       if (data.success) {
-        alert(editingId ? "Legend updated successfully" : "Legend created successfully");
+        toast.success(editingId ? "Legend updated successfully" : "Legend created successfully");
         handleCancel();
         fetchLegends();
       } else {
@@ -201,11 +202,11 @@ export default function LegendsAdmin() {
         const errorMsg = data.details
           ? `${data.error}: ${JSON.stringify(data.details)}`
           : data.error;
-        alert(errorMsg || "Failed to save legend");
+        toast.error(errorMsg || "Failed to save legend");
       }
     } catch (error) {
       logger.error("Error saving legend:", error);
-      alert(`Failed to save legend: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error(`Failed to save legend: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsSaving(false);
     }

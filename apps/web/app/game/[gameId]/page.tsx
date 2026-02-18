@@ -12,6 +12,7 @@ import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
 import { useChessSound } from "@/lib/hooks/useChessSound";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { computePositionAtMove, getLastMoveForDisplay } from "@/lib/utils/chess-navigation";
 import { motion } from "motion/react";
@@ -426,12 +427,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       }
       pendingOptimisticMoveRef.current = false;
 
-      // Only play error sound / show alert when the player actually had a pending move
       if (hadPendingMove) {
         playSound('illegal');
-        if (!isAIGameRef.current) {
-          alert(payload.message || "Invalid move");
-        }
       }
     });
 
@@ -470,12 +467,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     socketRef.current.on("opponent_disconnected", () => {
       playSound('notify');
-      alert("Opponent disconnected. They have 30 seconds to reconnect.");
+      toast.warning("Opponent disconnected. They have 30 seconds to reconnect.", { duration: 8000 });
     });
 
     socketRef.current.on("opponent_reconnected", () => {
       playSound('notify');
-      alert("Opponent reconnected!");
+      toast.success("Opponent reconnected!", { duration: 3000 });
     });
 
     socketRef.current.on("draw_offered", () => {
@@ -490,11 +487,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
     socketRef.current.on("error", (payload: ErrorPayload) => {
       if (payload.message && payload.message.includes("not part of")) {
-        alert("You are not part of this game. Redirecting...");
+        toast.error("You are not part of this game. Redirecting...");
         router.push(`/join/${gameId}`);
         return;
       }
-      alert(payload.message || "An error occurred");
+      toast.error(payload.message || "An error occurred");
     });
 
     return () => {
@@ -589,7 +586,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const isVictory = gameOver && gameResult?.includes("Victory");
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto">
+    <div
+      data-testid="game-board-container"
+      data-player-color={myColor}
+      data-current-turn={currentTurn}
+      data-game-started={gameStarted ? "true" : "false"}
+      className="min-h-screen bg-black text-white overflow-hidden lg:overflow-auto"
+    >
       {/* Victory confetti effect */}
       <VictoryConfetti isActive={isVictory || false} />
 
@@ -641,6 +644,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </p>
             <div className="flex gap-3">
               <button
+                data-testid="confirm-resign-button"
                 onClick={confirmResign}
                 className="flex-1 py-2 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors"
                 style={{ fontFamily: "'Geist', sans-serif" }}
@@ -743,10 +747,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Game Status */}
               {(gameOver || game.isCheck()) && (
-                <div className={cn(
-                  "border p-5",
-                  gameOver ? "border-white bg-white text-black" : "border-white/10"
-                )}>
+                <div
+                  data-testid={gameOver ? "game-result" : undefined}
+                  className={cn(
+                    "border p-5",
+                    gameOver ? "border-white bg-white text-black" : "border-white/10"
+                  )}
+                >
                   {gameOver ? (
                     <div className="text-center">
                       <p

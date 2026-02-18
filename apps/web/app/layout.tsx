@@ -5,6 +5,7 @@ import { safeJsonLd } from "@/lib/seo";
 
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 import { UserSync } from "./components/UserSync";
 
 const geistSans = localFont({
@@ -729,6 +730,18 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-black`}
         >
           <UserSync />
+          <Toaster
+            theme="dark"
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: '#0a0a0a',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                borderRadius: '0px',
+              },
+            }}
+          />
           {children}
         </body>
       </html>

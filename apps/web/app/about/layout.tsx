@@ -1,6 +1,7 @@
 import { createMetadata } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = createMetadata({
+export const metadata: Metadata = createMetadata({
   title: "About",
   description:
     "Learn how ReplayChess makes chess history interactive with legendary positions, AI analysis, and multiplayer battles.",

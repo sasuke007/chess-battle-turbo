@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { cn, getInitials } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
@@ -98,7 +99,7 @@ export default function JoinPage({
       router.push(`/game/${gameDetails.referenceId}`);
     } catch (err) {
       logger.error("Error joining game:", err);
-      alert(
+      toast.error(
         err instanceof Error
           ? err.message
           : "Failed to join game. Please try again."
@@ -348,6 +349,7 @@ export default function JoinPage({
             </button>
 
             <button
+              data-testid="accept-challenge-button"
               onClick={handleJoinGame}
               disabled={joining || alreadyStarted}
               className={cn(

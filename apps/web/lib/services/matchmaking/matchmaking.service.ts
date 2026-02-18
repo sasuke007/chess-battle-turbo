@@ -119,6 +119,9 @@ async function tryFindMatch(params: {
   incrementSeconds: number;
   legendReferenceId: string | null;
   openingReferenceId: string | null;
+  // When called from polling, lock the caller's queue entry to prevent
+  // duplicate games: if two polls overlap, each SKIP LOCKEDs the other's row.
+  callerQueueEntryId?: bigint;
 }): Promise<{
   gameReferenceId: string;
   queueEntryRef: string;
@@ -127,6 +130,19 @@ async function tryFindMatch(params: {
 } | null> {
   // Use a transaction to atomically find and match
   const result = await prisma.$transaction(async (tx) => {
+    // When retrying from a poll, lock caller's entry first and verify still SEARCHING.
+    // This prevents duplicate games when two entries poll simultaneously:
+    // both lock their own row, then SKIP LOCKED skips the other's locked row.
+    if (params.callerQueueEntryId) {
+      const locked = await tx.$queryRaw<{ status: string }[]>`
+        SELECT status FROM matchmaking_queue
+        WHERE id = ${params.callerQueueEntryId}
+        FOR UPDATE
+      `;
+      if (!locked[0] || locked[0].status !== 'SEARCHING') {
+        return null;
+      }
+    }
     // Find the best opponent with FOR UPDATE SKIP LOCKED
     // Rating filtering and closest-rating ordering is done in SQL
     type QueueCandidate = {
@@ -283,6 +299,18 @@ async function tryFindMatch(params: {
       },
     });
 
+    // When called from polling, also update caller's queue entry
+    if (params.callerQueueEntryId) {
+      await tx.matchmakingQueue.update({
+        where: { id: params.callerQueueEntryId },
+        data: {
+          status: "MATCHED",
+          matchedAt: new Date(),
+          matchedGameRef: game.referenceId,
+        },
+      });
+    }
+
     return {
       gameReferenceId: game.referenceId,
       queueEntryRef: opponent.referenceId,
@@ -381,8 +409,32 @@ export async function getMatchStatus(
     };
   }
 
-  // Still searching - just return current status
-  // Note: We don't try to match here anymore. Matching only happens when a new player joins.
+  // Still searching — retry matching on each poll to catch cases where two
+  // players queued simultaneously and missed each other's initial tryFindMatch.
+  const match = await tryFindMatch({
+    userId: entry.userId,
+    userName: entry.user.name,
+    userProfilePictureUrl: entry.user.profilePictureUrl,
+    rating: entry.rating,
+    timeControlSeconds: entry.timeControlSeconds,
+    incrementSeconds: entry.incrementSeconds,
+    legendReferenceId: entry.legendReferenceId,
+    openingReferenceId: entry.openingReferenceId,
+    callerQueueEntryId: entry.id,
+  });
+
+  if (match) {
+    return {
+      status: "MATCHED",
+      matchedGameRef: match.gameReferenceId,
+      timeRemaining,
+      opponentInfo: {
+        name: match.opponentName,
+        profilePictureUrl: match.opponentProfilePictureUrl,
+      },
+    };
+  }
+
   return {
     status: "SEARCHING",
     matchedGameRef: null,

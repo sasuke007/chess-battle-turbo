@@ -1,6 +1,7 @@
 import { createMetadata } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = createMetadata({
+export const metadata: Metadata = createMetadata({
   title: "Game Analysis",
   description: "Analyze chess game moves with AI-powered insights on ReplayChess.",
   path: "/analysis",
