@@ -40,32 +40,36 @@ export async function GET() {
     return NextResponse.json({ plan: null })
   }
 
-  const subscriptions = await dodo.subscriptions.list({
-    customer_id: customerId,
-    status: "active",
-  })
-
-  const subItems = []
-  for await (const sub of subscriptions) {
-    subItems.push(sub)
-  }
-
-  if (subItems.length === 0) {
-    return NextResponse.json({
-      plan: null,
-      customerId,
+  try {
+    const subscriptions = await dodo.subscriptions.list({
+      customer_id: customerId,
+      status: "active",
     })
-  }
 
-  const activeSub = subItems[0]!
-  return NextResponse.json({
-    plan: "player",
-    customerId,
-    subscription: {
-      id: activeSub.subscription_id,
-      status: activeSub.status,
-      productId: activeSub.product_id,
-      nextBillingDate: activeSub.next_billing_date,
-    },
-  })
+    const subItems = []
+    for await (const sub of subscriptions) {
+      subItems.push(sub)
+    }
+
+    if (subItems.length === 0) {
+      return NextResponse.json({
+        plan: null,
+        customerId,
+      })
+    }
+
+    const activeSub = subItems[0]!
+    return NextResponse.json({
+      plan: "player",
+      customerId,
+      subscription: {
+        id: activeSub.subscription_id,
+        status: activeSub.status,
+        productId: activeSub.product_id,
+        nextBillingDate: activeSub.next_billing_date,
+      },
+    })
+  } catch {
+    return NextResponse.json({ plan: null, customerId })
+  }
 }

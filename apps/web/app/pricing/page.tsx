@@ -98,7 +98,10 @@ function PricingContent() {
       return
     }
     fetch('/api/subscription')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(res.statusText)
+        return res.json()
+      })
       .then((data) => setSubInfo(data))
       .catch(() => setSubInfo({ plan: null }))
       .finally(() => setSubLoading(false))

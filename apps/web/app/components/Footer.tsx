@@ -21,7 +21,6 @@ const footerLinks = {
     { name: "Help Center", href: "/help" },
     { name: "Community", href: "/community" },
     { name: "API Docs", href: "/docs/api" },
-    { name: "Status", href: "/status" },
   ],
   legal: [
     { name: "Terms of Service", href: "/terms" },
