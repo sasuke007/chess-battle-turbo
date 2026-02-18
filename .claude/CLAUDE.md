@@ -77,6 +77,10 @@ pnpm --filter web prisma:seed:openings
 - Only add comments for non-obvious logic, workarounds, or important context
 - No redundant docstrings that restate function names/params
 
+## Debugging
+
+- **Neon MCP** is available for querying the production database directly. Use it to inspect database state when debugging issues — run SQL queries, check table schemas, list tables, and analyze query performance without needing a local DB connection.
+
 ## Deployment
 
 - **Web**: Vercel (auto-deploy from main)
