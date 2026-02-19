@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Clock, RefreshCw, ArrowLeft } from "lucide-react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 interface QueueTimeoutProps {
   onRetry: () => void;
@@ -17,7 +17,7 @@ export function QueueTimeout({
   isRetrying = false,
 }: QueueTimeoutProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center min-h-[400px] space-y-8"
@@ -86,6 +86,6 @@ export function QueueTimeout({
           Try different time controls or play during peak hours
         </p>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

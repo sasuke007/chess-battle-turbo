@@ -20,6 +20,8 @@ const sizeConfig = {
 // Static arrays for square notation conversion
 const fileArr = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 const rankArr = ["8", "7", "6", "5", "4", "3", "2", "1"] as const;
+const DEFAULT_BOARD = new Chess().board();
+const EMPTY_LEGAL_MOVES: Square[] = [];
 
 type ChessProps = {
   board?: PieceInfo[][];
@@ -37,10 +39,10 @@ type ChessProps = {
 };
 
 const ChessBoard = ({
-  board = new Chess().board(),
+  board = DEFAULT_BOARD,
   squareSize = "lg",
   selectedSquare = null,
-  legalMoves = [],
+  legalMoves = EMPTY_LEGAL_MOVES,
   onSquareClick,
   isInteractive = true,
   playerColor = "w",
@@ -113,8 +115,9 @@ const ChessBoard = ({
           <DefeatOverlay isActive={gameEndState === "defeat"} />
           <DrawOverlay isActive={gameEndState === "draw"} />
           {/* The board itself */}
+          <div role="grid" aria-label="Chess board">
           {displayBoard.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
+            <div key={rowIndex} className="flex" role="row">
               {row.map((square, columnIndex) => {
                 const squareNotation = getSquareNotation(rowIndex, columnIndex);
                 const isSelected = isSquareSelected(rowIndex, columnIndex);
@@ -131,8 +134,17 @@ const ChessBoard = ({
                 return (
                   <div
                     key={columnIndex}
+                    role="gridcell"
+                    aria-label={`${squareNotation}${square ? ` ${square.color === "w" ? "white" : "black"} ${square.type}` : ""}`}
+                    tabIndex={isInteractive ? 0 : -1}
                     data-square={squareNotation}
                     onClick={() => isInteractive && onSquareClick?.(squareNotation)}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === " ") && isInteractive) {
+                        e.preventDefault();
+                        onSquareClick?.(squareNotation);
+                      }
+                    }}
                     className={cn(
                       sizeConfig[squareSize],
                       "relative flex items-center justify-center",
@@ -272,6 +284,7 @@ const ChessBoard = ({
               })}
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

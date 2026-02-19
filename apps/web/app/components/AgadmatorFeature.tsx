@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 export const AgadmatorFeature = () => {
   const [isMuted, setIsMuted] = useState(true);
@@ -62,7 +62,7 @@ export const AgadmatorFeature = () => {
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section Header */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -93,11 +93,11 @@ export const AgadmatorFeature = () => {
           >
             Play iconic moments from Agadmator's legendary chess channel
           </p>
-        </motion.div>
+        </m.div>
 
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content - Video Card */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -193,7 +193,7 @@ export const AgadmatorFeature = () => {
                   { label: "Players", value: "1M+" },
                 ].map((stat, index) => (
                   <div
-                    key={index}
+                    key={stat.label}
                     className={cn(
                       "text-center py-4",
                       index !== 2 && "border-r border-white/10"
@@ -215,10 +215,10 @@ export const AgadmatorFeature = () => {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Right Content - Text */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -259,8 +259,8 @@ export const AgadmatorFeature = () => {
                 "Challenge friends to solve the position",
                 "Learn from the best tactical puzzles",
               ].map((feature, index) => (
-                <motion.div
-                  key={index}
+                <m.div
+                  key={feature}
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -281,7 +281,7 @@ export const AgadmatorFeature = () => {
                   >
                     {feature}
                   </span>
-                </motion.div>
+                </m.div>
               ))}
             </div>
 
@@ -305,7 +305,7 @@ export const AgadmatorFeature = () => {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </div>
     </section>

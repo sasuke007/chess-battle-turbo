@@ -10,5 +10,3 @@ export function trackApiResponseTime(endpoint: string, durationMs: number) {
     attributes: { endpoint },
   });
 }
-
-export const metrics = Sentry.metrics;

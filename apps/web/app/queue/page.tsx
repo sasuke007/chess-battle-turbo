@@ -15,7 +15,7 @@ import {
   OpponentInfo,
 } from "@/lib/hooks/useMatchmaking";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 type QueueState = "initializing" | "searching" | "timeout" | "matched" | "error";
 
@@ -23,6 +23,7 @@ function QueueContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isReady, userObject }: UseRequireAuthReturn = useRequireAuth();
+  const userRefId = userObject?.user?.referenceId;
 
   const [queueState, setQueueState] = useState<QueueState>("initializing");
   const [queueReferenceId, setQueueReferenceId] = useState<string | null>(null);
@@ -62,7 +63,7 @@ function QueueContent() {
   }, [router]);
 
   const createMatchRequest = useCallback(async () => {
-    if (!userObject?.user?.referenceId) return;
+    if (!userRefId) return;
 
     setIsCreating(true);
     try {
@@ -71,7 +72,7 @@ function QueueContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userReferenceId: userObject.user.referenceId,
+          userReferenceId: userRefId,
           legendReferenceId,
           openingReferenceId,
           initialTimeSeconds,
@@ -83,7 +84,11 @@ function QueueContent() {
       trackApiResponseTime("matchmaking.create", Date.now() - start);
 
       if (!data.success) {
-        throw new Error(data.error || "Failed to create match request");
+        logger.error("Error creating match request:", data.error);
+        setErrorMessage(data.error || "Failed to create match request");
+        setQueueState("error");
+        setIsCreating(false);
+        return;
       }
 
       if (data.data.immediateMatch) {
@@ -98,17 +103,17 @@ function QueueContent() {
         setQueueReferenceId(data.data.queueEntry.referenceId);
         setQueueState("searching");
       }
+      setIsCreating(false);
     } catch (error) {
       logger.error("Error creating match request:", error);
-      setErrorMessage(error instanceof Error ? error.message : "Failed to create match request");
+      setErrorMessage("Failed to create match request");
       setQueueState("error");
-    } finally {
       setIsCreating(false);
     }
-  }, [userObject?.user?.referenceId, legendReferenceId, openingReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
+  }, [userRefId, legendReferenceId, openingReferenceId, initialTimeSeconds, incrementSeconds, redirectToGame]);
 
   useEffect(() => {
-    if (!isReady || !userObject?.user?.referenceId) return;
+    if (!isReady || !userRefId) return;
     if (hasInitiatedRef.current) return;
 
     hasInitiatedRef.current = true;
@@ -119,7 +124,7 @@ function QueueContent() {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [isReady, userObject?.user?.referenceId, createMatchRequest]);
+  }, [isReady, userRefId, createMatchRequest]);
 
   // Keep queueStateRef in sync with queueState
   useEffect(() => {
@@ -128,10 +133,10 @@ function QueueContent() {
 
   // Cleanup effect - handles browser close and navigation
   useEffect(() => {
-    if (!queueReferenceId || !userObject?.user?.referenceId) return;
-    if (queueState === "matched") return; // Don't cancel if matched
+    if (!queueReferenceId || !userRefId) return;
+    if (queueState === "matched") return;
 
-    const userReferenceId = userObject.user.referenceId;
+    const userReferenceId = userRefId;
 
     const cancelData = new URLSearchParams({
       queueReferenceId,
@@ -160,7 +165,7 @@ function QueueContent() {
         }).catch(() => {});
       }
     };
-  }, [queueReferenceId, userObject?.user?.referenceId, queueState]);
+  }, [queueReferenceId, userRefId, queueState]);
 
   const handleMatchFound = useCallback(
     (gameRef: string, opponent: OpponentInfo) => {
@@ -173,15 +178,14 @@ function QueueContent() {
   );
 
   const handleTimeout = useCallback(async () => {
-    // Cancel the queue entry immediately on timeout
-    if (userObject?.user?.referenceId && queueReferenceId) {
+    if (userRefId && queueReferenceId) {
       try {
         await fetch("/api/matchmaking/cancel-match-request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             queueReferenceId,
-            userReferenceId: userObject.user.referenceId,
+            userReferenceId: userRefId,
           }),
         });
       } catch (error) {
@@ -191,7 +195,7 @@ function QueueContent() {
 
     setQueueReferenceId(null);
     setQueueState("timeout");
-  }, [userObject?.user?.referenceId, queueReferenceId]);
+  }, [userRefId, queueReferenceId]);
 
   const handleError = useCallback((error: string) => {
     logger.error("Matchmaking error: " + error);
@@ -207,14 +211,14 @@ function QueueContent() {
 
   const handleCancel = async () => {
     setIsCancelling(true);
-    if (userObject?.user?.referenceId && queueReferenceId) {
+    if (userRefId && queueReferenceId) {
       try {
         await fetch("/api/matchmaking/cancel-match-request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             queueReferenceId,
-            userReferenceId: userObject.user.referenceId,
+            userReferenceId: userRefId,
           }),
         });
       } catch (error) {
@@ -225,7 +229,6 @@ function QueueContent() {
   };
 
   const handleRetry = async () => {
-    // Queue entry already cancelled on timeout, just reset state and retry
     setQueueState("initializing");
     setErrorMessage(null);
     setOpponentInfo(null);
@@ -234,13 +237,13 @@ function QueueContent() {
   };
 
   const handleBack = async () => {
-    if (queueReferenceId && userObject?.user?.referenceId && queueState !== "matched") {
+    if (queueReferenceId && userRefId && queueState !== "matched") {
       await fetch("/api/matchmaking/cancel-match-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           queueReferenceId,
-          userReferenceId: userObject.user.referenceId,
+          userReferenceId: userRefId,
         }),
       }).catch(() => {});
     }
@@ -248,7 +251,7 @@ function QueueContent() {
   };
 
   const handlePlayBot = async () => {
-    if (!userObject?.user?.referenceId) return;
+    if (!userRefId) return;
 
     setIsCreatingBotGame(true);
     try {
@@ -257,7 +260,7 @@ function QueueContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userReferenceId: userObject.user.referenceId,
+          userReferenceId: userRefId,
           initialTimeSeconds,
           incrementSeconds,
           ...(legendReferenceId && { selectedLegend: legendReferenceId }),
@@ -268,15 +271,19 @@ function QueueContent() {
       trackApiResponseTime("chess.createAiGame", Date.now() - start);
 
       if (!data.success) {
-        throw new Error(data.error || "Failed to create AI game");
+        logger.error("Error creating AI game:", data.error);
+        setErrorMessage(data.error || "Failed to create AI game");
+        setQueueState("error");
+        setIsCreatingBotGame(false);
+        return;
       }
 
+      setIsCreatingBotGame(false);
       router.replace(`/game/${data.data.game.referenceId}`);
     } catch (error) {
       logger.error("Error creating AI game:", error);
-      setErrorMessage(error instanceof Error ? error.message : "Failed to create AI game");
+      setErrorMessage("Failed to create AI game");
       setQueueState("error");
-    } finally {
       setIsCreatingBotGame(false);
     }
   };
@@ -284,7 +291,7 @@ function QueueContent() {
   if (!isReady) {
     return (
       <div className="flex min-h-screen bg-black items-center justify-center">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center gap-4"
@@ -293,7 +300,7 @@ function QueueContent() {
           <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
             Loading...
           </p>
-        </motion.div>
+        </m.div>
       </div>
     );
   }
@@ -314,7 +321,7 @@ function QueueContent() {
         <div className="w-full max-w-lg p-4 relative z-10">
           {/* Error state */}
           {queueState === "error" && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center space-y-6"
@@ -338,7 +345,7 @@ function QueueContent() {
               >
                 Back to Play
               </button>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Initializing or Searching state */}

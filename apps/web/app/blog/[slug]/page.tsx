@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import Link from "next/link";
 import { getBlogPostBySlug, blogPosts } from "@/lib/blog-data";
 import { safeJsonLd } from "@/lib/seo";
@@ -59,10 +60,9 @@ export default async function BlogPostPage({ params }: Props) {
       <Navbar />
       <Breadcrumbs />
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(blogPostingJsonLd) }}
-      />
+      <Script id="blogpost-jsonld" type="application/ld+json">
+        {safeJsonLd(blogPostingJsonLd)}
+      </Script>
 
       {/* Grid background */}
       <div
@@ -126,7 +126,7 @@ export default async function BlogPostPage({ params }: Props) {
         {/* Article content */}
         <div className="space-y-8">
           {sections.map((section, i) => (
-            <section key={i}>
+            <section key={section.heading ?? `intro-${i}`}>
               {section.heading && (
                 <h2
                   style={{ fontFamily: "'Instrument Serif', serif" }}
@@ -137,9 +137,9 @@ export default async function BlogPostPage({ params }: Props) {
               )}
               {section.body.split(/\n### /).map((subsection, j) => {
                 if (j === 0) {
-                  return subsection.split("\n\n").map((paragraph, k) => (
+                  return subsection.split("\n\n").map((paragraph) => (
                     <p
-                      key={`${i}-${j}-${k}`}
+                      key={paragraph.slice(0, 64)}
                       style={{ fontFamily: "'Geist', sans-serif" }}
                       className="text-sm text-white/50 leading-relaxed mb-4"
                     >
@@ -151,16 +151,16 @@ export default async function BlogPostPage({ params }: Props) {
                 const subHeading = nlIdx > -1 ? subsection.slice(0, nlIdx).trim() : subsection.trim();
                 const subBody = nlIdx > -1 ? subsection.slice(nlIdx + 1).trim() : "";
                 return (
-                  <div key={`${i}-${j}`} className="mb-4">
+                  <div key={subHeading} className="mb-4">
                     <h3
                       style={{ fontFamily: "'Geist', sans-serif" }}
                       className="text-base text-white/70 font-medium mb-2"
                     >
                       {subHeading}
                     </h3>
-                    {subBody.split("\n\n").map((paragraph, k) => (
+                    {subBody.split("\n\n").map((paragraph) => (
                       <p
-                        key={`${i}-${j}-${k}`}
+                        key={paragraph.slice(0, 64)}
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="text-sm text-white/50 leading-relaxed mb-3"
                       >

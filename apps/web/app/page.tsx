@@ -1,8 +1,17 @@
+import Script from "next/script";
+import { createMetadata } from "@/lib/seo";
 import Hero from "./components/Hero";
 import { HowToPlay } from "./components/HowToPlay";
 import { Navbar } from "./components/Navbar";
 import { AgadmatorFeature } from "./components/AgadmatorFeature";
 import { Footer } from "./components/Footer";
+
+export const metadata = createMetadata({
+  title: "ReplayChess - Master Chess Through Legendary Games",
+  description:
+    "Replay iconic chess positions from history's greatest games. Study grandmaster moves, challenge friends, and master the classics.",
+  path: "/",
+});
 
 const webAppJsonLd = {
   "@context": "https://schema.org",
@@ -28,10 +37,9 @@ const webAppJsonLd = {
 export default function Home() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }}
-      />
+      <Script id="webapp-jsonld" type="application/ld+json">
+        {JSON.stringify(webAppJsonLd)}
+      </Script>
       <Navbar />
       <div className="w-full bg-black text-white">
         <div className="h-screen w-full">

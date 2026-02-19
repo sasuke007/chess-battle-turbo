@@ -5,6 +5,8 @@ import { Move } from "chess.js";
 import { cn } from "../../lib/utils";
 import { DivergenceInfo } from "../../lib/hooks/useAnalysisBoard";
 
+const EMPTY_LEGEND_MOVES: Move[] = [];
+
 interface AnalysisMoveListProps {
   divergences: DivergenceInfo[];
   currentPlyIndex: number;
@@ -23,7 +25,7 @@ export default function AnalysisMoveList({
   moveNumberStart,
   startingSide,
   isLegendMode = false,
-  fullLegendMoves = [],
+  fullLegendMoves = EMPTY_LEGEND_MOVES,
   gameStartPly = 0,
 }: AnalysisMoveListProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -167,7 +169,7 @@ function LegendFullMoveList({
           const showDivider = rowIndex === dividerBeforeRow;
 
           return (
-            <React.Fragment key={rowIndex}>
+            <React.Fragment key={row.moveNumber}>
               {showDivider && (
                 <div ref={dividerRef} className="relative my-3 flex items-center">
                   <div className="flex-1 border-t border-dashed border-amber-400/30" />
@@ -233,10 +235,11 @@ interface LegendMoveCellProps {
 
 function LegendMoveCell({ san, isActive, isPreGame, onClick }: LegendMoveCellProps) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "py-1 px-1.5 rounded cursor-pointer transition-all duration-150",
+        "w-full text-left py-1 px-1.5 rounded transition-all duration-150",
         isActive && "bg-sky-500/20 ring-1 ring-sky-400/30",
         !isActive && "hover:bg-white/5"
       )}
@@ -249,7 +252,7 @@ function LegendMoveCell({ san, isActive, isPreGame, onClick }: LegendMoveCellPro
       >
         {san}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -329,7 +332,7 @@ function ComparisonMoveList({
 
       {/* Move rows */}
       <div className="space-y-0.5 p-2">
-        {moveRows.map((row, rowIndex) => {
+        {moveRows.map((row) => {
           const whiteIsActive =
             row.whitePly && currentPlyIndex === row.whitePly.plyIndex;
           const blackIsActive =
@@ -338,7 +341,7 @@ function ComparisonMoveList({
 
           return (
             <div
-              key={rowIndex}
+              key={row.moveNumber}
               ref={isActive ? activeRowRef : null}
               className="grid grid-cols-[40px_1fr_1fr] gap-1"
             >
@@ -393,10 +396,11 @@ function MoveCell({ divergence, isActive, onClick }: MoveCellProps) {
   const { userMove, legendMove, isDivergent } = divergence;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "grid grid-cols-2 gap-1 py-1 px-1.5 rounded cursor-pointer transition-all duration-150",
+        "w-full text-left grid grid-cols-2 gap-1 py-1 px-1.5 rounded transition-all duration-150",
         isActive && "bg-white/10 ring-1 ring-white/20",
         !isActive && "hover:bg-white/5",
         isDivergent && "bg-amber-500/10"
@@ -422,6 +426,6 @@ function MoveCell({ divergence, isActive, onClick }: MoveCellProps) {
       >
         {legendMove?.san || "-"}
       </div>
-    </div>
+    </button>
   );
 }

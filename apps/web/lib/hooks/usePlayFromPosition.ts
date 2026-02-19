@@ -293,11 +293,11 @@ export function usePlayFromPosition({
             console.error("Failed to apply bot move:", botMoveUCI);
           }
         }
+        botMoveInProgressRef.current = false;
       } catch (error) {
         if (process.env.NODE_ENV === "development") {
           console.error("Error computing bot move:", error);
         }
-      } finally {
         botMoveInProgressRef.current = false;
       }
     };

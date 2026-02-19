@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -38,14 +38,14 @@ export default function Hero() {
       />
 
       {/* Content */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-5xl"
       >
         {/* Eyebrow */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -59,10 +59,10 @@ export default function Hero() {
             Where Chess History Comes Alive
           </span>
           <div className="h-px w-12 bg-white/30" />
-        </motion.div>
+        </m.div>
 
         {/* Main Title */}
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
@@ -72,10 +72,10 @@ export default function Hero() {
           Relive Legendary
           <br />
           <span className="text-white/40">Chess Moments</span>
-        </motion.h1>
+        </m.h1>
 
         {/* Subtitle */}
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -83,10 +83,10 @@ export default function Hero() {
           className="text-white/40 text-lg sm:text-xl md:text-2xl max-w-2xl leading-relaxed mb-12"
         >
           Step into the exact positions where chess legends were made.
-        </motion.p>
+        </m.p>
 
         {/* CTA Button */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
@@ -110,10 +110,10 @@ export default function Hero() {
               </span>
             </button>
           </Link>
-        </motion.div>
+        </m.div>
 
         {/* Stats */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
@@ -124,7 +124,7 @@ export default function Hero() {
             { value: "100+", label: "Players" },
             { value: "100+", label: "Games Played" },
           ].map((stat, index, arr) => (
-            <div key={index} className="flex items-center gap-8 sm:gap-12">
+            <div key={stat.label} className="flex items-center gap-8 sm:gap-12">
               <div className="text-center">
                 <p
                   style={{ fontFamily: "'Instrument Serif', serif" }}
@@ -144,8 +144,8 @@ export default function Hero() {
               )}
             </div>
           ))}
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
 
       {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />

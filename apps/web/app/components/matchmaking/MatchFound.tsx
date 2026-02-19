@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
+import Image from "next/image";
+import * as m from "motion/react-m";
 import { Swords } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 
@@ -15,20 +16,20 @@ export function MatchFound({
   opponentProfilePictureUrl,
 }: MatchFoundProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center min-h-[400px] space-y-8"
     >
       {/* Match found animation */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
+      <m.div
+        initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", duration: 0.5 }}
         className="relative"
       >
         {/* Success ring */}
-        <motion.div
+        <m.div
           className="absolute inset-0 border border-white/30"
           initial={{ scale: 1, opacity: 1 }}
           animate={{ scale: 1.5, opacity: 0 }}
@@ -38,17 +39,17 @@ export function MatchFound({
 
         {/* Center icon */}
         <div className="relative w-[100px] h-[100px] bg-white flex items-center justify-center">
-          <motion.div
+          <m.div
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Swords className="w-10 h-10 text-black" strokeWidth={1.5} />
-          </motion.div>
+          </m.div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Match found text */}
-      <motion.div
+      <m.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -63,10 +64,10 @@ export function MatchFound({
         <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40">
           Get ready to play
         </p>
-      </motion.div>
+      </m.div>
 
       {/* Opponent info */}
-      <motion.div
+      <m.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -74,9 +75,11 @@ export function MatchFound({
       >
         {/* Opponent avatar */}
         {opponentProfilePictureUrl ? (
-          <img
+          <Image
             src={opponentProfilePictureUrl}
             alt={opponentName}
+            width={48}
+            height={48}
             className="w-12 h-12 object-cover grayscale"
           />
         ) : (
@@ -98,10 +101,10 @@ export function MatchFound({
             {opponentName}
           </p>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Loading indicator */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
@@ -111,7 +114,7 @@ export function MatchFound({
         <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-sm">
           Starting game...
         </span>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

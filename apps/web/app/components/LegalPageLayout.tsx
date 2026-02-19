@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
@@ -62,7 +62,7 @@ export function LegalPageLayout({ title, lastUpdated, sections }: LegalPageLayou
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-6">
         <div className="max-w-7xl mx-auto">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -89,7 +89,7 @@ export function LegalPageLayout({ title, lastUpdated, sections }: LegalPageLayou
             >
               Last updated: {lastUpdated}
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -153,7 +153,7 @@ export function LegalPageLayout({ title, lastUpdated, sections }: LegalPageLayou
           {/* Document Body */}
           <div className="lg:col-span-9 max-w-3xl">
             {sections.map((section, index) => (
-              <motion.div
+              <m.div
                 key={section.id}
                 id={section.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -174,7 +174,7 @@ export function LegalPageLayout({ title, lastUpdated, sections }: LegalPageLayou
                 >
                   {section.content}
                 </div>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>

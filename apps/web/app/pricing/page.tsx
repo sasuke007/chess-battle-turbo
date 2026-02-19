@@ -4,7 +4,8 @@ import React, { Suspense, useState, useEffect } from 'react'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'
 import { Bot, ChevronDown, Video, Loader2, Check, CreditCard, LifeBuoy, ArrowRight } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
+import * as m from 'motion/react-m'
 import { useUser } from '@clerk/nextjs'
 import { useSearchParams } from 'next/navigation'
 
@@ -76,7 +77,13 @@ type SubscriptionInfo = {
 
 export default function PricingPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen bg-black items-center justify-center">
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+        </div>
+      }
+    >
       <PricingContent />
     </Suspense>
   )
@@ -92,19 +99,20 @@ function PricingContent() {
   const checkoutSuccess = searchParams.get('checkout') === 'success'
 
   useEffect(() => {
-    if (!isLoaded) return
-    if (!isSignedIn) {
-      setSubLoading(false)
-      return
-    }
+    if (!isLoaded || !isSignedIn) return
     fetch('/api/subscription')
       .then((res) => {
         if (!res.ok) throw new Error(res.statusText)
         return res.json()
       })
-      .then((data) => setSubInfo(data))
-      .catch(() => setSubInfo({ plan: null }))
-      .finally(() => setSubLoading(false))
+      .then((data) => {
+        setSubInfo(data)
+        setSubLoading(false)
+      })
+      .catch(() => {
+        setSubInfo({ plan: null })
+        setSubLoading(false)
+      })
   }, [isLoaded, isSignedIn])
 
   async function handleCheckout() {
@@ -113,14 +121,16 @@ function PricingContent() {
       return
     }
     setCheckoutLoading(true)
+    const email = user.primaryEmailAddress?.emailAddress
+    const name = user.fullName
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: PLAYER_PRODUCT_ID,
-          email: user.primaryEmailAddress?.emailAddress,
-          name: user.fullName,
+          email,
+          name,
           metadata: { clerkUserId: user.id },
         }),
       })
@@ -128,14 +138,15 @@ function PricingContent() {
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl
       }
-    } finally {
+      setCheckoutLoading(false)
+    } catch {
       setCheckoutLoading(false)
     }
   }
 
   const isSubscribed = subInfo?.plan === 'player'
 
-  if (!isLoaded || subLoading) {
+  if (!isLoaded || (isSignedIn && subLoading)) {
     return (
       <div className="min-h-screen bg-black text-white">
         <Navbar />
@@ -162,7 +173,7 @@ function PricingContent() {
             }}
           />
           <div className="relative z-10 max-w-3xl mx-auto px-4 text-center">
-            <motion.p
+            <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, ease: EASE }}
@@ -170,8 +181,8 @@ function PricingContent() {
               className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-6"
             >
               Membership
-            </motion.p>
-            <motion.h1
+            </m.p>
+            <m.h1
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: EASE }}
@@ -179,8 +190,8 @@ function PricingContent() {
               className="text-5xl sm:text-6xl md:text-7xl mb-4 text-white"
             >
               {user?.firstName ? `Welcome back, ${user.firstName}` : 'Your Membership'}
-            </motion.h1>
-            <motion.p
+            </m.h1>
+            <m.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
@@ -188,7 +199,7 @@ function PricingContent() {
               className="text-lg text-white/40"
             >
               Manage your Player plan and billing details.
-            </motion.p>
+            </m.p>
           </div>
         </section>
 
@@ -197,7 +208,7 @@ function PricingContent() {
 
             {/* Checkout success banner */}
             {checkoutSuccess && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-8"
@@ -210,11 +221,11 @@ function PricingContent() {
                     Payment successful! Your subscription is now active.
                   </p>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Membership Status Card */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
@@ -282,10 +293,10 @@ function PricingContent() {
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
 
             {/* Feature Access Grid */}
-            <motion.section
+            <m.section
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
@@ -303,7 +314,7 @@ function PricingContent() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-white/[0.04]">
                 {PLAN_FEATURES.map((feature, index) => (
-                  <motion.div
+                  <m.div
                     key={feature}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -325,13 +336,13 @@ function PricingContent() {
                     >
                       Included
                     </p>
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
-            </motion.section>
+            </m.section>
 
             {/* Quick Actions */}
-            <motion.section
+            <m.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
@@ -381,7 +392,7 @@ function PricingContent() {
                   </p>
                 </a>
               </div>
-            </motion.section>
+            </m.section>
 
             {/* Subscriber FAQ */}
             <section className="mb-20">
@@ -393,8 +404,8 @@ function PricingContent() {
               </h2>
               <div className="space-y-3">
                 {SUBSCRIBER_FAQS.map((faq, index) => (
-                  <motion.div
-                    key={index}
+                  <m.div
+                    key={faq.question}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -415,7 +426,7 @@ function PricingContent() {
                     </button>
                     <AnimatePresence>
                       {openFaq === index && (
-                        <motion.div
+                        <m.div
                           initial={{ height: 0 }}
                           animate={{ height: 'auto' }}
                           exit={{ height: 0 }}
@@ -427,10 +438,10 @@ function PricingContent() {
                           >
                             {faq.answer}
                           </div>
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             </section>
@@ -476,7 +487,7 @@ function PricingContent() {
         />
 
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <motion.h1
+          <m.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -484,8 +495,8 @@ function PricingContent() {
             className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl mb-6 text-white"
           >
             Pricing
-          </motion.h1>
-          <motion.p
+          </m.h1>
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -493,7 +504,7 @@ function PricingContent() {
             className="text-lg sm:text-xl md:text-2xl text-white/40 max-w-2xl"
           >
             All-in-one chess creation suite. Powered by AI.
-          </motion.p>
+          </m.p>
         </div>
       </section>
 
@@ -502,7 +513,7 @@ function PricingContent() {
         <main>
           <section className="py-10">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <motion.p
+              <m.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -510,12 +521,12 @@ function PricingContent() {
                 className="text-md text-white/40 mb-8 mx-auto"
               >
                 Game Recorder, Position Editor, AI Assistant, Voice Coach, Analysis Generator - all in one powerful package.
-              </motion.p>
+              </m.p>
             </div>
 
             {/* Checkout success banner */}
             {checkoutSuccess && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="max-w-md mx-auto mb-8 px-4"
@@ -528,11 +539,11 @@ function PricingContent() {
                     Payment successful! Your subscription is being activated.
                   </p>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Single Player Pricing Card */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -594,7 +605,7 @@ function PricingContent() {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
 
             <p
               style={{ fontFamily: "'Geist', sans-serif" }}
@@ -616,8 +627,8 @@ function PricingContent() {
             </p>
             <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 6%, rgb(0, 0, 0) 12%, rgb(0, 0, 0) 88%, rgba(0, 0, 0, 0) 94%, rgba(0, 0, 0, 0) 100%)' }}>
               <div className="flex animate-scroll whitespace-nowrap py-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex-shrink-0 mx-8">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div key={n} className="flex-shrink-0 mx-8">
                     <div className="h-8 w-24 bg-white/5 border border-white/10" />
                   </div>
                 ))}
@@ -731,8 +742,8 @@ function PricingContent() {
             </h2>
             <div className="space-y-3">
               {SALES_FAQS.map((faq, index) => (
-                <motion.div
-                  key={index}
+                <m.div
+                  key={faq.question}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -753,7 +764,7 @@ function PricingContent() {
                   </button>
                   <AnimatePresence>
                     {openFaq === index && (
-                      <motion.div
+                      <m.div
                         initial={{ height: 0 }}
                         animate={{ height: 'auto' }}
                         exit={{ height: 0 }}
@@ -765,10 +776,10 @@ function PricingContent() {
                         >
                           {faq.answer}
                         </div>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>

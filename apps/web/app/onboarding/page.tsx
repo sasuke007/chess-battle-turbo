@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { ArrowRight, ExternalLink, Search } from "lucide-react";
@@ -35,56 +36,60 @@ export default function OnboardingPage() {
     setLoading(true);
     setError(null);
 
+    let data;
+    let response;
     try {
-      const response = await fetch("/api/user/chess-com-profile/preview", {
+      response = await fetch("/api/user/chess-com-profile/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chessComHandle: chessComHandle.trim() }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to look up chess.com profile");
-      }
-
-      setPreviewData(data.data);
-      setStep("preview");
+      data = await response.json();
     } catch (err) {
       logger.error("Preview error", err);
-      setError(
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      );
-    } finally {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
+      return;
     }
+
+    if (!response.ok) {
+      setError(data.error || "Failed to look up chess.com profile");
+      setLoading(false);
+      return;
+    }
+
+    setPreviewData(data.data);
+    setStep("preview");
+    setLoading(false);
   };
 
   const handleConfirm = async () => {
     setSaving(true);
     setError(null);
 
+    let data;
+    let response;
     try {
-      const response = await fetch("/api/user/chess-com-profile", {
+      response = await fetch("/api/user/chess-com-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chessComHandle: chessComHandle.trim() }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save chess.com profile");
-      }
-
-      router.push("/");
+      data = await response.json();
     } catch (err) {
       logger.error("Confirm error", err);
-      setError(
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      );
+      setError("Something went wrong. Please try again.");
       setSaving(false);
+      return;
     }
+
+    if (!response.ok) {
+      setError(data.error || "Failed to save chess.com profile");
+      setSaving(false);
+      return;
+    }
+
+    router.push("/");
   };
 
   const handleGoBack = () => {
@@ -105,7 +110,7 @@ export default function OnboardingPage() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center gap-4"
@@ -117,7 +122,7 @@ export default function OnboardingPage() {
           >
             Loading...
           </p>
-        </motion.div>
+        </m.div>
       </div>
     );
   }
@@ -136,7 +141,7 @@ export default function OnboardingPage() {
       <div className="relative z-10 max-w-md w-full">
         <AnimatePresence mode="wait">
           {step === "input" && (
-            <motion.div
+            <m.div
               key="input"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -145,7 +150,7 @@ export default function OnboardingPage() {
               className="border border-white/10 p-8 sm:p-12"
             >
               {/* Header */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -169,11 +174,11 @@ export default function OnboardingPage() {
                 >
                   You can add this later from your profile
                 </p>
-              </motion.div>
+              </m.div>
 
               <form onSubmit={handleLookup} className="space-y-6">
                 {/* Input */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
@@ -205,11 +210,11 @@ export default function OnboardingPage() {
                   >
                     We&apos;ll fetch your ratings and stats from chess.com
                   </p>
-                </motion.div>
+                </m.div>
 
                 {/* Error */}
                 {error && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="border border-white/20 p-4"
@@ -220,11 +225,11 @@ export default function OnboardingPage() {
                     >
                       {error}
                     </p>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 {/* Buttons */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -267,10 +272,10 @@ export default function OnboardingPage() {
                   >
                     Skip for Now
                   </button>
-                </motion.div>
+                </m.div>
 
                 {/* Link to chess.com */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -286,13 +291,13 @@ export default function OnboardingPage() {
                     Don&apos;t have an account? Create one
                     <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
                   </a>
-                </motion.div>
+                </m.div>
               </form>
-            </motion.div>
+            </m.div>
           )}
 
           {step === "preview" && previewData && (
-            <motion.div
+            <m.div
               key="preview"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -300,7 +305,7 @@ export default function OnboardingPage() {
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
               {/* Preview header */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-6"
@@ -311,7 +316,7 @@ export default function OnboardingPage() {
                 >
                   Is this your account?
                 </p>
-              </motion.div>
+              </m.div>
 
               <ChessComPreviewCard
                 previewData={previewData}
@@ -323,7 +328,7 @@ export default function OnboardingPage() {
 
               {/* Error on confirm */}
               {error && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="border border-white/20 p-4 mt-4"
@@ -334,9 +339,9 @@ export default function OnboardingPage() {
                   >
                     {error}
                   </p>
-                </motion.div>
+                </m.div>
               )}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

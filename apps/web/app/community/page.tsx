@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
+import { LazyMotion, domAnimation } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Users, Trophy, Star } from "lucide-react";
 import Link from "next/link";
@@ -14,9 +15,9 @@ const tournaments = [
 ];
 
 const spotlights = [
-  { piece: "♔", username: "GrandmasterX", rating: 2450, achievement: "Winter Open Champion" },
-  { piece: "♕", username: "QueenGambit99", rating: 2280, achievement: "Longest Win Streak: 23" },
-  { piece: "♗", username: "BishopPair", rating: 2190, achievement: "Most Games Played: 1,200" },
+  { piece: "\u2654", username: "GrandmasterX", rating: 2450, achievement: "Winter Open Champion" },
+  { piece: "\u2655", username: "QueenGambit99", rating: 2280, achievement: "Longest Win Streak: 23" },
+  { piece: "\u2657", username: "BishopPair", rating: 2190, achievement: "Most Games Played: 1,200" },
 ];
 
 const leaderboard = [
@@ -29,6 +30,7 @@ const leaderboard = [
 
 export default function CommunityPage() {
   return (
+    <LazyMotion features={domAnimation}>
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
@@ -44,7 +46,7 @@ export default function CommunityPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -67,7 +69,7 @@ export default function CommunityPage() {
               <br />
               <span className="text-white/40">Community</span>
             </h1>
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -80,8 +82,8 @@ export default function CommunityPage() {
               >
                 10,000+ members
               </span>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         </div>
       </section>
 
@@ -90,7 +92,7 @@ export default function CommunityPage() {
       {/* Discord Card */}
       <section className="relative py-16 sm:py-24 px-6">
         <div className="max-w-4xl mx-auto">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -145,7 +147,7 @@ export default function CommunityPage() {
                 </span>
               </button>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -159,7 +161,7 @@ export default function CommunityPage() {
           }}
         />
         <div className="max-w-6xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -181,11 +183,11 @@ export default function CommunityPage() {
             >
               Tournaments
             </h2>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {tournaments.map((tournament, index) => (
-              <motion.div
+              <m.div
                 key={tournament.name}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -225,7 +227,7 @@ export default function CommunityPage() {
                 >
                   {tournament.participants} players
                 </p>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>
@@ -234,7 +236,7 @@ export default function CommunityPage() {
       {/* Player Spotlights */}
       <section className="relative py-16 sm:py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -246,11 +248,11 @@ export default function CommunityPage() {
             >
               Player Spotlights
             </h2>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10">
             {spotlights.map((player, index) => (
-              <motion.div
+              <m.div
                 key={player.username}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -283,7 +285,7 @@ export default function CommunityPage() {
                     {player.achievement}
                   </span>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>
@@ -299,7 +301,7 @@ export default function CommunityPage() {
           }}
         />
         <div className="max-w-4xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -321,7 +323,7 @@ export default function CommunityPage() {
             >
               Leaderboard
             </h2>
-          </motion.div>
+          </m.div>
 
           <div className="border border-white/10 overflow-x-auto">
             <table className="w-full text-sm">
@@ -403,7 +405,7 @@ export default function CommunityPage() {
       {/* Guidelines CTA */}
       <section className="relative py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -421,11 +423,12 @@ export default function CommunityPage() {
             >
               Read Community Guidelines
             </Link>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
       <Footer />
     </div>
+    </LazyMotion>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, LazyMotion, domAnimation } from "motion/react";
+import * as m from "motion/react-m";
 import Image from "next/image";
 import { Color } from "chess.js";
 
@@ -21,11 +22,11 @@ const PROMOTION_PIECES: { piece: PromotionPiece; name: string }[] = [
 
 export const PromotionPopup = ({ isOpen, color, onSelect }: PromotionPopupProps) => {
   return (
+    <LazyMotion features={domAnimation}>
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop - clicking does nothing (no cancel) */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -33,7 +34,7 @@ export const PromotionPopup = ({ isOpen, color, onSelect }: PromotionPopupProps)
           />
 
           {/* Popup */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -52,7 +53,7 @@ export const PromotionPopup = ({ isOpen, color, onSelect }: PromotionPopupProps)
               {/* Piece options */}
               <div className="grid grid-cols-4 gap-3">
                 {PROMOTION_PIECES.map(({ piece, name }) => (
-                  <motion.button
+                  <m.button
                     key={piece}
                     onClick={() => onSelect(piece)}
                     whileHover={{ scale: 1.05 }}
@@ -75,7 +76,7 @@ export const PromotionPopup = ({ isOpen, color, onSelect }: PromotionPopupProps)
                     >
                       {name}
                     </span>
-                  </motion.button>
+                  </m.button>
                 ))}
               </div>
 
@@ -87,11 +88,10 @@ export const PromotionPopup = ({ isOpen, color, onSelect }: PromotionPopupProps)
                 Select a piece to promote your pawn
               </p>
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>
+    </LazyMotion>
   );
 };
-
-export default PromotionPopup;

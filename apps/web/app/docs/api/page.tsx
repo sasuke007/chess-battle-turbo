@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
@@ -51,7 +51,7 @@ export default function ApiDocsPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -87,7 +87,7 @@ export default function ApiDocsPage() {
             >
               Programmatic access to games, positions, player data, and AI-powered analysis.
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -96,7 +96,7 @@ export default function ApiDocsPage() {
       {/* Coming Soon */}
       <section className="relative py-16 sm:py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -114,7 +114,7 @@ export default function ApiDocsPage() {
               We&apos;re building a comprehensive REST API that will give developers full access to ReplayChess&apos;s
               platform — from game data and player stats to our legendary positions library and AI analysis engine.
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -128,7 +128,7 @@ export default function ApiDocsPage() {
           }}
         />
         <div className="max-w-4xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -144,11 +144,11 @@ export default function ApiDocsPage() {
               </span>
               <div className="h-px w-16 bg-white/20" />
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="space-y-3">
             {endpoints.map((endpoint, index) => (
-              <motion.div
+              <m.div
                 key={endpoint.group}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -186,7 +186,7 @@ export default function ApiDocsPage() {
                     </span>
                   ))}
                 </div>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function ApiDocsPage() {
       {/* Email Signup */}
       <section className="relative py-20 px-6">
         <div className="max-w-xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -242,7 +242,7 @@ export default function ApiDocsPage() {
                 </span>
               </button>
             </form>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 

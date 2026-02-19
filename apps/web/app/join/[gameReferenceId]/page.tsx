@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { cn, getInitials } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { Navbar } from "@/app/components/Navbar";
 import { Swords, Clock, DollarSign, ArrowLeft } from "lucide-react";
 
@@ -50,24 +50,27 @@ export default function JoinPage({
 
   useEffect(() => {
     async function fetchGameDetails() {
+      let data;
       try {
         const response = await fetch(
           `/api/chess/game-by-ref/${gameReferenceId}`
         );
-        const data = await response.json();
-
-        if (!data.success) {
-          setError(data.error || "Failed to fetch game details");
-          return;
-        }
-
-        setGameDetails(data.data);
+        data = await response.json();
       } catch (err) {
         logger.error("Error fetching game:", err);
         setError("Failed to load game details");
-      } finally {
         setLoading(false);
+        return;
       }
+
+      if (!data.success) {
+        setError(data.error || "Failed to fetch game details");
+        setLoading(false);
+        return;
+      }
+
+      setGameDetails(data.data);
+      setLoading(false);
     }
 
     fetchGameDetails();
@@ -78,6 +81,7 @@ export default function JoinPage({
 
     setJoining(true);
 
+    let data;
     try {
       const response = await fetch("/api/chess/join", {
         method: "POST",
@@ -89,23 +93,22 @@ export default function JoinPage({
           opponentReferenceId: userReferenceId,
         }),
       });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to join game");
-      }
-
-      router.push(`/game/${gameDetails.referenceId}`);
+      data = await response.json();
     } catch (err) {
       logger.error("Error joining game:", err);
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to join game. Please try again."
-      );
+      toast.error("Failed to join game. Please try again.");
       setJoining(false);
+      return;
     }
+
+    if (!data.success) {
+      logger.error("Error joining game:", data.error);
+      toast.error(data.error || "Failed to join game");
+      setJoining(false);
+      return;
+    }
+
+    router.push(`/game/${gameDetails.referenceId}`);
   };
 
   if (loading || !isReady) {
@@ -113,7 +116,7 @@ export default function JoinPage({
       <>
         <Navbar />
         <div className="min-h-screen bg-black flex items-center justify-center pt-16">
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex flex-col items-center gap-4"
@@ -122,7 +125,7 @@ export default function JoinPage({
             <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-wide">
               Loading...
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </>
     );
@@ -142,7 +145,7 @@ export default function JoinPage({
             }}
           />
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="relative z-10 border border-white/10 p-8 max-w-md text-center"
@@ -173,7 +176,7 @@ export default function JoinPage({
                 Create New Game
               </span>
             </button>
-          </motion.div>
+          </m.div>
         </div>
       </>
     );
@@ -194,13 +197,13 @@ export default function JoinPage({
           }}
         />
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 border border-white/10 p-6 sm:p-10 max-w-xl w-full"
         >
           {/* Header with Swords icon */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -215,10 +218,10 @@ export default function JoinPage({
             >
               Chess Challenge
             </h1>
-          </motion.div>
+          </m.div>
 
           {/* Creator Info */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -255,10 +258,10 @@ export default function JoinPage({
                 </p>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Game Details Grid */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -310,11 +313,11 @@ export default function JoinPage({
                 ${gameDetails.platformFeeAmount}
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Warning for already started games */}
           {alreadyStarted && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -323,11 +326,11 @@ export default function JoinPage({
               <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/60 text-center text-sm">
                 This game has already started or is no longer available.
               </p>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Action Buttons */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -376,11 +379,11 @@ export default function JoinPage({
                     : "Accept Challenge"}
               </span>
             </button>
-          </motion.div>
+          </m.div>
 
           {/* Stake Warning */}
           {!alreadyStarted && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
@@ -389,9 +392,9 @@ export default function JoinPage({
               <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs text-white/20">
                 By accepting, ${gameDetails.stakeAmount} will be deducted from your wallet
               </p>
-            </motion.div>
+            </m.div>
           )}
-        </motion.div>
+        </m.div>
       </div>
     </>
   );

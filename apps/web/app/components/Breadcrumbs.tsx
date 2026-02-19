@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
+import Script from "next/script";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "../../lib/utils";
 import { safeJsonLd } from "../../lib/seo";
 import { Home, Gamepad2, Clock, Swords, Users, DollarSign, Shield, BookOpen, Crown, Grid3X3 } from "lucide-react";
@@ -115,11 +116,10 @@ export const Breadcrumbs = () => {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
-      />
-      <motion.div
+      <Script id="breadcrumb-jsonld" type="application/ld+json">
+        {safeJsonLd(breadcrumbJsonLd)}
+      </Script>
+      <m.div
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
@@ -130,9 +130,6 @@ export const Breadcrumbs = () => {
           "bg-black/60 backdrop-blur-md",
           "border-b border-white/[0.05]"
         )}
-        style={{
-          WebkitBackdropFilter: "blur(12px)",
-        }}
       >
         <nav className="flex items-center gap-1.5">
           {breadcrumbs.map((crumb, index) => {
@@ -179,7 +176,7 @@ export const Breadcrumbs = () => {
             );
           })}
         </nav>
-      </motion.div>
+      </m.div>
     </>
   );
 };

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
@@ -92,7 +93,9 @@ export default async function OpeningsPage({ searchParams }: Props) {
           >
             Browse openings by ECO code. Study the moves, then play from the position.
           </p>
-          <OpeningsSearch />
+          <Suspense fallback={<div className="h-12 mt-6 bg-white/5 animate-pulse" />}>
+            <OpeningsSearch />
+          </Suspense>
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -33,7 +33,7 @@ export default function Error({
 
       <div className="relative z-10 flex flex-col items-center">
         {/* Fallen King */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, rotate: 0, y: -30 }}
           animate={{ opacity: 0.5, rotate: -35, y: 0 }}
           transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
@@ -68,30 +68,30 @@ export default function Error({
               <path d="M12.5 37c5.5-3 14.5-3 20 0" />
             </g>
           </svg>
-        </motion.div>
+        </m.div>
 
         {/* Micro label */}
-        <motion.span
+        <m.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mb-5 text-[10px] tracking-[0.3em] uppercase text-white/30"
         >
           Something went wrong
-        </motion.span>
+        </m.span>
 
         {/* Heading */}
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="mb-5 font-[family-name:var(--font-instrument-serif)] text-5xl italic text-white sm:text-6xl"
         >
           Position Lost
-        </motion.h1>
+        </m.h1>
 
         {/* Gradient divider */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.8, delay: 0.7 }}
@@ -99,7 +99,7 @@ export default function Error({
         />
 
         {/* Description */}
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
@@ -107,22 +107,22 @@ export default function Error({
         >
           An unexpected error disrupted the game. The position has been reported
           and we&apos;re working to restore it.
-        </motion.p>
+        </m.p>
 
         {/* Error digest */}
         {error.digest && (
-          <motion.code
+          <m.code
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 1 }}
             className="mb-8 select-all font-[family-name:var(--font-geist-mono)] text-[11px] text-white/15"
           >
             {error.digest}
-          </motion.code>
+          </m.code>
         )}
 
         {/* Actions */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.1 }}
@@ -141,7 +141,7 @@ export default function Error({
           >
             Return Home
           </Link>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

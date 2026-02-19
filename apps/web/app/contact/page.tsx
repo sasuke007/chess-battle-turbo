@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { Mail, Clock, ArrowRight, Twitter, Github, Youtube } from "lucide-react";
 import Link from "next/link";
@@ -62,7 +62,7 @@ export default function ContactPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-6">
         <div className="max-w-7xl mx-auto">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -90,7 +90,7 @@ export default function ContactPage() {
             >
               Have a question, feedback, or partnership idea? We&apos;d love to hear from you.
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -100,7 +100,7 @@ export default function ContactPage() {
       <section className="relative py-16 sm:py-24 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           {/* Form */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -126,12 +126,14 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label
+                    htmlFor="name"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                     className="block text-xs text-white/50 uppercase tracking-widest mb-2"
                   >
                     Name
                   </label>
                   <input
+                    id="name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => {
@@ -152,12 +154,14 @@ export default function ContactPage() {
 
                 <div>
                   <label
+                    htmlFor="email"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                     className="block text-xs text-white/50 uppercase tracking-widest mb-2"
                   >
                     Email
                   </label>
                   <input
+                    id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => {
@@ -178,12 +182,14 @@ export default function ContactPage() {
 
                 <div>
                   <label
+                    htmlFor="subject"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                     className="block text-xs text-white/50 uppercase tracking-widest mb-2"
                   >
                     Subject
                   </label>
                   <select
+                    id="subject"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     className={cn(
@@ -203,12 +209,14 @@ export default function ContactPage() {
 
                 <div>
                   <label
+                    htmlFor="message"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                     className="block text-xs text-white/50 uppercase tracking-widest mb-2"
                   >
                     Message
                   </label>
                   <textarea
+                    id="message"
                     value={formData.message}
                     onChange={(e) => {
                       setFormData({ ...formData, message: e.target.value });
@@ -245,10 +253,10 @@ export default function ContactPage() {
                 </button>
               </form>
             )}
-          </motion.div>
+          </m.div>
 
           {/* Info Panel */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -345,7 +353,7 @@ export default function ContactPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 

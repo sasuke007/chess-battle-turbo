@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { trackApiResponseTime } from "@/lib/metrics";
@@ -56,6 +57,8 @@ export function ChessComConnectModal({
     setLoading(true);
     setError(null);
 
+    let data;
+    let previewOk = false;
     try {
       const start = Date.now();
       const response = await fetch("/api/user/chess-com-profile/preview", {
@@ -63,32 +66,33 @@ export function ChessComConnectModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chessComHandle: handle.trim() }),
       });
-
-      const data = await response.json();
+      data = await response.json();
       trackApiResponseTime("chessCom.preview", Date.now() - start);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to look up chess.com profile");
-      }
-
-      setPreviewData(data.data);
-      setStep("preview");
+      previewOk = response.ok;
     } catch (err) {
       logger.error("Preview error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
-    } finally {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
+      return;
     }
+
+    if (!previewOk) {
+      setError(data.error || "Failed to look up chess.com profile");
+      setLoading(false);
+      return;
+    }
+
+    setPreviewData(data.data);
+    setStep("preview");
+    setLoading(false);
   };
 
   const handleConfirm = async () => {
     setSaving(true);
     setError(null);
 
+    let data;
+    let confirmOk = false;
     try {
       const start = Date.now();
       const response = await fetch("/api/user/chess-com-profile", {
@@ -96,25 +100,24 @@ export function ChessComConnectModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chessComHandle: handle.trim() }),
       });
-
-      const data = await response.json();
+      data = await response.json();
       trackApiResponseTime("chessCom.connect", Date.now() - start);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save chess.com profile");
-      }
-
-      resetState();
-      onSuccess();
+      confirmOk = response.ok;
     } catch (err) {
       logger.error("Confirm error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
+      setError("Something went wrong. Please try again.");
       setSaving(false);
+      return;
     }
+
+    if (!confirmOk) {
+      setError(data.error || "Failed to save chess.com profile");
+      setSaving(false);
+      return;
+    }
+
+    resetState();
+    onSuccess();
   };
 
   const handleGoBack = () => {
@@ -126,7 +129,7 @@ export function ChessComConnectModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -134,7 +137,7 @@ export function ChessComConnectModal({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
         >
           {/* Backdrop */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -143,7 +146,7 @@ export function ChessComConnectModal({
           />
 
           {/* Modal content */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -160,7 +163,7 @@ export function ChessComConnectModal({
 
             <AnimatePresence mode="wait">
               {step === "input" && (
-                <motion.div
+                <m.div
                   key="modal-input"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -206,12 +209,11 @@ export function ChessComConnectModal({
                         )}
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         disabled={loading}
-                        autoFocus
                       />
                     </div>
 
                     {error && (
-                      <motion.div
+                      <m.div
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="border border-white/20 p-3"
@@ -222,7 +224,7 @@ export function ChessComConnectModal({
                         >
                           {error}
                         </p>
-                      </motion.div>
+                      </m.div>
                     )}
 
                     <button
@@ -262,11 +264,11 @@ export function ChessComConnectModal({
                       </a>
                     </div>
                   </form>
-                </motion.div>
+                </m.div>
               )}
 
               {step === "preview" && previewData && (
-                <motion.div
+                <m.div
                   key="modal-preview"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -282,7 +284,7 @@ export function ChessComConnectModal({
                   />
 
                   {error && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="border border-white/20 p-3 mt-3"
@@ -293,13 +295,13 @@ export function ChessComConnectModal({
                       >
                         {error}
                       </p>
-                    </motion.div>
+                    </m.div>
                   )}
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

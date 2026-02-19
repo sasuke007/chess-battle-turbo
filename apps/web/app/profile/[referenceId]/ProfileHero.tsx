@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import Image from "next/image";
 import { getInitials } from "@/lib/utils";
 import { Link as LinkIcon, Check, ExternalLink } from "lucide-react";
@@ -72,7 +73,7 @@ export function ProfileHero({ user, chessComProfile }: ProfileHeroProps) {
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -88,7 +89,7 @@ export function ProfileHero({ user, chessComProfile }: ProfileHeroProps) {
         >
           <AnimatePresence mode="wait">
             {copied ? (
-              <motion.div
+              <m.div
                 key="copied"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -103,9 +104,9 @@ export function ProfileHero({ user, chessComProfile }: ProfileHeroProps) {
                 >
                   Copied
                 </span>
-              </motion.div>
+              </m.div>
             ) : (
-              <motion.div
+              <m.div
                 key="share"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -123,7 +124,7 @@ export function ProfileHero({ user, chessComProfile }: ProfileHeroProps) {
                 >
                   Share
                 </span>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </button>
@@ -245,6 +246,6 @@ export function ProfileHero({ user, chessComProfile }: ProfileHeroProps) {
           </div>
         </div>
       )}
-    </motion.div>
+    </m.div>
   );
 }

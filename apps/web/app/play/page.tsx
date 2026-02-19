@@ -13,7 +13,8 @@ import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks/useRequireAuth
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
 import { Users, Zap, Crown, Bot, ArrowRight, Sparkles, BookOpen } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 
 // Static game mode definitions — never change at runtime
 const gameModes = [
@@ -56,6 +57,8 @@ function PlayContent() {
   const userReferenceId = userObject?.user?.referenceId;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const legendParam = searchParams.get("legend");
+  const openingParam = searchParams.get("opening");
 
   const [timeControl, setTimeControl] = useState<TimeControlValue>({
     mode: "Blitz",
@@ -65,13 +68,13 @@ function PlayContent() {
   });
   const [isCreatingGame, setIsCreatingGame] = useState(false);
   const [selectedMode, setSelectedMode] = useState<"quick" | "friend" | "ai">("quick");
-  const [playAsLegend, setPlayAsLegend] = useState(false);
-  const [selectedHero, setSelectedHero] = useState<string | null>(null);
+  const [playAsLegend, setPlayAsLegend] = useState(!!legendParam);
+  const [selectedHero, setSelectedHero] = useState<string | null>(legendParam);
   const [hoveredMode, setHoveredMode] = useState<string | null>(null);
 
   // Opening state
-  const [playOpening, setPlayOpening] = useState(false);
-  const [selectedOpening, setSelectedOpening] = useState<string | null>(null);
+  const [playOpening, setPlayOpening] = useState(!!openingParam);
+  const [selectedOpening, setSelectedOpening] = useState<string | null>(openingParam);
 
   interface Opening {
     id: string;
@@ -124,24 +127,6 @@ function PlayContent() {
     fetchData();
   }, []);
 
-  // Pre-select legend from URL param (e.g. /play?legend=abc123)
-  const legendParam = searchParams.get("legend");
-  useEffect(() => {
-    if (legendParam) {
-      setPlayAsLegend(true);
-      setSelectedHero(legendParam);
-    }
-  }, [legendParam]);
-
-  // Pre-select opening from URL param (e.g. /play?opening=abc123)
-  const openingParam = searchParams.get("opening");
-  useEffect(() => {
-    if (openingParam) {
-      setPlayOpening(true);
-      setSelectedOpening(openingParam);
-    }
-  }, [openingParam]);
-
   const handleCreateGame = async () => {
     // TODO:  This error should ideally not Happen, because we dont load the page untill the auth state is ready, but just in case
     // if (!userReferenceId) {
@@ -176,6 +161,7 @@ function PlayContent() {
         ...(playOpening && selectedOpening && { selectedOpening: selectedOpening }),
       };
 
+      let aiData;
       try {
         const start = Date.now();
         const response = await fetch("/api/chess/create-ai-game", {
@@ -183,20 +169,23 @@ function PlayContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(aiGameData),
         });
-
-        const data = await response.json();
+        aiData = await response.json();
         trackApiResponseTime("chess.createAiGame", Date.now() - start);
-
-        if (!data.success) {
-          throw new Error(data.error || "Failed to create AI game");
-        }
-
-        router.push(`/game/${data.data.game.referenceId}`);
       } catch (error) {
         logger.error("Error creating AI game", error);
-        toast.error(error instanceof Error ? error.message : "Failed to create AI game");
+        toast.error("Failed to create AI game");
         setIsCreatingGame(false);
+        return;
       }
+
+      if (!aiData.success) {
+        logger.error("Error creating AI game", aiData.error);
+        toast.error(aiData.error || "Failed to create AI game");
+        setIsCreatingGame(false);
+        return;
+      }
+
+      router.push(`/game/${aiData.data.game.referenceId}`);
     }
     else {
       const gameData = {
@@ -222,7 +211,9 @@ function PlayContent() {
         trackApiResponseTime("chess.createGame", Date.now() - start);
 
         if (!data.success) {
-          throw new Error(data.error || "Failed to create game");
+          logger.error("Error creating game", data.error);
+          setIsCreatingGame(false);
+          return;
         }
 
         const gameRef = data.data.game.referenceId;
@@ -238,19 +229,19 @@ function PlayContent() {
   if (!isReady) {
     return (
       <div className="flex min-h-screen bg-black items-center justify-center">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center gap-6"
         >
           {/* Chess piece loading animation */}
           <div className="relative w-16 h-16">
-            <motion.div
+            <m.div
               className="absolute inset-0 border-2 border-white/20 rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             />
-            <motion.div
+            <m.div
               className="absolute inset-2 border-2 border-white/40 rounded-full"
               animate={{ rotate: -360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
@@ -262,7 +253,7 @@ function PlayContent() {
           <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/40 text-sm tracking-[0.2em] uppercase">
             Loading
           </p>
-        </motion.div>
+        </m.div>
       </div>
     );
   }
@@ -286,14 +277,14 @@ function PlayContent() {
 
         {/* Left Side - Controls */}
         <div className="flex-1 flex items-center lg:items-start justify-center pt-4 sm:pt-2 lg:pt-6 px-6 sm:px-8 lg:px-12 pb-8 lg:pb-0 relative z-10">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-md"
           >
             {/* Header */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
@@ -304,10 +295,10 @@ function PlayContent() {
                 New Game
               </span>
               <div className="h-px flex-1 bg-gradient-to-l from-white/30 to-transparent" />
-            </motion.div>
+            </m.div>
 
             {/* Game Mode Cards */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
@@ -319,7 +310,7 @@ function PlayContent() {
                 const isHovered = hoveredMode === mode.id;
 
                 return (
-                  <motion.button
+                  <m.button
                     key={mode.id}
                     data-testid={`mode-${mode.id}`}
                     initial={{ opacity: 0, y: -40 }}
@@ -337,7 +328,7 @@ function PlayContent() {
                     )}
                   >
                     {/* Hover fill animation */}
-                    <motion.div
+                    <m.div
                       className="absolute inset-0 bg-white origin-left"
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: isHovered && !isSelected ? 1 : 0 }}
@@ -377,14 +368,14 @@ function PlayContent() {
                         </p>
                       </div>
                     </div>
-                  </motion.button>
+                  </m.button>
                 );
               })}
-            </motion.div>
+            </m.div>
 
             {/* Legends Section */}
             {(legendsLoading || legends.length > 0) && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
@@ -438,7 +429,7 @@ function PlayContent() {
                     "w-10 h-5 border relative overflow-hidden transition-colors duration-300 flex-shrink-0",
                     playAsLegend ? "border-white bg-white" : "border-white/30"
                   )}>
-                    <motion.div
+                    <m.div
                       className={cn(
                         "absolute top-0 w-1/2 h-full transition-colors duration-300",
                         playAsLegend ? "bg-black" : "bg-white/50"
@@ -452,7 +443,7 @@ function PlayContent() {
                 {/* Expandable legends — now using SearchableDropdown */}
                 <AnimatePresence>
                   {playAsLegend && (
-                    <motion.div
+                    <m.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -470,15 +461,15 @@ function PlayContent() {
                           isLoading={legendsLoading}
                         />
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Play Opening Section */}
             {(openingsLoading || openings.length > 0) && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.85 }}
@@ -532,7 +523,7 @@ function PlayContent() {
                     "w-10 h-5 border relative overflow-hidden transition-colors duration-300 flex-shrink-0",
                     playOpening ? "border-white bg-white" : "border-white/30"
                   )}>
-                    <motion.div
+                    <m.div
                       className={cn(
                         "absolute top-0 w-1/2 h-full transition-colors duration-300",
                         playOpening ? "bg-black" : "bg-white/50"
@@ -546,7 +537,7 @@ function PlayContent() {
                 {/* Expandable openings */}
                 <AnimatePresence>
                   {playOpening && (
-                    <motion.div
+                    <m.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -564,14 +555,14 @@ function PlayContent() {
                           isLoading={openingsLoading}
                         />
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Time Control */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 }}
@@ -584,10 +575,10 @@ function PlayContent() {
                 <div className="h-px flex-1 bg-white/10" />
               </div>
               <TimeControlSelector value={timeControl} onChange={setTimeControl} />
-            </motion.div>
+            </m.div>
 
             {/* Start Button */}
-            <motion.button
+            <m.button
               data-testid="start-game-button"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -608,7 +599,7 @@ function PlayContent() {
               <div className="relative z-10 py-4 px-6 flex items-center justify-center gap-3">
                 {isCreatingGame ? (
                   <>
-                    <motion.div
+                    <m.div
                       className="w-4 h-4 border-2 border-black/30 border-t-black group-hover:border-white/30 group-hover:border-t-white"
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -626,8 +617,8 @@ function PlayContent() {
                   </>
                 )}
               </div>
-            </motion.button>
-          </motion.div>
+            </m.button>
+          </m.div>
         </div>
 
         {/* Right Side - Chess Board */}
@@ -635,7 +626,7 @@ function PlayContent() {
           {/* Subtle light source effect */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/[0.02] rounded-full blur-3xl" />
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 1, ease: [0.22, 1, 0.36, 1] }}
@@ -645,7 +636,7 @@ function PlayContent() {
             <div className="m-8">
               <ChessBoard isInteractive={false} showCoordinates={true} />
             </div>
-          </motion.div>
+          </m.div>
         </div>
 
         {/* Decorative corner elements */}

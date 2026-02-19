@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -57,7 +57,7 @@ export default function HelpPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -87,7 +87,7 @@ export default function HelpPage() {
                 style={{ fontFamily: "'Geist', sans-serif" }}
               />
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -96,7 +96,7 @@ export default function HelpPage() {
       {/* Categories */}
       <section className="relative py-16 sm:py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -112,11 +112,11 @@ export default function HelpPage() {
               </span>
               <div className="h-px w-16 bg-white/20" />
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
             {helpCategories.map((category, index) => (
-              <motion.div
+              <m.div
                 key={category.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -156,7 +156,7 @@ export default function HelpPage() {
                   "border-white/10 group-hover:border-black/10",
                   "transition-colors duration-500"
                 )} />
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function HelpPage() {
           }}
         />
         <div className="max-w-4xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -188,11 +188,11 @@ export default function HelpPage() {
               </span>
               <div className="h-px w-12 bg-white/20" />
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="space-y-1">
             {popularArticles.map((article, index) => (
-              <motion.div
+              <m.div
                 key={article.question}
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -213,7 +213,7 @@ export default function HelpPage() {
                 >
                   {article.category}
                 </span>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>
@@ -222,7 +222,7 @@ export default function HelpPage() {
       {/* CTA */}
       <section className="relative py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -257,7 +257,7 @@ export default function HelpPage() {
                 </span>
               </button>
             </Link>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 

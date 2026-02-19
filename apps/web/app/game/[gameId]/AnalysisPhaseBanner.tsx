@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 
 interface AnalysisPhaseBannerProps {
   isAnalysisPhase: boolean;
@@ -16,7 +17,7 @@ export function AnalysisPhaseBannerMobile({
   return (
     <AnimatePresence>
       {isAnalysisPhase && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.3 } }}
@@ -26,7 +27,7 @@ export function AnalysisPhaseBannerMobile({
           <div className="mx-auto max-w-md">
             <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-2 shadow-2xl">
               <div className="flex items-center justify-center gap-3">
-                <motion.div
+                <m.div
                   key={analysisTimeRemaining}
                   initial={{ scale: 1.1, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -40,7 +41,7 @@ export function AnalysisPhaseBannerMobile({
                   >
                     {analysisTimeRemaining}
                   </span>
-                </motion.div>
+                </m.div>
 
                 <div className="w-px h-8 bg-white/20" />
 
@@ -67,7 +68,7 @@ export function AnalysisPhaseBannerMobile({
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );
@@ -82,7 +83,7 @@ export function AnalysisPhaseBannerDesktop({
   return (
     <AnimatePresence>
       {isAnalysisPhase && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
@@ -110,7 +111,7 @@ export function AnalysisPhaseBannerDesktop({
           </div>
 
           <div className="flex items-center justify-center py-4">
-            <motion.div
+            <m.div
               key={analysisTimeRemaining}
               initial={{ scale: 1.05, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -124,12 +125,12 @@ export function AnalysisPhaseBannerDesktop({
               >
                 {analysisTimeRemaining}
               </span>
-            </motion.div>
+            </m.div>
           </div>
 
           <div className="mt-4">
             <div className="h-1 bg-white/5 overflow-hidden">
-              <motion.div
+              <m.div
                 className="h-full bg-gradient-to-r from-amber-500/60 to-amber-400/40"
                 initial={{ width: "100%" }}
                 animate={{
@@ -148,7 +149,7 @@ export function AnalysisPhaseBannerDesktop({
           >
             Study the position before playing
           </p>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

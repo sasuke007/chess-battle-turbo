@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
 import { Plus, Edit2, Save, X, Trash2, Crown, ArrowLeft } from "lucide-react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 interface Legend {
   id: string;
@@ -68,10 +68,6 @@ export default function LegendsAdmin() {
   const [formData, setFormData] = useState<LegendFormData>(initialFormData);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    fetchLegends();
-  }, []);
-
   const fetchLegends = async () => {
     try {
       logger.debug("Fetching legends...");
@@ -84,13 +80,17 @@ export default function LegendsAdmin() {
       } else {
         logger.error("API returned unsuccessful:", data);
       }
+      setIsLoading(false);
     } catch (error) {
       logger.error("Error fetching legends:", error);
       toast.error("Failed to fetch legends");
-    } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchLegends();
+  }, []);
 
   const handleEdit = (legend: Legend) => {
     setEditingId(legend.id);
@@ -128,29 +128,31 @@ export default function LegendsAdmin() {
       return;
     }
 
+    let data;
     try {
       const response = await fetch(`/api/legends/${legendId}`, {
         method: "DELETE",
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        logger.error("Server error response: " + text);
-        throw new Error(`Server error: ${response.status} - ${text}`);
+        logger.error("Server error response:", response.status);
+        toast.error(`Failed to delete legend: Server error: ${response.status}`);
+        return;
       }
 
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(`Legend deleted successfully. ${data.data.deletedLegend.gamesAffected} chess positions were unlinked.`);
-        fetchLegends();
-      } else {
-        logger.error("API Error:", data);
-        toast.error(data.error || "Failed to delete legend");
-      }
+      data = await response.json();
     } catch (error) {
       logger.error("Error deleting legend:", error);
-      toast.error(`Failed to delete legend: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error("Failed to delete legend");
+      return;
+    }
+
+    if (data.success) {
+      toast.success(`Legend deleted successfully. ${data.data.deletedLegend.gamesAffected} chess positions were unlinked.`);
+      fetchLegends();
+    } else {
+      logger.error("API Error:", data);
+      toast.error(data.error || "Failed to delete legend");
     }
   };
 
@@ -188,7 +190,9 @@ export default function LegendsAdmin() {
       if (!response.ok) {
         const text = await response.text();
         logger.error("Server error response: " + text);
-        throw new Error(`Server error: ${response.status} - ${text}`);
+        toast.error(`Failed to save legend: Server error: ${response.status}`);
+        setIsSaving(false);
+        return;
       }
 
       const data = await response.json();
@@ -204,10 +208,10 @@ export default function LegendsAdmin() {
           : data.error;
         toast.error(errorMsg || "Failed to save legend");
       }
+      setIsSaving(false);
     } catch (error) {
       logger.error("Error saving legend:", error);
-      toast.error(`Failed to save legend: ${error instanceof Error ? error.message : "Unknown error"}`);
-    } finally {
+      toast.error("Failed to save legend");
       setIsSaving(false);
     }
   };
@@ -311,10 +315,11 @@ export default function LegendsAdmin() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Name */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-name" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Name *
                       </label>
                       <input
+                        id="legend-name"
                         type="text"
                         required
                         value={formData.name}
@@ -331,10 +336,11 @@ export default function LegendsAdmin() {
 
                     {/* Era */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-era" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Era *
                       </label>
                       <input
+                        id="legend-era"
                         type="text"
                         required
                         value={formData.era}
@@ -351,10 +357,11 @@ export default function LegendsAdmin() {
 
                     {/* Profile Photo URL */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-profile-photo-url" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Profile Photo URL
                       </label>
                       <input
+                        id="legend-profile-photo-url"
                         type="url"
                         value={formData.profilePhotoUrl}
                         onChange={(e) => setFormData({ ...formData, profilePhotoUrl: e.target.value })}
@@ -370,10 +377,11 @@ export default function LegendsAdmin() {
 
                     {/* Peak Rating */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-peak-rating" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Peak Rating
                       </label>
                       <input
+                        id="legend-peak-rating"
                         type="number"
                         value={formData.peakRating}
                         onChange={(e) => setFormData({ ...formData, peakRating: e.target.value })}
@@ -389,10 +397,11 @@ export default function LegendsAdmin() {
 
                     {/* Nationality */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-nationality" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Nationality
                       </label>
                       <input
+                        id="legend-nationality"
                         type="text"
                         value={formData.nationality}
                         onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
@@ -408,10 +417,11 @@ export default function LegendsAdmin() {
 
                     {/* Birth Year */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-birth-year" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Birth Year
                       </label>
                       <input
+                        id="legend-birth-year"
                         type="number"
                         value={formData.birthYear}
                         onChange={(e) => setFormData({ ...formData, birthYear: e.target.value })}
@@ -427,10 +437,11 @@ export default function LegendsAdmin() {
 
                     {/* Death Year */}
                     <div>
-                      <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                      <label htmlFor="legend-death-year" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                         Death Year
                       </label>
                       <input
+                        id="legend-death-year"
                         type="number"
                         value={formData.deathYear}
                         onChange={(e) => setFormData({ ...formData, deathYear: e.target.value })}
@@ -456,7 +467,7 @@ export default function LegendsAdmin() {
                           "w-12 h-6 border relative transition-colors duration-300",
                           formData.isActive ? "border-white bg-white" : "border-white/30"
                         )}>
-                          <motion.div
+                          <m.div
                             animate={{ x: formData.isActive ? 24 : 0 }}
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                             className={cn(
@@ -480,7 +491,7 @@ export default function LegendsAdmin() {
                           "w-12 h-6 border relative transition-colors duration-300",
                           formData.isVisible ? "border-white bg-white" : "border-white/30"
                         )}>
-                          <motion.div
+                          <m.div
                             animate={{ x: formData.isVisible ? 24 : 0 }}
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                             className={cn(
@@ -498,10 +509,11 @@ export default function LegendsAdmin() {
 
                   {/* Short Description */}
                   <div>
-                    <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                    <label htmlFor="legend-short-description" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                       Short Description * (max 500 chars)
                     </label>
                     <textarea
+                      id="legend-short-description"
                       required
                       value={formData.shortDescription}
                       onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
@@ -519,10 +531,11 @@ export default function LegendsAdmin() {
 
                   {/* Playing Style */}
                   <div>
-                    <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                    <label htmlFor="legend-playing-style" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                       Playing Style
                     </label>
                     <textarea
+                      id="legend-playing-style"
                       value={formData.playingStyle}
                       onChange={(e) => setFormData({ ...formData, playingStyle: e.target.value })}
                       rows={2}
@@ -538,10 +551,11 @@ export default function LegendsAdmin() {
 
                   {/* Achievements */}
                   <div>
-                    <label style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
+                    <label htmlFor="legend-achievements" style={{ fontFamily: "'Geist', sans-serif" }} className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">
                       Achievements (comma-separated)
                     </label>
                     <textarea
+                      id="legend-achievements"
                       value={formData.achievements}
                       onChange={(e) => setFormData({ ...formData, achievements: e.target.value })}
                       rows={2}
@@ -565,7 +579,7 @@ export default function LegendsAdmin() {
                         "disabled:opacity-50 disabled:cursor-not-allowed"
                       )}
                     >
-                      <motion.div
+                      <m.div
                         className="absolute inset-0 bg-black origin-left"
                         initial={{ scaleX: 0 }}
                         whileHover={{ scaleX: isSaving ? 0 : 1 }}

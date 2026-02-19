@@ -14,7 +14,7 @@ import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { trackApiResponseTime } from "@/lib/metrics";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 type AnalysisTab = "your-moves" | "legend-moves" | "practice";
 
@@ -69,27 +69,30 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     if (!isReady) return;
 
     const fetchData = async () => {
+      const url = userReferenceId
+        ? `/api/analysis/${gameId}?userReferenceId=${userReferenceId}`
+        : `/api/analysis/${gameId}`;
+      let result;
       try {
-        const url = userReferenceId
-          ? `/api/analysis/${gameId}?userReferenceId=${userReferenceId}`
-          : `/api/analysis/${gameId}`;
         const start = Date.now();
         const response = await fetch(url);
-        const result = await response.json();
+        result = await response.json();
         trackApiResponseTime("analysis.fetch", Date.now() - start);
-
-        if (!result.success) {
-          setError(result.error || "Failed to load analysis data");
-          return;
-        }
-
-        setData(result.data);
       } catch (err) {
         setError("Failed to load analysis data");
         logger.error("Failed to load analysis data", err);
-      } finally {
         setLoading(false);
+        return;
       }
+
+      if (!result.success) {
+        setError(result.error || "Failed to load analysis data");
+        setLoading(false);
+        return;
+      }
+
+      setData(result.data);
+      setLoading(false);
     };
 
     fetchData();
@@ -101,7 +104,6 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [practiceKey, setPracticeKey] = useState(0); // bumped to force reset even for same FEN
   const previousTabRef = useRef<AnalysisTab>("legend-moves");
 
-  // Default to "your-moves" when no legend moves (e.g. opening games)
   useEffect(() => {
     if (data && data.legendMoves.length === 0) {
       setActiveTab("your-moves");
@@ -236,7 +238,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       />
 
       <div className="relative max-w-7xl mx-auto px-8 md:px-12 lg:px-4 pb-6 md:pb-12 lg:pb-8 pt-20 md:pt-24 lg:pt-20 min-h-[100dvh] flex flex-col justify-center">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8 min-h-0"
@@ -304,7 +306,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           {/* Center - Chess Board */}
           <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col lg:block">
             {/* Compact Header */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -423,7 +425,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
 
             {/* Tabs - Mobile Only */}
             {(hasLegendMoves || isOpeningGame) && (
@@ -922,7 +924,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             )}
 
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

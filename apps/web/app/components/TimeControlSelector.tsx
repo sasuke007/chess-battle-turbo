@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 
 type TimeControl = {
   display: string;
@@ -124,7 +125,7 @@ export default function TimeControlSelector({ value, onChange }: TimeControlSele
       {/* Expandable Time Controls */}
       <AnimatePresence>
         {isExpanded && (
-          <motion.div
+          <m.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -173,7 +174,7 @@ export default function TimeControlSelector({ value, onChange }: TimeControlSele
                 </div>
               </div>
             ))}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

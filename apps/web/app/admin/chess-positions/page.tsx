@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
 import ChessBoard from "@/app/components/ChessBoard";
 import { Chess } from "chess.js";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import {
   Plus,
   Edit2,
@@ -117,11 +117,13 @@ const initialFormData: ChessPositionFormData = {
 // Legend Search Dropdown Component
 function LegendSearchDropdown({
   label,
+  id,
   selectedLegend,
   onSelect,
   onClear,
 }: {
   label: string;
+  id: string;
   selectedLegend: Legend | null;
   onSelect: (legend: Legend) => void;
   onClear: () => void;
@@ -163,9 +165,9 @@ function LegendSearchDropdown({
       if (data.success) {
         setSearchResults(data.data.legends);
       }
+      setIsSearching(false);
     } catch (error) {
       logger.error("Error searching legends:", error);
-    } finally {
       setIsSearching(false);
     }
   }, []);
@@ -189,6 +191,7 @@ function LegendSearchDropdown({
   return (
     <div ref={dropdownRef} className="relative">
       <label
+        htmlFor={id}
         style={{ fontFamily: "'Geist', sans-serif" }}
         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
       >
@@ -239,16 +242,18 @@ function LegendSearchDropdown({
         </div>
       ) : (
         <div>
-          <div
+          <button
+            type="button"
             onClick={() => setIsOpen(true)}
             className={cn(
-              "w-full px-4 py-3 border cursor-pointer flex items-center gap-2",
+              "w-full px-4 py-3 border flex items-center gap-2",
               isOpen ? "border-white/30" : "border-white/10",
               "hover:border-white/20 transition-colors"
             )}
           >
             <Search className="w-4 h-4 text-white/30" strokeWidth={1.5} />
             <input
+              id={id}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -264,7 +269,7 @@ function LegendSearchDropdown({
               )}
               strokeWidth={1.5}
             />
-          </div>
+          </button>
 
           {isOpen && (
             <div className="absolute z-50 w-full mt-1 border border-white/10 bg-black max-h-60 overflow-y-auto">
@@ -380,6 +385,7 @@ function SideToMoveDropdown({
   return (
     <div ref={dropdownRef} className="relative">
       <label
+        htmlFor="position-side-to-move"
         style={{ fontFamily: "'Geist', sans-serif" }}
         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
       >
@@ -387,6 +393,7 @@ function SideToMoveDropdown({
       </label>
 
       <button
+        id="position-side-to-move"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
@@ -487,6 +494,23 @@ export default function ChessPositionsAdmin() {
     null
   );
 
+  const fetchPositions = async () => {
+    try {
+      const response = await fetch("/api/chess-positions");
+      const data = await response.json();
+      if (data.success) {
+        setPositions(data.data.positions);
+      } else {
+        logger.error("API returned unsuccessful:", data);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      logger.error("Error fetching positions:", error);
+      toast.error("Failed to fetch chess positions");
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPositions();
   }, []);
@@ -521,23 +545,6 @@ export default function ChessPositionsAdmin() {
       setPreviewBoard(null);
     }
   }, [formData.fen, formData.sideToMove, errors.fen]);
-
-  const fetchPositions = async () => {
-    try {
-      const response = await fetch("/api/chess-positions");
-      const data = await response.json();
-      if (data.success) {
-        setPositions(data.data.positions);
-      } else {
-        logger.error("API returned unsuccessful:", data);
-      }
-    } catch (error) {
-      logger.error("Error fetching positions:", error);
-      toast.error("Failed to fetch chess positions");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleEdit = (position: ChessPosition) => {
     setEditingId(position.referenceId);
@@ -612,8 +619,9 @@ export default function ChessPositionsAdmin() {
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Server error: ${response.status} - ${text}`);
+        logger.error("Error deleting position: Server error", response.status);
+        toast.error(`Failed to delete position: Server error: ${response.status}`);
+        return;
       }
 
       const data = await response.json();
@@ -626,9 +634,7 @@ export default function ChessPositionsAdmin() {
       }
     } catch (error) {
       logger.error("Error deleting position:", error);
-      toast.error(
-        `Failed to delete position: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      toast.error("Failed to delete position");
     }
   };
 
@@ -741,8 +747,10 @@ export default function ChessPositionsAdmin() {
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Server error: ${response.status} - ${text}`);
+        logger.error("Error saving position: Server error", response.status);
+        setErrors({ general: `Failed to save position: Server error: ${response.status}` });
+        setIsSaving(false);
+        return;
       }
 
       const data = await response.json();
@@ -768,12 +776,12 @@ export default function ChessPositionsAdmin() {
           setErrors({ general: data.error || "Failed to save position" });
         }
       }
+      setIsSaving(false);
     } catch (error) {
       logger.error("Error saving position:", error);
       setErrors({
         general: `Failed to save position: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
-    } finally {
       setIsSaving(false);
     }
   };
@@ -921,12 +929,14 @@ export default function ChessPositionsAdmin() {
                       {/* FEN */}
                       <div>
                         <label
+                          htmlFor="position-fen"
                           style={{ fontFamily: "'Geist', sans-serif" }}
                           className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                         >
                           FEN *
                         </label>
                         <input
+                          id="position-fen"
                           type="text"
                           required
                           value={formData.fen}
@@ -971,12 +981,14 @@ export default function ChessPositionsAdmin() {
                         {/* Move Number */}
                         <div>
                           <label
+                            htmlFor="position-move-number"
                             style={{ fontFamily: "'Geist', sans-serif" }}
                             className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                           >
                             Move Number
                           </label>
                           <input
+                            id="position-move-number"
                             type="number"
                             value={formData.moveNumber}
                             onChange={(e) => {
@@ -1010,12 +1022,14 @@ export default function ChessPositionsAdmin() {
                         {/* Position Type */}
                         <div>
                           <label
+                            htmlFor="position-type"
                             style={{ fontFamily: "'Geist', sans-serif" }}
                             className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                           >
                             Position Type
                           </label>
                           <input
+                            id="position-type"
                             type="text"
                             value={formData.positionType}
                             onChange={(e) =>
@@ -1038,12 +1052,14 @@ export default function ChessPositionsAdmin() {
                       {/* PGN */}
                       <div>
                         <label
+                          htmlFor="position-pgn"
                           style={{ fontFamily: "'Geist', sans-serif" }}
                           className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                         >
                           PGN
                         </label>
                         <textarea
+                          id="position-pgn"
                           value={formData.pgn}
                           onChange={(e) =>
                             setFormData({ ...formData, pgn: e.target.value })
@@ -1062,12 +1078,12 @@ export default function ChessPositionsAdmin() {
 
                     {/* FEN Preview */}
                     <div>
-                      <label
+                      <span
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Board Preview
-                      </label>
+                      </span>
                       <div className="border border-white/10 p-4 flex items-center justify-center min-h-[300px]">
                         {previewBoard ? (
                           <ChessBoard
@@ -1116,6 +1132,7 @@ export default function ChessPositionsAdmin() {
 
                       <LegendSearchDropdown
                         label="White Legend"
+                        id="white-legend"
                         selectedLegend={selectedWhiteLegend}
                         onSelect={setSelectedWhiteLegend}
                         onClear={() => setSelectedWhiteLegend(null)}
@@ -1123,12 +1140,14 @@ export default function ChessPositionsAdmin() {
 
                       <div>
                         <label
+                          htmlFor="position-white-player-name"
                           style={{ fontFamily: "'Geist', sans-serif" }}
                           className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                         >
                           White Player Name
                         </label>
                         <input
+                          id="position-white-player-name"
                           type="text"
                           value={formData.whitePlayerName}
                           onChange={(e) =>
@@ -1149,12 +1168,14 @@ export default function ChessPositionsAdmin() {
 
                       <div>
                         <label
+                          htmlFor="position-white-player-metadata"
                           style={{ fontFamily: "'Geist', sans-serif" }}
                           className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                         >
                           White Player Metadata (JSON)
                         </label>
                         <textarea
+                          id="position-white-player-metadata"
                           value={formData.whitePlayerMetadata}
                           onChange={(e) => {
                             setFormData({
@@ -1201,6 +1222,7 @@ export default function ChessPositionsAdmin() {
 
                       <LegendSearchDropdown
                         label="Black Legend"
+                        id="black-legend"
                         selectedLegend={selectedBlackLegend}
                         onSelect={setSelectedBlackLegend}
                         onClear={() => setSelectedBlackLegend(null)}
@@ -1208,12 +1230,14 @@ export default function ChessPositionsAdmin() {
 
                       <div>
                         <label
+                          htmlFor="position-black-player-name"
                           style={{ fontFamily: "'Geist', sans-serif" }}
                           className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                         >
                           Black Player Name
                         </label>
                         <input
+                          id="position-black-player-name"
                           type="text"
                           value={formData.blackPlayerName}
                           onChange={(e) =>
@@ -1234,12 +1258,14 @@ export default function ChessPositionsAdmin() {
 
                       <div>
                         <label
+                          htmlFor="position-black-player-metadata"
                           style={{ fontFamily: "'Geist', sans-serif" }}
                           className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                         >
                           Black Player Metadata (JSON)
                         </label>
                         <textarea
+                          id="position-black-player-metadata"
                           value={formData.blackPlayerMetadata}
                           onChange={(e) => {
                             setFormData({
@@ -1285,12 +1311,14 @@ export default function ChessPositionsAdmin() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label
+                        htmlFor="position-tournament-name"
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Tournament Name
                       </label>
                       <input
+                        id="position-tournament-name"
                         type="text"
                         value={formData.tournamentName}
                         onChange={(e) =>
@@ -1311,12 +1339,14 @@ export default function ChessPositionsAdmin() {
 
                     <div>
                       <label
+                        htmlFor="position-event-date"
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Event Date
                       </label>
                       <input
+                        id="position-event-date"
                         type="datetime-local"
                         value={formData.eventDate}
                         onChange={(e) => {
@@ -1347,12 +1377,14 @@ export default function ChessPositionsAdmin() {
 
                     <div className="md:col-span-2">
                       <label
+                        htmlFor="position-game-metadata"
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Game Metadata (JSON)
                       </label>
                       <textarea
+                        id="position-game-metadata"
                         value={formData.gameMetadata}
                         onChange={(e) => {
                           setFormData({
@@ -1383,12 +1415,14 @@ export default function ChessPositionsAdmin() {
 
                     <div className="md:col-span-2">
                       <label
+                        htmlFor="position-context"
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Position Context (JSON)
                       </label>
                       <textarea
+                        id="position-context"
                         value={formData.positionContext}
                         onChange={(e) => {
                           setFormData({
@@ -1433,12 +1467,14 @@ export default function ChessPositionsAdmin() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label
+                        htmlFor="position-source-type"
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Source Type
                       </label>
                       <input
+                        id="position-source-type"
                         type="text"
                         value={formData.sourceType}
                         onChange={(e) =>
@@ -1459,12 +1495,14 @@ export default function ChessPositionsAdmin() {
 
                     <div>
                       <label
+                        htmlFor="position-source-metadata"
                         style={{ fontFamily: "'Geist', sans-serif" }}
                         className="block text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2"
                       >
                         Source Metadata (JSON)
                       </label>
                       <textarea
+                        id="position-source-metadata"
                         value={formData.sourceMetadata}
                         onChange={(e) => {
                           setFormData({
@@ -1514,7 +1552,7 @@ export default function ChessPositionsAdmin() {
                         "w-10 h-5 border relative overflow-hidden transition-colors duration-300 flex-shrink-0",
                         formData.featured ? "border-white bg-white" : "border-white/30"
                       )}>
-                        <motion.div
+                        <m.div
                           className={cn(
                             "absolute top-0 w-1/2 h-full transition-colors duration-300",
                             formData.featured ? "bg-black" : "bg-white/50"
@@ -1541,7 +1579,7 @@ export default function ChessPositionsAdmin() {
                         "w-10 h-5 border relative overflow-hidden transition-colors duration-300 flex-shrink-0",
                         formData.isActive ? "border-white bg-white" : "border-white/30"
                       )}>
-                        <motion.div
+                        <m.div
                           className={cn(
                             "absolute top-0 w-1/2 h-full transition-colors duration-300",
                             formData.isActive ? "bg-black" : "bg-white/50"
@@ -1570,7 +1608,7 @@ export default function ChessPositionsAdmin() {
                       "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                   >
-                    <motion.div
+                    <m.div
                       className="absolute inset-0 bg-black origin-left"
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: isSaving ? 0 : 1 }}

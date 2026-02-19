@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 
 interface ProfileStats {
@@ -33,7 +33,7 @@ function formatDuration(seconds: number | null): string {
 export function StatsOverview({ stats }: StatsOverviewProps) {
   if (!stats || stats.totalGamesPlayed === 0) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -52,14 +52,14 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
         >
           Stats will appear after the first game
         </p>
-      </motion.div>
+      </m.div>
     );
   }
 
   const offset = CIRCUMFERENCE - (stats.winRate / 100) * CIRCUMFERENCE;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -137,7 +137,7 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 

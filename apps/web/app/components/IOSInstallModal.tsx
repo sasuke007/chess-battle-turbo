@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -53,7 +54,7 @@ export function IOSInstallModal({ isOpen, onClose }: IOSInstallModalProps) {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -62,7 +63,7 @@ export function IOSInstallModal({ isOpen, onClose }: IOSInstallModalProps) {
           />
 
           {/* Modal */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -204,7 +205,7 @@ export function IOSInstallModal({ isOpen, onClose }: IOSInstallModalProps) {
             >
               Got it
             </button>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>

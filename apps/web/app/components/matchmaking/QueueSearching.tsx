@@ -3,7 +3,7 @@
 import React from "react";
 import { cn, formatTime } from "@/lib/utils";
 import { Search, Clock, X } from "lucide-react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 interface QueueSearchingProps {
   timeRemaining: number;
@@ -21,7 +21,7 @@ export function QueueSearching({
   timeControlLabel = "5 min",
 }: QueueSearchingProps) {
   return (
-    <motion.div
+    <m.div
       data-testid="queue-searching"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -30,7 +30,7 @@ export function QueueSearching({
       {/* Animated searching indicator */}
       <div className="relative">
         {/* Outer pulsing ring */}
-        <motion.div
+        <m.div
           className="absolute inset-0 border border-white/20"
           animate={{
             scale: [1, 1.3, 1],
@@ -45,7 +45,7 @@ export function QueueSearching({
         />
 
         {/* Second ring */}
-        <motion.div
+        <m.div
           className="absolute inset-0 border border-white/10"
           animate={{
             scale: [1, 1.2, 1],
@@ -62,7 +62,7 @@ export function QueueSearching({
 
         {/* Center icon */}
         <div className="relative w-[100px] h-[100px] border border-white/20 flex items-center justify-center">
-          <motion.div
+          <m.div
             animate={{ rotate: 360 }}
             transition={{
               duration: 4,
@@ -71,7 +71,7 @@ export function QueueSearching({
             }}
           >
             <Search className="w-8 h-8 text-white/60" strokeWidth={1.5} />
-          </motion.div>
+          </m.div>
         </div>
       </div>
 
@@ -122,6 +122,6 @@ export function QueueSearching({
           Matching players with similar ratings for fair games
         </p>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

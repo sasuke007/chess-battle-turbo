@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
@@ -113,9 +114,11 @@ export default async function LegendsPage() {
                     >
                       <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-4 mx-auto sm:mx-0">
                         {legend.profilePhotoUrl ? (
-                          <img
+                          <Image
                             src={legend.profilePhotoUrl}
                             alt={legend.name}
+                            width={56}
+                            height={56}
                             className="w-14 h-14 object-cover border border-white/10"
                           />
                         ) : (

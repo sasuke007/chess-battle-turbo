@@ -2,7 +2,8 @@
 
 import React from "react";
 import { cn } from "../../lib/utils";
-import { motion } from "motion/react";
+import { LazyMotion, domAnimation } from "motion/react";
+import * as m from "motion/react-m";
 
 export const HowToPlay = () => {
   const steps = [
@@ -39,9 +40,10 @@ export const HowToPlay = () => {
         }}
       />
 
+      <LazyMotion features={domAnimation}>
       <div className="max-w-6xl mx-auto relative">
         {/* Section Header */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -72,13 +74,13 @@ export const HowToPlay = () => {
           >
             Relive legendary chess moments and challenge your friends
           </p>
-        </motion.div>
+        </m.div>
 
         {/* Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
           {steps.map((step, index) => (
-            <motion.div
-              key={index}
+            <m.div
+              key={step.number}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -133,10 +135,11 @@ export const HowToPlay = () => {
                 "border-white/10 group-hover:border-black/10",
                 "transition-colors duration-500"
               )} />
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>
+      </LazyMotion>
     </section>
   );
 };

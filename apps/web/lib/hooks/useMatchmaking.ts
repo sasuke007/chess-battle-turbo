@@ -135,6 +135,7 @@ export function useMatchmaking(
       // Note: userReferenceId needs to be passed from the parent component
       // The cancel API will be called from the queue page with the full data
       setStatus("CANCELLED");
+      setIsLoading(false);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error("Error cancelling match request:", error);
@@ -142,7 +143,6 @@ export function useMatchmaking(
       onErrorRef.current(
         error instanceof Error ? error.message : "Failed to cancel"
       );
-    } finally {
       setIsLoading(false);
     }
   }, [options.queueReferenceId, stopPolling]);
@@ -216,11 +216,11 @@ export function useCreateMatchRequest(
           queueReferenceId: data.data.queueEntry.referenceId,
           immediateMatch: data.data.immediateMatch,
         });
+        setIsCreating(false);
       } catch (error) {
         options.onError(
           error instanceof Error ? error.message : "Failed to create match request"
         );
-      } finally {
         setIsCreating(false);
       }
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -48,7 +48,7 @@ export default function BlogPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-6">
         <div className="max-w-7xl mx-auto">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -76,7 +76,7 @@ export default function BlogPage() {
             >
               Strategy, stories, and updates from the world of ReplayChess.
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -108,7 +108,7 @@ export default function BlogPage() {
         <section className="relative py-12 sm:py-16 px-6">
           <div className="max-w-7xl mx-auto">
             <Link href={`/blog/${featuredPost.slug}`}>
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -162,7 +162,7 @@ export default function BlogPage() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             </Link>
           </div>
         </section>
@@ -174,7 +174,7 @@ export default function BlogPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
             {filteredArticles.map((article, index) => (
               <Link key={article.slug} href={`/blog/${article.slug}`}>
-                <motion.article
+                <m.article
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -237,7 +237,7 @@ export default function BlogPage() {
                     "border-white/10 group-hover:border-black/10",
                     "transition-colors duration-500"
                   )} />
-                </motion.article>
+                </m.article>
               </Link>
             ))}
           </div>
@@ -247,7 +247,7 @@ export default function BlogPage() {
       {/* Newsletter CTA */}
       <section className="relative py-20 px-6">
         <div className="max-w-xl mx-auto text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -294,7 +294,7 @@ export default function BlogPage() {
                 </span>
               </button>
             </form>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 

@@ -59,9 +59,6 @@ export const Navbar = () => {
         "border-b border-white/[0.08]",
         "supports-[backdrop-filter]:bg-black/30"
       )}
-      style={{
-        WebkitBackdropFilter: 'blur(20px)',
-      }}
     >
       {/* Logo */}
       <Link href="/" className="flex items-center gap-3 group">

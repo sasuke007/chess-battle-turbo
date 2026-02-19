@@ -49,6 +49,9 @@ export function useRequireAuth(): UseRequireAuthReturn {
       trackApiResponseTime("user.fetchByEmail", Date.now() - start);
 
       if (!response.ok) {
+        isFetchingRef.current = false;
+        setIsLoadingUserData(false);
+        setInitialCheckDone(true);
         router.push("/sign-in");
         return;
       }
@@ -61,12 +64,14 @@ export function useRequireAuth(): UseRequireAuthReturn {
       } else {
         router.push("/sign-in");
       }
+      isFetchingRef.current = false;
+      setIsLoadingUserData(false);
+      setInitialCheckDone(true);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error("Error fetching user data:", error);
       }
       router.push("/sign-in");
-    } finally {
       isFetchingRef.current = false;
       setIsLoadingUserData(false);
       setInitialCheckDone(true);
@@ -117,14 +122,15 @@ export function useRequireAuth(): UseRequireAuthReturn {
         } else if (data !== null) {
           router.push("/sign-in");
         }
+        isFetchingRef.current = false;
+        setIsLoadingUserData(false);
+        setInitialCheckDone(true);
       })
       .catch((error) => {
         if (process.env.NODE_ENV === 'development') {
           console.error("Error fetching user data:", error);
         }
         router.push("/sign-in");
-      })
-      .finally(() => {
         isFetchingRef.current = false;
         setIsLoadingUserData(false);
         setInitialCheckDone(true);

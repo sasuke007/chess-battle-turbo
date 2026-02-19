@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn, getInitials } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -48,7 +48,7 @@ function timeAgo(dateString: string | null): string {
 export function GameHistory({ games }: GameHistoryProps) {
   if (games.length === 0) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -67,12 +67,12 @@ export function GameHistory({ games }: GameHistoryProps) {
         >
           Completed games will appear here
         </p>
-      </motion.div>
+      </m.div>
     );
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -182,6 +182,6 @@ export function GameHistory({ games }: GameHistoryProps) {
           );
         })}
       </div>
-    </motion.div>
+    </m.div>
   );
 }

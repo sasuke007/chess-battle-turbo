@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Mail } from "lucide-react";
 import { Navbar } from "../components/Navbar";
@@ -51,7 +51,7 @@ export default function CareersPage() {
         <div className="absolute bottom-20 right-8 w-32 h-32 border-r border-b border-white/10" />
 
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -65,9 +65,9 @@ export default function CareersPage() {
               Careers
             </span>
             <div className="h-px w-12 bg-white/30" />
-          </motion.div>
+          </m.div>
 
-          <motion.h1
+          <m.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -77,9 +77,9 @@ export default function CareersPage() {
             Great Things
             <br />
             <span className="text-white/40">Take Time</span>
-          </motion.h1>
+          </m.h1>
 
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -87,7 +87,7 @@ export default function CareersPage() {
             className="text-base sm:text-lg text-white/40 max-w-xl leading-relaxed"
           >
             We&apos;re not hiring right now — but that chapter is coming.
-          </motion.p>
+          </m.p>
         </div>
       </section>
 
@@ -101,7 +101,7 @@ export default function CareersPage() {
           }}
         />
         <div className="max-w-3xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -147,14 +147,14 @@ export default function CareersPage() {
                 preparing for the middle game where things get interesting.
               </p>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
       {/* The Future */}
       <section className="relative py-24 sm:py-36 px-6 border-t border-white/[0.06]">
         <div className="max-w-3xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -210,7 +210,7 @@ export default function CareersPage() {
                   description: "Hire exceptional people to accelerate the vision.",
                 },
               ].map((step, index) => (
-                <motion.div
+                <m.div
                   key={step.number}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -236,10 +236,10 @@ export default function CareersPage() {
                   >
                     {step.description}
                   </p>
-                </motion.div>
+                </m.div>
               ))}
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -257,7 +257,7 @@ export default function CareersPage() {
           <div className="absolute -top-10 -left-10 w-28 h-28 border-l border-t border-white/10 hidden sm:block" />
           <div className="absolute -bottom-10 -right-10 w-28 h-28 border-r border-b border-white/10 hidden sm:block" />
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -327,7 +327,7 @@ export default function CareersPage() {
                 </button>
               </form>
             ) : (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="pt-4"
@@ -338,7 +338,7 @@ export default function CareersPage() {
                 >
                   We&apos;ll be in touch — thanks for your interest.
                 </p>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Divider */}
@@ -374,7 +374,7 @@ export default function CareersPage() {
                 </span>
               </a>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 

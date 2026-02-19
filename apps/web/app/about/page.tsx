@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -54,7 +54,7 @@ export default function AboutPage() {
         <div className="absolute bottom-20 right-8 w-32 h-32 border-r border-b border-white/10" />
 
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -68,9 +68,9 @@ export default function AboutPage() {
               Our Story
             </span>
             <div className="h-px w-12 bg-white/30" />
-          </motion.div>
+          </m.div>
 
-          <motion.h1
+          <m.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -80,9 +80,9 @@ export default function AboutPage() {
             Where Legends
             <br />
             <span className="text-white/40">Meet the Board</span>
-          </motion.h1>
+          </m.h1>
 
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
@@ -90,7 +90,7 @@ export default function AboutPage() {
             className="text-lg sm:text-xl text-white/40 max-w-2xl"
           >
             We&apos;re on a mission to make chess history interactive, immersive, and unforgettable.
-          </motion.p>
+          </m.p>
         </div>
       </section>
 
@@ -104,7 +104,7 @@ export default function AboutPage() {
           }}
         />
         <div className="max-w-6xl mx-auto relative grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -116,8 +116,8 @@ export default function AboutPage() {
             >
               &ldquo;Every great chess game tells a story. We built a platform where you can live those stories.&rdquo;
             </p>
-          </motion.div>
-          <motion.div
+          </m.div>
+          <m.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -138,7 +138,7 @@ export default function AboutPage() {
               Our platform combines real-time multiplayer gaming with a curated library of historic positions,
               AI-powered analysis, and a community of passionate players who share our love for the royal game.
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -147,7 +147,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/10">
             {stats.map((stat, index) => (
-              <motion.div
+              <m.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -167,7 +167,7 @@ export default function AboutPage() {
                 >
                   {stat.label}
                 </p>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function AboutPage() {
       {/* Timeline */}
       <section className="relative py-20 sm:py-32 px-6">
         <div className="max-w-6xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -198,7 +198,7 @@ export default function AboutPage() {
             >
               Milestones
             </h2>
-          </motion.div>
+          </m.div>
 
           <div className="relative">
             {/* Vertical line */}
@@ -206,8 +206,8 @@ export default function AboutPage() {
 
             <div className="space-y-12">
               {milestones.map((milestone, index) => (
-                <motion.div
-                  key={index}
+                <m.div
+                  key={milestone.title}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -254,7 +254,7 @@ export default function AboutPage() {
                   >
                     {milestone.description}
                   </p>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -271,7 +271,7 @@ export default function AboutPage() {
           }}
         />
         <div className="max-w-6xl mx-auto relative">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -293,9 +293,9 @@ export default function AboutPage() {
             >
               Behind the Board
             </h2>
-          </motion.div>
+          </m.div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -308,6 +308,7 @@ export default function AboutPage() {
                   src="/rohit-pandit.jpeg"
                   alt="Rohit Pandit"
                   fill
+                  sizes="112px"
                   className="object-cover"
                 />
               </div>
@@ -334,7 +335,7 @@ export default function AboutPage() {
               <div className="absolute top-4 right-4 w-8 h-8 border-t border-r border-white/10" />
               <div className="absolute bottom-4 left-4 w-8 h-8 border-b border-l border-white/10" />
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 
@@ -345,7 +346,7 @@ export default function AboutPage() {
           <div className="absolute -top-8 -left-8 w-24 h-24 border-l border-t border-white/10" />
           <div className="absolute -bottom-8 -right-8 w-24 h-24 border-r border-b border-white/10" />
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -380,7 +381,7 @@ export default function AboutPage() {
                 </span>
               </button>
             </Link>
-          </motion.div>
+          </m.div>
         </div>
       </section>
 

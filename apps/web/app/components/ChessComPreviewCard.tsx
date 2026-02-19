@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ArrowRight, RotateCcw } from "lucide-react";
@@ -33,7 +33,7 @@ export function ChessComPreviewCard({
   const { profile, ratings } = previewData;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -41,7 +41,7 @@ export function ChessComPreviewCard({
     >
       {/* Profile header */}
       <div className="p-6 sm:p-8">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -118,14 +118,14 @@ export function ChessComPreviewCard({
               )}
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </div>
 
       {/* Divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       {/* Ratings grid */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -160,13 +160,13 @@ export function ChessComPreviewCard({
             );
           })}
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       {/* Actions */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -186,7 +186,7 @@ export function ChessComPreviewCard({
           <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
           {loading ? (
             <>
-              <motion.div
+              <m.div
                 className="w-4 h-4 border-2 border-black/30 border-t-black group-hover:border-white/30 group-hover:border-t-white relative z-10"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -225,7 +225,7 @@ export function ChessComPreviewCard({
           <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
           {cancelLabel}
         </button>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

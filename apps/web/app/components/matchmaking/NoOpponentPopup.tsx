@@ -3,7 +3,8 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Bot, RefreshCw, ArrowLeft, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 
 interface NoOpponentPopupProps {
   isOpen: boolean;
@@ -29,14 +30,14 @@ export function NoOpponentPopup({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-49 flex items-center justify-center bg-black/90 backdrop-blur-sm"
         >
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -47,7 +48,7 @@ export function NoOpponentPopup({
             <div className="flex justify-center mb-8">
               <div className="relative">
                 {/* Outer pulsing ring */}
-                <motion.div
+                <m.div
                   className="absolute inset-0 border border-white/20"
                   animate={{
                     scale: [1, 1.3, 1],
@@ -62,7 +63,7 @@ export function NoOpponentPopup({
                 />
 
                 {/* Second ring */}
-                <motion.div
+                <m.div
                   className="absolute inset-0 border border-white/10"
                   animate={{
                     scale: [1, 1.2, 1],
@@ -179,8 +180,8 @@ export function NoOpponentPopup({
                 <span className="text-sm">Back to Play</span>
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, type ReactNode, type KeyboardEvent } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,18 @@ interface SearchableDropdownProps<T> {
   placeholder: string;
   isLoading?: boolean;
   renderItem?: (item: T, isSelected: boolean) => ReactNode;
+}
+
+function DropdownItemContent<T>({
+  item,
+  isSelected,
+  renderItem,
+}: {
+  item: T;
+  isSelected: boolean;
+  renderItem: (item: T, isSelected: boolean) => ReactNode;
+}) {
+  return <>{renderItem(item, isSelected)}</>;
 }
 
 export default function SearchableDropdown<T>({
@@ -48,11 +61,6 @@ export default function SearchableDropdown<T>({
       })
     : items;
 
-  // Reset highlight when query or open state changes
-  useEffect(() => {
-    setHighlightedIndex(-1);
-  }, [query, isOpen]);
-
   // Scroll highlighted item into view
   useEffect(() => {
     if (highlightedIndex >= 0 && listRef.current) {
@@ -67,6 +75,7 @@ export default function SearchableDropdown<T>({
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setQuery("");
+        setHighlightedIndex(-1);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -76,6 +85,7 @@ export default function SearchableDropdown<T>({
   function handleOpen() {
     setIsOpen(true);
     setQuery("");
+    setHighlightedIndex(-1);
     // Focus input after animation frame
     requestAnimationFrame(() => inputRef.current?.focus());
   }
@@ -123,11 +133,11 @@ export default function SearchableDropdown<T>({
   if (isLoading) {
     return (
       <div className="space-y-1.5">
-        {[...Array(3)].map((_, i) => (
+        {[0, 1, 2].map((n) => (
           <div
-            key={i}
+            key={n}
             className="h-10 bg-white/5 border border-white/10 animate-pulse"
-            style={{ animationDelay: `${i * 150}ms` }}
+            style={{ animationDelay: `${n * 150}ms` }}
           />
         ))}
       </div>
@@ -195,7 +205,7 @@ export default function SearchableDropdown<T>({
       {/* Open state: search input + scrollable list */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -212,7 +222,7 @@ export default function SearchableDropdown<T>({
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setHighlightedIndex(-1); }}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 style={geistFont}
@@ -247,17 +257,17 @@ export default function SearchableDropdown<T>({
 
                   if (renderItem) {
                     return (
-                      <div
+                      <button
                         key={id}
                         onClick={() => handleSelect(id)}
                         className={cn(
-                          "cursor-pointer transition-colors duration-150",
+                          "w-full cursor-pointer transition-colors duration-150 text-left",
                           isHighlighted && "bg-white/10",
                           isSelected && "bg-white/5"
                         )}
                       >
-                        {renderItem(item, isSelected)}
-                      </div>
+                        <DropdownItemContent item={item} isSelected={isSelected} renderItem={renderItem} />
+                      </button>
                     );
                   }
 
@@ -301,7 +311,7 @@ export default function SearchableDropdown<T>({
                 })
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

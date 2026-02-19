@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LegalPageLayout } from "../components/LegalPageLayout";
 
 const sections = [
@@ -140,9 +141,9 @@ const sections = [
         <p>
           We use cookies and similar tracking technologies to enhance your experience. For detailed information about the
           cookies we use, please see our{" "}
-          <a href="/cookies" className="text-white/60 hover:text-white underline transition-colors">
+          <Link href="/cookies" className="text-white/60 hover:text-white underline transition-colors">
             Cookie Policy
-          </a>
+          </Link>
           .
         </p>
         <p>

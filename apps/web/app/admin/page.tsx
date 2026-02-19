@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
 import { Crown, ArrowRight } from "lucide-react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 // Chess piece icon component for positions card
 function ChessPieceIcon({ className }: { className?: string }) {
@@ -55,7 +55,7 @@ function FeatureCard({
 }: FeatureCardProps) {
   return (
     <Link href={href}>
-      <motion.div
+      <m.div
         className={cn(
           "group relative border border-white/10 p-8",
           "hover:border-white/20 transition-all duration-300",
@@ -120,7 +120,7 @@ function FeatureCard({
             "transition-opacity duration-300 pointer-events-none"
           )}
         />
-      </motion.div>
+      </m.div>
     </Link>
   );
 }
@@ -131,24 +131,27 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
+      let legendsData;
+      let positionsData;
       try {
         const [legendsRes, positionsRes] = await Promise.all([
           fetch("/api/legends"),
           fetch("/api/chess-positions"),
         ]);
-
-        const legendsData = await legendsRes.json();
-        const positionsData = await positionsRes.json();
-
-        setStats({
-          legends: legendsData.data?.legends?.length || 0,
-          positions: positionsData.data?.positions?.length || 0,
-        });
+        [legendsData, positionsData] = await Promise.all([
+          legendsRes.json(),
+          positionsRes.json(),
+        ]);
       } catch (error) {
         logger.error("Failed to fetch stats:", error);
-      } finally {
         setIsLoading(false);
+        return;
       }
+
+      const legendCount = Array.isArray(legendsData.data?.legends) ? legendsData.data.legends.length : 0;
+      const positionCount = Array.isArray(positionsData.data?.positions) ? positionsData.data.positions.length : 0;
+      setStats({ legends: legendCount, positions: positionCount });
+      setIsLoading(false);
     }
     fetchStats();
   }, []);

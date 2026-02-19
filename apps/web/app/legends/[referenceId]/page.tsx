@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { safeJsonLd } from "@/lib/seo";
 import { Navbar } from "../../components/Navbar";
@@ -70,10 +72,9 @@ export default async function LegendDetailPage({ params }: Props) {
       <Navbar />
       <Breadcrumbs />
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd) }}
-      />
+      <Script id="person-jsonld" type="application/ld+json">
+        {safeJsonLd(personJsonLd)}
+      </Script>
 
       {/* Grid background */}
       <div
@@ -97,9 +98,11 @@ export default async function LegendDetailPage({ params }: Props) {
         {/* Hero */}
         <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-6 mb-12">
           {legend.profilePhotoUrl ? (
-            <img
+            <Image
               src={legend.profilePhotoUrl}
               alt={legend.name}
+              width={128}
+              height={128}
               className="w-24 h-24 sm:w-32 sm:h-32 object-cover border border-white/10"
             />
           ) : (
@@ -198,9 +201,9 @@ export default async function LegendDetailPage({ params }: Props) {
               Achievements
             </h2>
             <ul className="space-y-2">
-              {achievements.map((achievement, i) => (
+              {achievements.map((achievement) => (
                 <li
-                  key={i}
+                  key={achievement}
                   style={{ fontFamily: "'Geist', sans-serif" }}
                   className="flex items-start gap-3 text-sm text-white/40"
                 >
@@ -224,7 +227,7 @@ export default async function LegendDetailPage({ params }: Props) {
             <div className="space-y-2">
               {famousGames.map((game, i) => (
                 <div
-                  key={i}
+                  key={game.fen}
                   className="border border-white/[0.06] p-4 flex items-center justify-between"
                 >
                   <div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import { Navbar } from "../../components/Navbar";
@@ -96,21 +96,25 @@ const ProfilePage = ({
   }, [clerkUser]);
 
   const fetchProfile = async () => {
+    let result;
     try {
       const response = await fetch(`/api/profile/${referenceId}`);
-      const result = await response.json();
-
-      if (!result.success) {
-        setError(result.error || "Profile not found");
-        return;
-      }
-
-      setData(result.data);
+      result = await response.json();
     } catch {
       setError("Failed to load profile");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!result.success) {
+      const msg = result.error || "Profile not found";
+      setError(msg);
+      setLoading(false);
+      return;
+    }
+
+    setData(result.data);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -184,7 +188,7 @@ const ProfilePage = ({
       />
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-16">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="space-y-6 sm:space-y-8"
@@ -194,7 +198,7 @@ const ProfilePage = ({
 
           {/* Chess.com warning banner for own profile */}
           {isOwnProfile && !data.chessComProfile && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -237,7 +241,7 @@ const ProfilePage = ({
                   strokeWidth={1.5}
                 />
               </button>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Stats Overview */}
@@ -245,7 +249,7 @@ const ProfilePage = ({
 
           {/* Game History */}
           <GameHistory games={data.games} />
-        </motion.div>
+        </m.div>
       </div>
 
       {/* Connect modal */}

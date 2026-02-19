@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 
 interface ConfettiPiece {
   id: number;
@@ -14,46 +15,29 @@ interface ConfettiPiece {
   shape: "square" | "line" | "dot";
 }
 
+const CONFETTI_SHAPES: ("square" | "line" | "dot")[] = ["square", "line", "dot"];
+const CONFETTI_PIECES: ConfettiPiece[] = Array.from({ length: 40 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  delay: Math.random() * 1.5,
+  duration: 3 + Math.random() * 2,
+  size: 4 + Math.random() * 8,
+  rotation: Math.random() * 360,
+  opacity: 0.3 + Math.random() * 0.5,
+  shape: CONFETTI_SHAPES[Math.floor(Math.random() * CONFETTI_SHAPES.length)]!,
+}));
+
 interface VictoryConfettiProps {
   isActive: boolean;
 }
 
 export const VictoryConfetti = ({ isActive }: VictoryConfettiProps) => {
-  const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
-
-  useEffect(() => {
-    if (!isActive) {
-      setPieces([]);
-      return;
-    }
-
-    // Generate elegant, sparse confetti pieces
-    const newPieces: ConfettiPiece[] = [];
-    const pieceCount = 40; // Sparse, not overwhelming
-
-    for (let i = 0; i < pieceCount; i++) {
-      const shapes: ("square" | "line" | "dot")[] = ["square", "line", "dot"];
-      newPieces.push({
-        id: i,
-        x: Math.random() * 100, // percentage across screen
-        delay: Math.random() * 1.5,
-        duration: 3 + Math.random() * 2,
-        size: 4 + Math.random() * 8,
-        rotation: Math.random() * 360,
-        opacity: 0.3 + Math.random() * 0.5,
-        shape: shapes[Math.floor(Math.random() * shapes.length)]!,
-      });
-    }
-
-    setPieces(newPieces);
-  }, [isActive]);
-
-  if (!isActive || pieces.length === 0) return null;
+  if (!isActive) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {pieces.map((piece) => (
-        <motion.div
+      {CONFETTI_PIECES.map((piece) => (
+        <m.div
           key={piece.id}
           initial={{
             x: `${piece.x}vw`,
@@ -84,7 +68,7 @@ export const VictoryConfetti = ({ isActive }: VictoryConfettiProps) => {
       ))}
 
       {/* Subtle glow pulse at the center */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: [0, 0.15, 0], scale: [0.8, 1.5, 2] }}
         transition={{ duration: 2, ease: "easeOut" }}
@@ -107,7 +91,7 @@ export const DefeatOverlay = ({ isActive }: DefeatOverlayProps) => {
       {isActive && (
         <>
           {/* Top-to-bottom decay sweep */}
-          <motion.div
+          <m.div
             initial={{ scaleY: 0 }}
             animate={{ scaleY: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
@@ -124,7 +108,7 @@ export const DefeatOverlay = ({ isActive }: DefeatOverlayProps) => {
           />
 
           {/* Grayscale/desaturation filter overlay */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.5, delay: 0.3 }}
@@ -136,7 +120,7 @@ export const DefeatOverlay = ({ isActive }: DefeatOverlayProps) => {
           />
 
           {/* Subtle scan lines for "skeleton" effect */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.08 }}
             transition={{ duration: 1, delay: 0.5 }}
@@ -153,7 +137,7 @@ export const DefeatOverlay = ({ isActive }: DefeatOverlayProps) => {
           />
 
           {/* Vignette effect */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.5, delay: 0.2 }}
@@ -175,22 +159,20 @@ export const DefeatOverlay = ({ isActive }: DefeatOverlayProps) => {
   );
 };
 
-const AshParticles = () => {
-  const particles = useMemo(() => {
-    return Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      delay: Math.random() * 3,
-      duration: 4 + Math.random() * 3,
-      size: 2 + Math.random() * 3,
-      drift: (Math.random() - 0.5) * 30,
-    }));
-  }, []);
+const ASH_PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  delay: Math.random() * 3,
+  duration: 4 + Math.random() * 3,
+  size: 2 + Math.random() * 3,
+  drift: (Math.random() - 0.5) * 30,
+}));
 
+const AshParticles = () => {
   return (
     <div className="absolute inset-0 z-45 pointer-events-none overflow-hidden">
-      {particles.map((particle) => (
-        <motion.div
+      {ASH_PARTICLES.map((particle) => (
+        <m.div
           key={particle.id}
           initial={{
             x: `${particle.x}%`,
@@ -230,7 +212,7 @@ export const DrawOverlay = ({ isActive }: DrawOverlayProps) => {
   return (
     <AnimatePresence>
       {isActive && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1 }}
@@ -245,13 +227,13 @@ export const DrawOverlay = ({ isActive }: DrawOverlayProps) => {
           }}
         >
           {/* Balanced scale-like pattern */}
-          <motion.div
+          <m.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-[1px] bg-white/20"
           />
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );
@@ -278,16 +260,15 @@ export const GameEndOverlay = ({
   const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
-    if (isActive) {
-      // Show button after animation delay (2.5 seconds)
-      const timer = setTimeout(() => {
-        setShowButton(true);
-      }, 2500);
-      return () => clearTimeout(timer);
-    } else {
+    if (!isActive) return;
+    const timer = setTimeout(() => {
+      setShowButton(true);
+    }, 2500);
+    return () => {
+      clearTimeout(timer);
       setShowButton(false);
-    }
-  }, [isActive, result]);
+    };
+  }, [isActive]);
 
   const getResultText = () => {
     switch (result) {
@@ -323,7 +304,7 @@ export const GameEndOverlay = ({
   return (
     <AnimatePresence>
       {isActive && showButton && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -336,7 +317,7 @@ export const GameEndOverlay = ({
           }}
           onClick={handleDismiss}
         >
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -355,7 +336,7 @@ export const GameEndOverlay = ({
             </div>
 
             {/* Action buttons */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.3 }}
@@ -383,7 +364,7 @@ export const GameEndOverlay = ({
                   Back
                 </span>
               </button>
-            </motion.div>
+            </m.div>
 
             {/* Skip text */}
             <p
@@ -392,8 +373,8 @@ export const GameEndOverlay = ({
             >
               Click anywhere to dismiss
             </p>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

@@ -6,7 +6,7 @@ import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import ChessBoard from "../../components/ChessBoard";
 import { VictoryConfetti, GameEndOverlay } from "../../components/GameEndEffects";
-import PromotionPopup from "../../components/PromotionPopup";
+import { PromotionPopup } from "../../components/PromotionPopup";
 import MoveNavigation from "../../components/MoveNavigation";
 import { useRequireAuth, UseRequireAuthReturn } from "@/lib/hooks";
 import { useBotMove, Difficulty } from "@/lib/hooks/useBotMove";
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { computePositionAtMove, getLastMoveForDisplay } from "@/lib/utils/chess-navigation";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { PlayerInfoCard } from "./PlayerInfoCard";
 import { GameActionButtons } from "./GameActionButtons";
 import { AnalysisPhaseBannerMobile, AnalysisPhaseBannerDesktop } from "./AnalysisPhaseBanner";
@@ -452,6 +452,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
       setGameOver(true);
       setIsAnalysisPhase(false);
+      setPendingPromotion(null);
+      setSelectedSquare(null);
+      setLegalMoves([]);
       const resultText = payload.result === "DRAW"
         ? "Draw"
         : payload.winner === myColorRef.current
@@ -499,15 +502,6 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     };
   }, [isReady, gameId, userReferenceId]);
 
-  // Clear pending promotion if game ends
-  useEffect(() => {
-    if (gameOver && pendingPromotion) {
-      setPendingPromotion(null);
-      setSelectedSquare(null);
-      setLegalMoves([]);
-    }
-  }, [gameOver, pendingPromotion]);
-
   // Show game end overlay when game is over (only if position info exists for analysis)
   // Delayed by 5 seconds to let players see the final position
   useEffect(() => {
@@ -533,37 +527,40 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       return;
     }
 
-    const legalMovesUCI = legalMoves.map((m) => `${m.from}${m.to}${m.promotion || ""}`);
+    const legalMovesUCI = legalMoves.map((mv) => `${mv.from}${mv.to}${mv.promotion || ""}`);
 
     const makeBotMove = async () => {
+      let botMoveUCI: string;
       try {
-        const botMoveUCI = await computeBotMove(currentFen, legalMovesUCI);
-        const from = botMoveUCI.slice(0, 2) as Square;
-        const to = botMoveUCI.slice(2, 4) as Square;
-        const promotion = botMoveUCI.length > 4 ? botMoveUCI[4] as "q" | "r" | "b" | "n" : undefined;
-
-        if (socketRef.current) {
-          socketRef.current.emit("make_move", {
-            gameReferenceId: gameId,
-            from,
-            to,
-            promotion: promotion || "q",
-          });
-        }
+        botMoveUCI = await computeBotMove(currentFen, legalMovesUCI);
       } catch (error) {
         logger.error("Error computing bot move:", error);
         if (legalMoves.length > 0 && socketRef.current) {
           const fallbackMove = legalMoves[0]!;
+          const fallbackPromotion = fallbackMove.promotion || "q";
           socketRef.current.emit("make_move", {
             gameReferenceId: gameId,
             from: fallbackMove.from,
             to: fallbackMove.to,
-            promotion: fallbackMove.promotion || "q",
+            promotion: fallbackPromotion,
           });
         }
-      } finally {
         botMoveInProgressRef.current = false;
+        return;
       }
+
+      const from = botMoveUCI.slice(0, 2) as Square;
+      const to = botMoveUCI.slice(2, 4) as Square;
+      const promotion = botMoveUCI[4] as "q" | "r" | "b" | "n" | undefined;
+      if (socketRef.current) {
+        socketRef.current.emit("make_move", {
+          gameReferenceId: gameId,
+          from,
+          to,
+          promotion: promotion || "q",
+        });
+      }
+      botMoveInProgressRef.current = false;
     };
 
     makeBotMove();
@@ -628,7 +625,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       {/* Resign Confirmation Modal */}
       {showResignConfirm && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="border border-white/20 bg-black p-6 max-w-sm w-full"
@@ -659,7 +656,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 Cancel
               </button>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       )}
 
@@ -701,7 +698,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
           </div>
         ) : (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex-1 lg:flex-none flex flex-col lg:grid lg:grid-cols-12 gap-0 lg:gap-8"
@@ -776,7 +773,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Post-Game Actions */}
               {gameOver && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
@@ -804,7 +801,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   >
                     Back
                   </button>
-                </motion.div>
+                </m.div>
               )}
 
               {/* Move History */}
@@ -824,7 +821,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     <div className="grid grid-cols-2 gap-1">
                       {moveHistory.map((move, index) => (
                         <div
-                          key={index}
+                          key={move.after}
                           className={cn(
                             "px-2 py-1 text-sm",
                             index % 2 === 0 ? "bg-white/5" : ""
@@ -847,7 +844,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-2xl mx-auto w-full">
               {/* Opening / Tournament Name Banner - compact */}
               {(positionInfo?.openingName || positionInfo?.tournamentName) && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
@@ -880,7 +877,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     </p>
                   )}
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                </motion.div>
+                </m.div>
               )}
 
               {/* Opponent Clock & Info */}
@@ -899,7 +896,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Incoming Draw Offer Banner - compact on mobile */}
               {pendingDrawOffer && !gameOver && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-amber-500/20 border border-amber-500/40 p-2 lg:p-3 mx-2 mb-2 lg:mb-4"
@@ -925,7 +922,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                       </button>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               )}
 
               {/* Board - minimal margins on mobile, tighter on desktop */}
@@ -974,7 +971,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Mobile Post-Game Actions */}
               {gameOver && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
@@ -996,7 +993,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   >
                     Back
                   </button>
-                </motion.div>
+                </m.div>
               )}
 
               {/* Player Clock & Info */}
@@ -1079,7 +1076,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>

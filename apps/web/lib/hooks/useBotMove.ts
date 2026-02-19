@@ -94,6 +94,8 @@ export function useBotMove(options: UseBotMoveOptions): UseBotMoveReturn {
         }
 
         if (cancelledRef.current) {
+          setIsThinking(false);
+          onThinkingEnd?.();
           return legalMoves[0]!; // Return first legal move if cancelled
         }
 
@@ -115,6 +117,8 @@ export function useBotMove(options: UseBotMoveOptions): UseBotMoveReturn {
         }
 
         if (matchingMove) {
+          setIsThinking(false);
+          onThinkingEnd?.();
           return matchingMove;
         }
 
@@ -122,15 +126,16 @@ export function useBotMove(options: UseBotMoveOptions): UseBotMoveReturn {
         if (process.env.NODE_ENV === 'development') {
           console.warn("Stockfish move not found in legal moves, using first legal move");
         }
+        setIsThinking(false);
+        onThinkingEnd?.();
         return legalMoves[0]!;
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           console.error("Stockfish error, using first legal move:", error);
         }
-        return legalMoves[0]!;
-      } finally {
         setIsThinking(false);
         onThinkingEnd?.();
+        return legalMoves[0]!;
       }
     },
     [getBestMove, getDifficultyConfig, getThinkingTime, onThinkingStart, onThinkingEnd]

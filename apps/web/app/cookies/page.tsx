@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LegalPageLayout } from "../components/LegalPageLayout";
 
 const sections = [
@@ -224,9 +225,9 @@ const sections = [
       <>
         <p>
           For questions about our use of cookies, please see our{" "}
-          <a href="/privacy" className="text-white/60 hover:text-white underline transition-colors">
+          <Link href="/privacy" className="text-white/60 hover:text-white underline transition-colors">
             Privacy Policy
-          </a>{" "}
+          </Link>{" "}
           or contact us at{" "}
           <a
             href="mailto:privacy@playchess.tech"

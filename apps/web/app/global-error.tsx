@@ -123,17 +123,17 @@ export default function GlobalError({
           />
 
           {/* Floating debris particles */}
-          {[...Array(6)].map((_, i) => (
+          {[0, 1, 2, 3, 4, 5].map((n) => (
             <div
-              key={i}
+              key={n}
               style={{
                 position: "absolute",
                 width: "3px",
                 height: "3px",
                 backgroundColor: "white",
-                left: `${25 + i * 10}%`,
+                left: `${25 + n * 10}%`,
                 bottom: "30%",
-                animation: `drift ${4 + i * 0.8}s ease-in-out ${i * 0.6}s infinite`,
+                animation: `drift ${4 + n * 0.8}s ease-in-out ${n * 0.6}s infinite`,
                 pointerEvents: "none",
               }}
             />
@@ -324,12 +324,12 @@ export default function GlobalError({
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
                   cursor: "pointer",
-                  transition: "opacity 0.3s",
+                  transition: "opacity 0.3s ease",
                 }}
-                onMouseEnter={(e) => {
+                onMouseOver={(e) => {
                   e.currentTarget.style.opacity = "0.9";
                 }}
-                onMouseLeave={(e) => {
+                onMouseOut={(e) => {
                   e.currentTarget.style.opacity = "1";
                 }}
               >
@@ -348,7 +348,7 @@ export default function GlobalError({
                   textTransform: "uppercase",
                   textDecoration: "none",
                   cursor: "pointer",
-                  transition: "all 0.3s",
+                  transition: "border-color 0.3s, color 0.3s",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)";

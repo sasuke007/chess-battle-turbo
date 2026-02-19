@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Instrument_Serif } from "next/font/google";
+import Script from "next/script";
 import { safeJsonLd } from "@/lib/seo";
 
 import "./globals.css";
@@ -698,30 +699,25 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
         <head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link rel="dns-prefetch" href="https://img.clerk.com" />
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: safeJsonLd({
-                "@context": "https://schema.org",
-                "@type": "Organization",
-                name: "ReplayChess",
-                url: "https://playchess.tech",
-                logo: "https://playchess.tech/chess-logo-bnw.png",
-              }),
-            }}
-          />
+          <Script id="org-jsonld" type="application/ld+json">
+            {safeJsonLd({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "ReplayChess",
+              url: "https://playchess.tech",
+              logo: "https://playchess.tech/chess-logo-bnw.png",
+            })}
+          </Script>
           {process.env.NODE_ENV === "development" && (
             <>
-              <script
+              <Script
                 src="https://unpkg.com/react-scan/dist/auto.global.js"
-                crossOrigin="anonymous"
+                strategy="afterInteractive"
               />
-              <script
+              <Script
                 src="https://unpkg.com/react-grab/dist/index.global.js"
-                crossOrigin="anonymous"
+                strategy="afterInteractive"
               />
             </>
           )}
