@@ -427,7 +427,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {(hasLegendMoves || isOpeningGame) && (
-              <div className="flex items-center justify-center gap-2 md:gap-3 mb-2 sm:mb-3 md:mb-3 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-2 md:gap-3 mb-3 sm:mb-3 md:mb-4 px-2 lg:hidden">
                 {hasLegendMoves && (
                   <button
                     onClick={() => setActiveTab("legend-moves")}
@@ -470,7 +470,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             )}
 
             {/* Board */}
-            <div className="mx-1 sm:mx-0 md:mx-4 mt-0 mb-2 md:mb-3 lg:mt-6 lg:mb-4 lg:mx-0">
+            <div className="mx-1 sm:p-5 md:p-5 lg:p-0 lg:mt-6 lg:mb-4 lg:mx-0">
               {activeTab === "practice" ? (
                 <ChessBoard
                   board={practiceGame.board}
