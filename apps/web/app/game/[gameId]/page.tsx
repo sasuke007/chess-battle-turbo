@@ -952,7 +952,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               </div>
 
               {/* Mobile: Navigation + Actions on one row */}
-              <div className="flex items-center justify-between mt-1.5 sm:mt-3 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-3 mt-1.5 sm:mt-3 px-2 lg:hidden">
                 <MoveNavigation
                   totalMoves={moveHistory.length}
                   viewingMoveIndex={viewingMoveIndex}
