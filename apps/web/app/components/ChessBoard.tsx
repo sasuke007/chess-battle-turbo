@@ -15,6 +15,9 @@ const sizeConfig = {
   sm: "w-8 h-8 sm:w-9 sm:h-9",
   md: "w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14",
   lg: "w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16",
+  // Responsive: fills container width on phones (<640px), fixed on sm+
+  "responsive-lg": "flex-1 aspect-square sm:flex-none sm:aspect-auto sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16",
+  "responsive-md": "flex-1 aspect-square sm:flex-none sm:aspect-auto sm:w-12 sm:h-12 md:w-14 md:h-14",
 } as const;
 
 // Static arrays for square notation conversion
@@ -23,7 +26,7 @@ const rankArr = ["8", "7", "6", "5", "4", "3", "2", "1"] as const;
 
 type ChessProps = {
   board?: PieceInfo[][];
-  squareSize?: "sm" | "md" | "lg";
+  squareSize?: keyof typeof sizeConfig;
   selectedSquare?: Square | null;
   legalMoves?: Square[];
   onSquareClick?: (square: Square) => void;
@@ -97,12 +100,17 @@ const ChessBoard = ({
     return (rowIndex + columnIndex) % 2 === 0;
   };
 
+  const isResponsive = squareSize === "responsive-lg" || squareSize === "responsive-md";
+
   return (
     <div className="flex items-center justify-center w-full select-none">
       {/* Board with outer frames */}
-      <div className="relative">
-        {/* Outer decorative frame */}
-        <div className="absolute -inset-4 border border-white/10" />
+      <div className={cn("relative", isResponsive && "w-full sm:w-auto")}>
+        {/* Outer decorative frame — hidden on mobile for responsive sizes */}
+        <div className={cn(
+          "absolute -inset-4 border border-white/10",
+          isResponsive && "hidden sm:block"
+        )} />
 
         {/* Main board container */}
         <div className={cn(
@@ -114,7 +122,7 @@ const ChessBoard = ({
           <DrawOverlay isActive={gameEndState === "draw"} />
           {/* The board itself */}
           {displayBoard.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
+            <div key={rowIndex} className={cn("flex", isResponsive && "w-full")}>
               {row.map((square, columnIndex) => {
                 const squareNotation = getSquareNotation(rowIndex, columnIndex);
                 const isSelected = isSquareSelected(rowIndex, columnIndex);

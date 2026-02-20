@@ -15,12 +15,12 @@ export function GameActionButtons({
 }: GameActionButtonsProps) {
   if (variant === "mobile") {
     return (
-      <div className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2">
+      <div className="lg:hidden flex items-center justify-center gap-2 mt-1 sm:mt-3 px-2">
         <button
           onClick={onOfferDraw}
           disabled={drawOffered}
           className={cn(
-            "h-10 px-5 text-sm border transition-colors",
+            "h-8 sm:h-10 px-3 sm:px-5 text-sm border transition-colors",
             drawOffered
               ? "border-white/10 text-white/30 cursor-not-allowed bg-white/5"
               : "border-white/20 text-white bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -32,7 +32,7 @@ export function GameActionButtons({
         <button
           data-testid="resign-button"
           onClick={onResign}
-          className="h-10 px-5 text-sm border border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 transition-colors"
+          className="h-8 sm:h-10 px-3 sm:px-5 text-sm border border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 transition-colors"
           style={{ fontFamily: "'Geist', sans-serif" }}
         >
           Resign

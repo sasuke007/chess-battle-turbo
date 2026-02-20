@@ -677,7 +677,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         style={backgroundGridStyle}
       />
 
-      <div className="relative max-w-7xl mx-auto px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:py-4 h-[100dvh] lg:min-h-screen flex flex-col lg:flex lg:flex-col lg:justify-center">
+      <div className="relative max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:py-4 h-[100dvh] lg:min-h-screen flex flex-col lg:flex lg:flex-col lg:justify-center">
         {!gameStarted && !isAnalysisPhase ? (
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex flex-col items-center">
@@ -844,14 +844,14 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Center - Chess Board */}
-            <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-2xl mx-auto w-full">
+            <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-none sm:max-w-2xl mx-auto w-full">
               {/* Opening / Tournament Name Banner - compact */}
               {(positionInfo?.openingName || positionInfo?.tournamentName) && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="flex items-center justify-center gap-2 lg:gap-3 mb-1 px-2"
+                  className="flex items-center justify-center gap-2 lg:gap-3 mb-0.5 sm:mb-1 px-2"
                 >
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                   {positionInfo.openingName ? (
@@ -928,10 +928,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </motion.div>
               )}
 
-              {/* Board - minimal margins on mobile, tighter on desktop */}
-              <div className="mx-0 my-2 lg:my-2">
+              {/* Board - small side margins on mobile, tighter on desktop */}
+              <div className="mx-1 sm:mx-0 my-1 sm:my-2 lg:my-2">
                 <ChessBoard
                   board={displayPosition.board()}
+                  squareSize="responsive-lg"
                   selectedSquare={isViewingHistory ? null : selectedSquare}
                   legalMoves={isViewingHistory ? [] : legalMoves}
                   onSquareClick={handleSquareClick}
@@ -950,8 +951,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 />
               </div>
 
-              {/* Move Navigation - mobile only, desktop version is in right sidebar */}
-              <div className="flex items-center justify-center mt-3 px-2 lg:hidden">
+              {/* Mobile: Navigation + Actions on one row */}
+              <div className="flex items-center justify-between mt-1.5 sm:mt-3 px-2 lg:hidden">
                 <MoveNavigation
                   totalMoves={moveHistory.length}
                   viewingMoveIndex={viewingMoveIndex}
@@ -960,44 +961,53 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   disabled={!gameStarted}
                   enableKeyboard={false}
                 />
-              </div>
-
-              {/* Mobile Game Actions - below navigation */}
-              {!gameOver && (
-                <GameActionButtons
-                  variant="mobile"
-                  drawOffered={drawOffered}
-                  onOfferDraw={handleOfferDraw}
-                  onResign={handleResign}
-                />
-              )}
-
-              {/* Mobile Post-Game Actions */}
-              {gameOver && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="lg:hidden flex items-center justify-center gap-2 mt-3 px-2"
-                >
-                  {positionInfo && (
-                    <button
-                      onClick={() => router.replace(`/analysis/${gameId}`)}
-                      className="h-10 px-5 text-sm bg-white text-black hover:bg-white/90 transition-colors"
-                      style={{ fontFamily: "'Geist', sans-serif" }}
-                    >
-                      {positionInfo.openingName ? "Review" : "Compare"}
-                    </button>
+                <div className="flex items-center gap-1">
+                  {!gameOver ? (
+                    <>
+                      <button
+                        onClick={handleOfferDraw}
+                        disabled={drawOffered}
+                        className={cn(
+                          "h-9 sm:h-11 px-3 text-xs border transition-colors",
+                          drawOffered
+                            ? "border-white/10 text-white/30 cursor-not-allowed bg-white/5"
+                            : "border-white/20 text-white bg-white/5 hover:bg-white/15 active:bg-white/20"
+                        )}
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                      >
+                        {drawOffered ? "Offered" : "Draw"}
+                      </button>
+                      <button
+                        data-testid="resign-button"
+                        onClick={handleResign}
+                        className="h-9 sm:h-11 px-3 text-xs border border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 transition-colors"
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                      >
+                        Resign
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {positionInfo && (
+                        <button
+                          onClick={() => router.replace(`/analysis/${gameId}`)}
+                          className="h-9 sm:h-11 px-3 text-xs bg-white text-black hover:bg-white/90 transition-colors"
+                          style={{ fontFamily: "'Geist', sans-serif" }}
+                        >
+                          {positionInfo.openingName ? "Review" : "Compare"}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => router.push("/play")}
+                        className="h-9 sm:h-11 px-3 text-xs border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
+                        style={{ fontFamily: "'Geist', sans-serif" }}
+                      >
+                        Back
+                      </button>
+                    </>
                   )}
-                  <button
-                    onClick={() => router.push("/play")}
-                    className="h-10 px-5 text-sm border border-white/20 text-white/60 hover:border-white/40 hover:text-white transition-colors"
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    Back
-                  </button>
-                </motion.div>
-              )}
+                </div>
+              </div>
 
               {/* Player Clock & Info */}
               <PlayerInfoCard

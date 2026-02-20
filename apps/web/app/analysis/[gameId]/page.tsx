@@ -235,7 +235,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-8 md:px-12 lg:px-4 pb-6 md:pb-12 lg:pb-8 pt-20 md:pt-24 lg:pt-20 min-h-[100dvh] flex flex-col justify-center">
+      <div className="relative max-w-7xl mx-auto px-0 sm:px-8 md:px-8 lg:px-4 pb-4 md:pb-6 lg:pb-8 pt-16 sm:pt-20 md:pt-20 lg:pt-20 min-h-[100dvh] flex flex-col justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -427,12 +427,12 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Tabs - Mobile Only */}
             {(hasLegendMoves || isOpeningGame) && (
-              <div className="flex items-center justify-center gap-2 md:gap-3 mb-5 md:mb-6 px-2 lg:hidden">
+              <div className="flex items-center justify-center gap-2 md:gap-3 mb-2 sm:mb-3 md:mb-3 px-2 lg:hidden">
                 {hasLegendMoves && (
                   <button
                     onClick={() => setActiveTab("legend-moves")}
                     className={cn(
-                      "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                      "px-3 md:px-4 py-2 md:py-2 text-xs md:text-sm tracking-wide border transition-colors",
                       activeTab === "legend-moves"
                         ? "border-sky-500/40 text-sky-400 bg-sky-500/10"
                         : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -445,7 +445,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <button
                   onClick={() => setActiveTab("your-moves")}
                   className={cn(
-                    "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                    "px-3 md:px-4 py-2 md:py-2 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "your-moves"
                       ? "border-white/40 text-white bg-white/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -457,7 +457,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <button
                   onClick={handlePracticeTabClick}
                   className={cn(
-                    "px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm tracking-wide border transition-colors",
+                    "px-3 md:px-4 py-2 md:py-2 text-xs md:text-sm tracking-wide border transition-colors",
                     activeTab === "practice"
                       ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
                       : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
@@ -470,7 +470,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             )}
 
             {/* Board */}
-            <div className="mx-0 md:mx-8 mt-0 mb-3 md:mb-6 lg:mt-6 lg:mb-4 lg:mx-0">
+            <div className="mx-1 sm:mx-0 md:mx-4 mt-0 mb-2 md:mb-3 lg:mt-6 lg:mb-4 lg:mx-0">
               {activeTab === "practice" ? (
                 <ChessBoard
                   board={practiceGame.board}
@@ -490,7 +490,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                           ? "draw"
                           : null
                   }
-                  squareSize="md"
+                  squareSize="responsive-md"
                 />
               ) : (
                 <ChessBoard
@@ -501,7 +501,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   isInteractive={false}
                   gameEndState={null}
                   fadedPieces={activeTab === "legend-moves"}
-                  squareSize="md"
+                  squareSize="responsive-md"
                 />
               )}
             </div>
@@ -514,7 +514,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             />
 
             {/* Navigation Controls */}
-            <div className="flex flex-row items-center gap-2 md:gap-3 mt-4 md:mt-6 lg:mt-6 px-2 lg:px-0 justify-center">
+            <div className="flex flex-row items-center gap-2 md:gap-2 mt-2 md:mt-3 lg:mt-6 px-2 lg:px-0 justify-center">
               {/* Analysis Navigation Buttons — hidden during practice */}
               {activeTab !== "practice" && (
                 <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
@@ -522,7 +522,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     onClick={goToFirst}
                     disabled={isAtStart}
                     className={cn(
-                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      "w-9 h-9 sm:w-11 sm:h-11 md:w-11 md:h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                       isAtStart
                         ? "opacity-30 cursor-not-allowed border-white/10"
                         : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -538,7 +538,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     onClick={goBack}
                     disabled={isAtStart}
                     className={cn(
-                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      "w-9 h-9 sm:w-11 sm:h-11 md:w-11 md:h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                       isAtStart
                         ? "opacity-30 cursor-not-allowed border-white/10"
                         : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -553,7 +553,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     onClick={goForward}
                     disabled={isAtEnd}
                     className={cn(
-                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      "w-9 h-9 sm:w-11 sm:h-11 md:w-11 md:h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                       isAtEnd
                         ? "opacity-30 cursor-not-allowed border-white/10"
                         : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -568,7 +568,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     onClick={goToLast}
                     disabled={isAtEnd}
                     className={cn(
-                      "w-11 h-11 md:w-12 md:h-12 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
+                      "w-9 h-9 sm:w-11 sm:h-11 md:w-11 md:h-11 lg:w-9 lg:h-9 flex items-center justify-center border transition-colors",
                       isAtEnd
                         ? "opacity-30 cursor-not-allowed border-white/10"
                         : "border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20"
@@ -588,14 +588,14 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <div className="flex items-center gap-1 md:gap-2 lg:gap-1 lg:hidden">
                   <button
                     onClick={practiceGame.resetGame}
-                    className="h-10 md:h-12 px-4 md:px-6 text-sm md:text-base border border-amber-500/30 text-amber-400/80 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
+                    className="h-9 md:h-10 px-3 md:px-4 text-sm md:text-sm border border-amber-500/30 text-amber-400/80 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                   >
                     Reset
                   </button>
                   <button
                     onClick={handleBackToAnalysis}
-                    className="h-10 md:h-12 px-4 md:px-6 text-sm md:text-base border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 transition-colors"
+                    className="h-9 md:h-10 px-3 md:px-4 text-sm md:text-sm border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 transition-colors"
                     style={{ fontFamily: "'Geist', sans-serif" }}
                   >
                     Back to Analysis
@@ -605,21 +605,21 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
               {/* Separator */}
               {activeTab !== "practice" && (
-                <div className="w-px h-8 md:h-10 lg:h-6 bg-white/10 mx-1 md:mx-2" />
+                <div className="w-px h-7 md:h-8 lg:h-6 bg-white/10 mx-1 md:mx-2" />
               )}
 
               {/* Action Buttons */}
               <div className="flex items-center gap-1 md:gap-2 lg:gap-1">
                 <button
                   onClick={currentToggleFlip}
-                  className="h-10 md:h-12 lg:h-9 px-4 md:px-6 lg:px-3 text-sm md:text-base lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
+                  className="h-9 md:h-10 lg:h-9 px-3 md:px-4 lg:px-3 text-sm md:text-sm lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Flip
                 </button>
                 <button
                   onClick={() => router.push("/play")}
-                  className="h-10 md:h-12 lg:h-9 px-4 md:px-6 lg:px-3 text-sm md:text-base lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
+                  className="h-9 md:h-10 lg:h-9 px-3 md:px-4 lg:px-3 text-sm md:text-sm lg:text-xs border border-white/20 text-white/60 bg-white/5 hover:bg-white/15 hover:text-white transition-colors"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Back
@@ -628,8 +628,8 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
             </div>
 
             {/* Legend Key / Practice Status (Mobile) */}
-            <div className="lg:hidden mt-4 md:mt-8 px-4 md:px-8">
-              <div className="flex items-center justify-center gap-6 md:gap-10 py-3 md:py-5 border-t border-white/10">
+            <div className="lg:hidden mt-2 md:mt-3 px-4 md:px-8">
+              <div className="flex items-center justify-center gap-6 md:gap-10 py-2 md:py-3 border-t border-white/10">
                 {activeTab === "your-moves" && (
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 bg-white/90 border border-white/40 flex items-center justify-center">

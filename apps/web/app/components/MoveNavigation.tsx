@@ -109,7 +109,7 @@ export default function MoveNavigation({
         onClick={goToFirst}
         disabled={disabled || !canGoBack || currentIndex === 0}
         className={cn(
-          "w-11 h-11 flex items-center justify-center transition-all duration-200",
+          "w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-200",
           "border border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20",
           "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5"
         )}
@@ -126,7 +126,7 @@ export default function MoveNavigation({
         onClick={goBack}
         disabled={disabled || !canGoBack}
         className={cn(
-          "w-11 h-11 flex items-center justify-center transition-all duration-200",
+          "w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-200",
           "border border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20",
           "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5"
         )}
@@ -142,7 +142,7 @@ export default function MoveNavigation({
         onClick={goForward}
         disabled={disabled || !canGoForward}
         className={cn(
-          "w-11 h-11 flex items-center justify-center transition-all duration-200",
+          "w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-200",
           "border border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20",
           "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5"
         )}
@@ -158,7 +158,7 @@ export default function MoveNavigation({
         onClick={goToLast}
         disabled={disabled || isLive || totalMoves === 0}
         className={cn(
-          "w-11 h-11 flex items-center justify-center transition-all duration-200",
+          "w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-200",
           "border border-white/20 bg-white/5 hover:bg-white/15 active:bg-white/20",
           "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5"
         )}

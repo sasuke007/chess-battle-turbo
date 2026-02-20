@@ -79,14 +79,14 @@ export function PlayerInfoCard({
   return (
     <div className={cn(
       "flex items-center justify-between px-2",
-      isOpponent ? "mb-3 lg:mb-5" : "mt-3 lg:mt-5"
+      isOpponent ? "mb-1.5 sm:mb-3 lg:mb-5" : "mt-1.5 sm:mt-3 lg:mt-5"
     )}>
       <div className="flex items-center gap-3">
-        <div className={cn("w-8 h-8 flex items-center justify-center", squareBg)}>
+        <div className={cn("w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center", squareBg)}>
           <span className={pieceTextColor}>{displayPiece}</span>
         </div>
         <div>
-          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
+          <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-xs sm:text-sm">
             {playerName}
             {isOpponent && isAIGame && botColor && myColor !== botColor && (
               <span className="text-white/40"> (Bot)</span>
@@ -95,7 +95,7 @@ export function PlayerInfoCard({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {positionInfo && !positionInfo.openingName && (
           <div className="flex items-center gap-2">
             <p style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium text-sm">
@@ -123,7 +123,7 @@ export function PlayerInfoCard({
           </div>
         )}
         <div className={cn(
-          "px-4 py-2 font-mono text-xl",
+          "px-2.5 py-1 sm:px-4 sm:py-2 font-mono text-base sm:text-xl",
           isActive ? "bg-white text-black" : "bg-white/10 text-white"
         )}>
           {formatTime(time)}
