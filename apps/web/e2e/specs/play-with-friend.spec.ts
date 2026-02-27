@@ -9,6 +9,7 @@ test.describe("Play with Friend", () => {
     await playerA.page.goto("/play");
     await playerA.page.locator('[data-testid="mode-friend"]').click();
     await playerA.page.locator('[data-testid="start-game-button"]').click();
+    await playerA.page.locator('[data-testid="go-to-game-button"]').click({ timeout: 30_000 });
 
     // Wait for Player A to land on the game page
     await playerA.page.waitForURL(/\/game\//, { timeout: 30_000 });

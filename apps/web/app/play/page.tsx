@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
 import { Users, Zap, Crown, Bot, ArrowRight, Sparkles, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { ShareLinkModal } from "./ShareLinkModal";
 
 // Static game mode definitions — never change at runtime
 const gameModes = [
@@ -68,6 +69,8 @@ function PlayContent() {
   const [playAsLegend, setPlayAsLegend] = useState(false);
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [hoveredMode, setHoveredMode] = useState<string | null>(null);
+  const [shareLinkModalOpen, setShareLinkModalOpen] = useState(false);
+  const [createdGameRef, setCreatedGameRef] = useState<string | null>(null);
 
   // Opening state
   const [playOpening, setPlayOpening] = useState(false);
@@ -141,6 +144,12 @@ function PlayContent() {
       setSelectedOpening(openingParam);
     }
   }, [openingParam]);
+
+  const inviteLink = createdGameRef ? `${window.location.origin}/join/${createdGameRef}` : "";
+
+  const handleGoToGame = () => {
+    if (createdGameRef) router.push(`/game/${createdGameRef}`);
+  };
 
   const handleCreateGame = async () => {
     // TODO:  This error should ideally not Happen, because we dont load the page untill the auth state is ready, but just in case
@@ -226,8 +235,9 @@ function PlayContent() {
         }
 
         const gameRef = data.data.game.referenceId;
-        navigator.clipboard.writeText(`${window.location.origin}/join/${gameRef}`).catch(() => {});
-        router.push(`/game/${gameRef}`);
+        setCreatedGameRef(gameRef);
+        setShareLinkModalOpen(true);
+        setIsCreatingGame(false);
       } catch (error) {
         logger.error("Error creating game", error);
         setIsCreatingGame(false);
@@ -652,6 +662,8 @@ function PlayContent() {
         <div className="absolute top-20 left-6 w-16 h-16 border-l border-t border-white/10" />
         <div className="absolute bottom-6 right-6 w-16 h-16 border-r border-b border-white/10" />
       </div>
+
+      <ShareLinkModal isOpen={shareLinkModalOpen} inviteLink={inviteLink} onGoToGame={handleGoToGame} />
     </>
   );
 }
