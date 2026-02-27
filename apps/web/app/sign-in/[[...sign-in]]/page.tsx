@@ -2,8 +2,12 @@
 
 import { SignIn } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function Page() {
+    const searchParams = useSearchParams();
+    const redirectUrl = searchParams.get('redirect_url') || '/';
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-black relative overflow-hidden">
             {/* Subtle grid background */}
@@ -54,6 +58,7 @@ export default function Page() {
 
                 {/* Clerk SignIn with custom appearance */}
                 <SignIn
+                    fallbackRedirectUrl={redirectUrl}
                     appearance={{
                         variables: {
                             colorBackground: '#000000',

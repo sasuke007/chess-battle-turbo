@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { CompleteUserObject } from "../types/user";
 import { trackApiResponseTime } from "@/lib/metrics";
 
@@ -22,6 +22,7 @@ export function useRequireAuth(): UseRequireAuthReturn {
   const { isLoaded: userLoaded, isSignedIn, user } = useUser();
   const email = user?.emailAddresses[0]?.emailAddress;
   const router = useRouter();
+  const pathname = usePathname();
 
   // Local state for user data
   const [userObject, setUserObject] = useState<CompleteUserObject | null>(null);
@@ -49,7 +50,7 @@ export function useRequireAuth(): UseRequireAuthReturn {
       trackApiResponseTime("user.fetchByEmail", Date.now() - start);
 
       if (!response.ok) {
-        router.push("/sign-in");
+        router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
         return;
       }
 
@@ -59,13 +60,13 @@ export function useRequireAuth(): UseRequireAuthReturn {
         setUserObject(data.data);
         fetchedEmailRef.current = email;
       } else {
-        router.push("/sign-in");
+        router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error("Error fetching user data:", error);
       }
-      router.push("/sign-in");
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
     } finally {
       isFetchingRef.current = false;
       setIsLoadingUserData(false);
@@ -77,7 +78,7 @@ export function useRequireAuth(): UseRequireAuthReturn {
     if (!isLoaded) return;
 
     if (!isSignedIn || !userId || !email) {
-      router.push("/sign-in");
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -105,7 +106,7 @@ export function useRequireAuth(): UseRequireAuthReturn {
       .then((response) => {
         trackApiResponseTime("user.fetchByEmail", Date.now() - fetchStart);
         if (!response.ok) {
-          router.push("/sign-in");
+          router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
           return null;
         }
         return response.json();
@@ -115,21 +116,21 @@ export function useRequireAuth(): UseRequireAuthReturn {
           setUserObject(data.data);
           fetchedEmailRef.current = email;
         } else if (data !== null) {
-          router.push("/sign-in");
+          router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
         }
       })
       .catch((error) => {
         if (process.env.NODE_ENV === 'development') {
           console.error("Error fetching user data:", error);
         }
-        router.push("/sign-in");
+        router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
       })
       .finally(() => {
         isFetchingRef.current = false;
         setIsLoadingUserData(false);
         setInitialCheckDone(true);
       });
-  }, [isLoaded, isSignedIn, userId, email, router]);
+  }, [isLoaded, isSignedIn, userId, email, router, pathname]);
 
   return {
     isLoaded,
