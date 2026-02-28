@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import * as Sentry from "@sentry/node";
 import { GameManager } from "./GameManager";
+import { TournamentManager, TournamentLobbyPayload } from "./TournamentManager";
 import {
   JoinGamePayload,
   MakeMovePayload,
@@ -38,8 +39,12 @@ const io = new Server(server, {
   },
 });
 
-// Initialize GameManager
+// Initialize GameManager and TournamentManager
 const gameManager = new GameManager();
+let tournamentManager: TournamentManager;
+
+// Initialize TournamentManager with io instance
+tournamentManager = new TournamentManager(io);
 
 // Socket.IO connection handler
 io.on("connection", (socket) => {
@@ -224,6 +229,22 @@ io.on("connection", (socket) => {
     );
   });
 
+  // Handle tournament lobby join
+  socket.on("join_tournament_lobby", (payload: TournamentLobbyPayload) => {
+    trackSocketEvent("join_tournament_lobby");
+    const { tournamentReferenceId } = payload;
+    logger.info(`join_tournament_lobby: ${tournamentReferenceId}`, { socket: socket.id });
+    tournamentManager.handleJoinLobby(socket, tournamentReferenceId);
+  });
+
+  // Handle tournament lobby leave
+  socket.on("leave_tournament_lobby", (payload: TournamentLobbyPayload) => {
+    trackSocketEvent("leave_tournament_lobby");
+    const { tournamentReferenceId } = payload;
+    logger.info(`leave_tournament_lobby: ${tournamentReferenceId}`, { socket: socket.id });
+    tournamentManager.handleLeaveLobby(socket, tournamentReferenceId);
+  });
+
   // Handle disconnection (no gameReferenceId — stays as isolated span)
   socket.on("disconnect", () => {
     trackSocketEvent("disconnect");
@@ -234,6 +255,7 @@ io.on("connection", (socket) => {
       () => {
         logger.info(`Client disconnected, socket id: ${socket.id}`);
         gameManager.handleDisconnect(socket);
+        tournamentManager.handleDisconnect(socket);
       }
     );
   });
@@ -243,6 +265,7 @@ io.on("connection", (socket) => {
 process.on("SIGTERM", () => {
   logger.info("SIGTERM received, shutting down gracefully");
   gameManager.destroy();
+  tournamentManager.destroy();
   server.close(() => {
     logger.info("Server closed");
     process.exit(0);
@@ -252,6 +275,7 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   logger.info("SIGINT received, shutting down gracefully");
   gameManager.destroy();
+  tournamentManager.destroy();
   server.close(() => {
     logger.info("Server closed");
     process.exit(0);

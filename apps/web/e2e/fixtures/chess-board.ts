@@ -68,6 +68,13 @@ export class ChessBoardHelper {
       if (legalTargets.length > 0) {
         const to = legalTargets[0]!;
         await this.clickSquare(to);
+
+        // Handle pawn promotion popup — auto-select Queen
+        const promoHeading = this.page.getByRole("heading", { name: "Promote Pawn" });
+        if (await promoHeading.isVisible({ timeout: 500 }).catch(() => false)) {
+          await this.page.getByRole("button", { name: /queen/i }).click();
+        }
+
         return [from, to];
       }
 

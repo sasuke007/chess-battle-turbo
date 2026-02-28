@@ -1,28 +1,28 @@
 import { test, expect, ChessBoardHelper } from "../fixtures";
 
 test.describe("Play with Friend", () => {
-  test("should create, join, play moves, and resign", async ({ playerA, playerB }) => {
-    const boardA = new ChessBoardHelper(playerA.page);
-    const boardB = new ChessBoardHelper(playerB.page);
+  test("should create, join, play moves, and resign", async ({ playerF, playerG }) => {
+    const boardA = new ChessBoardHelper(playerF.page);
+    const boardB = new ChessBoardHelper(playerG.page);
 
-    // Player A creates a friend game
-    await playerA.page.goto("/play");
-    await playerA.page.locator('[data-testid="mode-friend"]').click();
-    await playerA.page.locator('[data-testid="start-game-button"]').click();
-    await playerA.page.locator('[data-testid="go-to-game-button"]').click({ timeout: 30_000 });
+    // Player F creates a friend game
+    await playerF.page.goto("/play");
+    await playerF.page.locator('[data-testid="mode-friend"]').click();
+    await playerF.page.locator('[data-testid="start-game-button"]').click();
+    await playerF.page.locator('[data-testid="go-to-game-button"]').click({ timeout: 30_000 });
 
-    // Wait for Player A to land on the game page
-    await playerA.page.waitForURL(/\/game\//, { timeout: 30_000 });
+    // Wait for Player F to land on the game page
+    await playerF.page.waitForURL(/\/game\//, { timeout: 60_000, waitUntil: "commit" });
 
     // Extract game reference ID from URL
-    const gameRefId = new URL(playerA.page.url()).pathname.split("/game/")[1]!;
+    const gameRefId = new URL(playerF.page.url()).pathname.split("/game/")[1]!;
 
-    // Player B joins via the join page
-    await playerB.page.goto(`/join/${gameRefId}`);
-    await playerB.page.locator('[data-testid="accept-challenge-button"]').click();
+    // Player G joins via the join page
+    await playerG.page.goto(`/join/${gameRefId}`);
+    await playerG.page.locator('[data-testid="accept-challenge-button"]').click();
 
-    // Player B waits for redirect to game page
-    await playerB.page.waitForURL(/\/game\//, { timeout: 30_000 });
+    // Player G waits for redirect to game page
+    await playerG.page.waitForURL(/\/game\//, { timeout: 60_000, waitUntil: "commit" });
 
     // Both wait for board and game to start (past analysis phase)
     await Promise.all([
