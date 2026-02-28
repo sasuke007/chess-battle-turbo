@@ -53,20 +53,21 @@ export async function POST(req: NextRequest) {
       return Math.random().toString(36).substring(2, 8).toUpperCase();
     };
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email },
-      include: {
-        wallet: true,
-        stats: true,
-        chessComProfile: true,
-      },
-    });
+    // Check by googleId first (returning user), then by email (link existing account)
+    const existingUser =
+      (await prisma.user.findUnique({
+        where: { googleId: userId },
+        include: { wallet: true, stats: true, chessComProfile: true },
+      })) ??
+      (await prisma.user.findUnique({
+        where: { email },
+        include: { wallet: true, stats: true, chessComProfile: true },
+      }));
 
     let user;
 
     if (existingUser) {
-      // Update existing user
+      // Update existing user (also links googleId for email-matched users)
       user = await prisma.user.update({
         where: { id: existingUser.id },
         data: {
@@ -99,56 +100,72 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      user = await prisma.$transaction(async (tx) => {
-        // Create user (onboarded: false — will be set true after onboarding or skip)
-        const newUser = await tx.user.create({
-          data: {
-            googleId: userId,
-            email,
-            name,
-            code: userCode,
-            profilePictureUrl,
-            isActive: true,
-            onboarded: false,
-          },
-        });
+      try {
+        user = await prisma.$transaction(async (tx) => {
+          // Create user (onboarded: false — will be set true after onboarding or skip)
+          const newUser = await tx.user.create({
+            data: {
+              googleId: userId,
+              email,
+              name,
+              code: userCode,
+              profilePictureUrl,
+              isActive: true,
+              onboarded: false,
+            },
+          });
 
-        // Create wallet for user
-        await tx.wallet.create({
-          data: {
-            userId: newUser.id,
-            balance: 0,
-            lockedAmount: 0,
-          },
-        });
+          // Create wallet for user
+          await tx.wallet.create({
+            data: {
+              userId: newUser.id,
+              balance: 0,
+              lockedAmount: 0,
+            },
+          });
 
-        // Create stats for user
-        await tx.userStats.create({
-          data: {
-            userId: newUser.id,
-            totalGamesPlayed: 0,
-            gamesWon: 0,
-            gamesLost: 0,
-            gamesDrawn: 0,
-            totalMoneyWon: 0,
-            totalMoneyLost: 0,
-            totalPlatformFeesPaid: 0,
-            netProfit: 0,
-            currentWinStreak: 0,
-            longestWinStreak: 0,
-          },
-        });
+          // Create stats for user
+          await tx.userStats.create({
+            data: {
+              userId: newUser.id,
+              totalGamesPlayed: 0,
+              gamesWon: 0,
+              gamesLost: 0,
+              gamesDrawn: 0,
+              totalMoneyWon: 0,
+              totalMoneyLost: 0,
+              totalPlatformFeesPaid: 0,
+              netProfit: 0,
+              currentWinStreak: 0,
+              longestWinStreak: 0,
+            },
+          });
 
-        // Fetch the complete user with relations
-        return await tx.user.findUnique({
-          where: { id: newUser.id },
-          include: {
-            wallet: true,
-            stats: true,
-            chessComProfile: true,
-          },
+          // Fetch the complete user with relations
+          return await tx.user.findUnique({
+            where: { id: newUser.id },
+            include: {
+              wallet: true,
+              stats: true,
+              chessComProfile: true,
+            },
+          });
         });
-      });
+      } catch (txError: any) {
+        // Race condition: another parallel request created the user between our check and insert
+        if (txError.code === "P2002") {
+          user = await prisma.user.findUnique({
+            where: { googleId: userId },
+            include: {
+              wallet: true,
+              stats: true,
+              chessComProfile: true,
+            },
+          });
+        } else {
+          throw txError;
+        }
+      }
     }
 
     // Convert BigInt and Decimal values to strings for JSON serialization
