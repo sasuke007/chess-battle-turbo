@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import type { Page, Browser } from "@playwright/test";
 import { signIn } from "./auth";
 
@@ -77,7 +78,7 @@ export async function createTempUsersAndJoin(
   for (let i = 0; i < count; i++) {
     const timestamp = Date.now();
     const email = `e2e-temp-${timestamp}-${i}@chessbattle.dev`;
-    const password = `TempPass123!${timestamp}`;
+    const password = crypto.randomBytes(12).toString("base64url") + "!Aa1";
 
     // Create user via Clerk REST API
     const createRes = await fetch("https://api.clerk.com/v1/users", {
