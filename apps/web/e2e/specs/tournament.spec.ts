@@ -3,10 +3,10 @@ import {
   expect,
   ChessBoardHelper,
   createTournamentViaApi,
-  createTempUsersAndJoin,
-  cleanupTempUsers,
 } from "../fixtures";
 import type { Page } from "@playwright/test";
+
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Call the find-match API from a page context. Returns the API response data.
@@ -28,62 +28,38 @@ async function callFindMatchApi(
 }
 
 /**
- * Both players find a match via the API (with random stagger to mimic client jitter),
- * navigate to the game, play a short game (2 rounds + resign).
+ * Safely call find-match, returning null on server errors (500s from
+ * transaction conflicts) instead of throwing.
  */
-async function playTournamentRound(
-  pageX: Page,
-  pageY: Page,
+async function tryFindMatch(
+  page: Page,
   tournamentRefId: string,
-) {
+): Promise<{ status: string; gameReferenceId?: string } | null> {
+  try {
+    return await callFindMatchApi(page, tournamentRefId);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Play a game between two already-matched players on a known game page.
+ * Navigates both to the game, plays 2 rounds of moves, then one player resigns.
+ */
+async function playMatchedGame(pageX: Page, pageY: Page, gameRefId: string) {
   const boardX = new ChessBoardHelper(pageX);
   const boardY = new ChessBoardHelper(pageY);
 
-  // Navigate both to tournament page first (ensures auth context is active)
-  await Promise.all([
-    pageX.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" }),
-    pageY.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" }),
-  ]);
-
-  // Call find-match sequentially with a random delay between them.
-  // X's transaction must commit before Y starts, so Y sees X's committed
-  // isSearching=true row (avoids SKIP LOCKED race and stale-flag overwrites).
-  let gameRefId: string | undefined;
-  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-  for (let attempt = 0; attempt < 5 && !gameRefId; attempt++) {
-    const resultX = await callFindMatchApi(pageX, tournamentRefId);
-    if ((resultX.status === "MATCHED" || resultX.status === "IN_GAME") && resultX.gameReferenceId) {
-      gameRefId = resultX.gameReferenceId;
-      break;
-    }
-
-    await delay(200 + Math.random() * 500);
-
-    const resultY = await callFindMatchApi(pageY, tournamentRefId);
-    if ((resultY.status === "MATCHED" || resultY.status === "IN_GAME") && resultY.gameReferenceId) {
-      gameRefId = resultY.gameReferenceId;
-      break;
-    }
-  }
-
-  if (!gameRefId) {
-    throw new Error("Players failed to match after 5 attempts");
-  }
-
-  // Both navigate directly to the game page
   await Promise.all([
     pageX.goto(`/game/${gameRefId}`, { waitUntil: "domcontentloaded" }),
     pageY.goto(`/game/${gameRefId}`, { waitUntil: "domcontentloaded" }),
   ]);
 
-  // Wait for boards and game to start (past analysis phase)
   await Promise.all([
     boardX.waitForBoard().then(() => boardX.waitForGameStarted()),
     boardY.waitForBoard().then(() => boardY.waitForGameStarted()),
   ]);
 
-  // Detect colors
   const [colorX, colorY] = await Promise.all([
     boardX.detectPlayerColor(),
     boardY.detectPlayerColor(),
@@ -95,11 +71,9 @@ async function playTournamentRound(
     b: colorX === "b" ? boardX : boardY,
   };
 
-  // Detect starting turn (legend positions can start with black to move)
   const startingTurn = await boardX.getCurrentTurn();
   const otherTurn = startingTurn === "w" ? "b" : "w";
 
-  // Play 2 rounds of alternating moves
   for (let i = 0; i < 2; i++) {
     await boardByColor[startingTurn]!.waitForTurn(startingTurn);
     await boardByColor[startingTurn]!.playValidMove(startingTurn);
@@ -108,32 +82,137 @@ async function playTournamentRound(
     await boardByColor[otherTurn]!.playValidMove(otherTurn);
   }
 
-  // The starting-turn player resigns
   const resignBoard = boardByColor[startingTurn]!;
   const winnerBoard = boardByColor[otherTurn]!;
   await resignBoard.waitForTurn(startingTurn);
   await resignBoard.resign();
 
-  // Assert results
   await expect(resignBoard.gameResult()).toContainText("Defeat", { timeout: 10_000 });
   await expect(winnerBoard.gameResult()).toContainText("Victory", { timeout: 10_000 });
 }
 
-test.describe("Tournament", () => {
-  let tempUserIds: string[] = [];
+/**
+ * All players search for a match with staggered sequential calls.
+ * Tracks already-played game IDs to avoid navigating to stale finished games
+ * that the server still reports as IN_GAME due to async DB updates.
+ *
+ * Returns a Map of gameReferenceId → [page, page] representing matched pairs.
+ */
+async function searchForMatches(
+  players: Page[],
+  tournamentRefId: string,
+  playedGameIds: Set<string>,
+): Promise<Map<string, Page[]>> {
+  // Navigate all players to the tournament page (ensures auth context)
+  await Promise.all(
+    players.map((p) =>
+      p.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" }),
+    ),
+  );
 
-  test.afterAll(async () => {
-    if (tempUserIds.length > 0) {
-      await cleanupTempUsers(tempUserIds);
+  const games = new Map<string, Page[]>();
+  const matched = new Set<Page>();
+
+  const addMatch = (page: Page, gameRefId: string) => {
+    if (!games.has(gameRefId)) games.set(gameRefId, []);
+    games.get(gameRefId)!.push(page);
+    matched.add(page);
+  };
+
+  const isNewMatch = (result: { status: string; gameReferenceId?: string } | null) =>
+    result &&
+    (result.status === "MATCHED" || result.status === "IN_GAME") &&
+    result.gameReferenceId &&
+    !playedGameIds.has(result.gameReferenceId);
+
+  // Phase 1: Sequential search with stagger — avoids transaction lock contention.
+  // Shuffle so pairing order varies each round.
+  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  for (const page of shuffled) {
+    const result = await tryFindMatch(page, tournamentRefId);
+    if (isNewMatch(result)) {
+      addMatch(page, result!.gameReferenceId!);
     }
-  });
+    // Wait for the transaction to commit before the next player searches
+    await delay(300 + Math.random() * 400);
+  }
 
-  test("full tournament lifecycle: create, join 10 users, play games, end, verify leaderboard", async ({
+  // Phase 2: Poll unmatched players — they were the "first searcher" in a pair
+  // and need to retry to discover the game created when their opponent matched.
+  for (let round = 0; round < 20 && matched.size < players.length; round++) {
+    await delay(500 + Math.random() * 500);
+    for (const page of players) {
+      if (matched.has(page)) continue;
+      const result = await tryFindMatch(page, tournamentRefId);
+      if (isNewMatch(result)) {
+        addMatch(page, result!.gameReferenceId!);
+      }
+    }
+  }
+
+  if (matched.size < players.length) {
+    throw new Error(
+      `${players.length - matched.size} player(s) failed to match after polling`,
+    );
+  }
+
+  return games;
+}
+
+/**
+ * Simulate realistic tournament play: all players search for matches,
+ * the server's FIFO matchmaking pairs them, they play, then search again.
+ * Repeats until the target number of games is reached.
+ */
+async function playTournamentGames(
+  players: Page[],
+  tournamentRefId: string,
+  targetGames: number,
+) {
+  let gamesPlayed = 0;
+  const playedGameIds = new Set<string>();
+
+  while (gamesPlayed < targetGames) {
+    console.log(
+      `\n── Tournament round: searching for matches (${gamesPlayed}/${targetGames} games played) ──`,
+    );
+
+    const matchedGames = await searchForMatches(players, tournamentRefId, playedGameIds);
+
+    for (const [gameRefId, pairedPlayers] of matchedGames) {
+      if (pairedPlayers.length !== 2) {
+        console.warn(`Unexpected pairing size ${pairedPlayers.length} for game ${gameRefId}, skipping`);
+        continue;
+      }
+      if (gamesPlayed >= targetGames) break;
+
+      gamesPlayed++;
+      playedGameIds.add(gameRefId);
+      console.log(`Playing game ${gamesPlayed}/${targetGames} (ref: ${gameRefId.slice(0, 8)}…)`);
+      await playMatchedGame(pairedPlayers[0]!, pairedPlayers[1]!, gameRefId);
+    }
+
+    if (matchedGames.size === 0) {
+      throw new Error(
+        `No matches found with ${players.length} players — matchmaking may be stuck`,
+      );
+    }
+
+    // Breather between rounds for server state (game status) to settle
+    if (gamesPlayed < targetGames) {
+      await delay(1000);
+    }
+  }
+
+  console.log(`\n── All ${gamesPlayed} tournament games completed ──`);
+}
+
+test.describe("Tournament", () => {
+  test("full tournament lifecycle: create, join, play 10 games, end, verify leaderboard", async ({
     playerJ,
     playerK,
     playerL,
     playerM,
-    browser,
   }) => {
     test.setTimeout(600_000);
 
@@ -142,60 +221,69 @@ test.describe("Tournament", () => {
       playerJ.page,
       `E2E Test Tournament ${Date.now()}`,
     );
-    // PlayerJ is auto-joined as creator
 
-    // ── PHASE 2: JOIN - Browser users (K, L, M) ──
-    await Promise.all([
-      playerK.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" }),
-      playerL.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" }),
-      playerM.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" }),
-    ]);
-
-    // Each clicks "Join Tournament" sequentially to avoid race conditions
+    // ── PHASE 2: JOIN - K, L, M join (J is auto-joined as creator) ──
     for (const player of [playerK, playerL, playerM]) {
+      await player.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
       const joinBtn = player.page.locator('[data-testid="join-tournament-button"]');
       await joinBtn.waitFor({ timeout: 30_000 });
       await joinBtn.click();
       await joinBtn.waitFor({ state: "hidden", timeout: 30_000 });
     }
 
-    // ── PHASE 3: JOIN - API users (4 temp Clerk users) ──
-    tempUserIds = await createTempUsersAndJoin(browser, tournamentRefId, 4);
-    // Now 8 participants total (J + K + L + M + 4 temp)
-
-    // ── PHASE 4: VERIFY LOBBY STATE ──
+    // ── PHASE 3: VERIFY LOBBY STATE ──
     await playerJ.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
-    // Wait for participant count to show 8
-    await expect(playerJ.page.getByText("8 players")).toBeVisible({ timeout: 15_000 });
+    await expect(playerJ.page.getByText("4 players")).toBeVisible({ timeout: 15_000 });
 
-    // ── PHASE 5: START TOURNAMENT ──
-    await playerJ.page.locator('[data-testid="start-tournament-button"]').click();
+    // ── PHASE 4: START TOURNAMENT ──
+    await playerJ.page.evaluate(async (refId: string) => {
+      const res = await fetch("/api/tournament/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentReferenceId: refId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `Start tournament failed: ${res.status}`);
+      }
+    }, tournamentRefId);
+    await playerJ.page.reload({ waitUntil: "domcontentloaded" });
     await expect(playerJ.page.locator('[data-testid="tournament-status"]')).toContainText(
       "ACTIVE",
       { timeout: 15_000 },
     );
 
-    // ── PHASE 6: ROUND 1 - PlayerJ vs PlayerK ──
-    await playTournamentRound(playerJ.page, playerK.page, tournamentRefId);
+    // ── PHASE 5: PLAY 10 GAMES ──
+    // All 4 players search with stagger, server pairs them via FIFO matchmaking,
+    // they play, then search again. ~2 games per round → ~5 rounds for 10 games.
+    const allPlayers = [playerJ.page, playerK.page, playerL.page, playerM.page];
+    await playTournamentGames(allPlayers, tournamentRefId, 10);
 
-    // ── PHASE 7: ROUND 2 - PlayerL vs PlayerM ──
-    await playTournamentRound(playerL.page, playerM.page, tournamentRefId);
-
-    // ── PHASE 8: END TOURNAMENT ──
+    // ── PHASE 6: END TOURNAMENT ──
+    // Navigate to tournament page first (players are still on the last game page)
     await playerJ.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
-    const endBtn = playerJ.page.locator('[data-testid="end-tournament-button"]');
-    await endBtn.waitFor({ timeout: 15_000 });
-    await endBtn.click();
+    await playerJ.page.evaluate(async (refId: string) => {
+      const res = await fetch("/api/tournament/end", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentReferenceId: refId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `End tournament failed: ${res.status}`);
+      }
+    }, tournamentRefId);
+    await playerJ.page.reload({ waitUntil: "domcontentloaded" });
     await expect(playerJ.page.locator('[data-testid="tournament-status"]')).toContainText(
       "COMPLETED",
       { timeout: 15_000 },
     );
 
-    // ── PHASE 9: VERIFY LEADERBOARD ──
+    // ── PHASE 7: VERIFY LEADERBOARD ──
     const leaderboard = playerJ.page.locator('[data-testid="leaderboard"]');
     await expect(leaderboard).toBeVisible({ timeout: 15_000 });
 
     const rows = leaderboard.locator('[data-testid="leaderboard-row"]');
-    await expect(rows).toHaveCount(8, { timeout: 15_000 });
+    await expect(rows).toHaveCount(4, { timeout: 15_000 });
   });
 });

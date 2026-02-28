@@ -14,9 +14,9 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:seed:openings": "tsx prisma/opening-seed.ts",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e": "set -a && source .env.test && set +a && npx playwright test 2>&1",
+    "test:e2e:ui": "set -a && source .env.test && set +a && npx playwright test --ui 2>&1",
+    "test:e2e:headed": "set -a && source .env.test && set +a && npx playwright test --headed 2>&1"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",
