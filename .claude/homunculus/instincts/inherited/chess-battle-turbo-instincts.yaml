@@ -1,0 +1,654 @@
+# Instincts generated from https://github.com/sasuke007/chess-battle-turbo
+# Generated: 2026-02-28T01:12:12.880Z
+# Version: 2.0
+
+---
+id: chess-battle-turbo-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Commit Length
+
+## Action
+
+Keep commit messages concise (under 50 characters)
+
+## Evidence
+
+- Average commit message length: 33 chars
+- Based on 159 commits
+
+---
+id: chess-battle-turbo-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: chess-battle-turbo-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: chess-battle-turbo-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Test Framework
+
+## Action
+
+Use playwright as the test framework
+
+## Evidence
+
+- Test framework detected: playwright
+- File pattern: *.spec.ts
+
+---
+id: chess-battle-turbo-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Test Naming
+
+## Action
+
+Name test files using the pattern: *.spec.ts
+
+## Evidence
+
+- File pattern: *.spec.ts
+- Consistent across test files
+
+---
+id: chess-battle-turbo-test-types
+trigger: "when planning tests for a feature"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Test Types
+
+## Action
+
+Write unit, integration, e2e tests to match project standards
+
+## Evidence
+
+- Test types detected: unit, integration, e2e
+- Coverage config: no
+
+---
+id: chess-battle-turbo-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: **/types.ts, **/schema.*, migrations/*
+
+---
+id: chess-battle-turbo-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~10x per month
+- Files: apps/web-socket/*, apps/web-socket/utils/*, apps/web/app/api/chess/create-ai-game/*
+
+---
+id: chess-battle-turbo-workflow-ui-bug-fix
+trigger: "when doing ui bug fix"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Ui Bug Fix
+
+## Action
+
+Follow the ui-bug-fix workflow:
+1. Identify the UI issue
+2. Modify component styling/layout
+3. Test across breakpoints
+4. Commit fix
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~8x per month
+- Files: apps/web/app/game/[gameId]/page.tsx, apps/web/app/analysis/[gameId]/page.tsx, apps/web/app/components/*.tsx
+
+---
+id: chess-battle-turbo-workflow-sentry-instrumentation
+trigger: "when doing sentry instrumentation"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Sentry Instrumentation
+
+## Action
+
+Follow the sentry-instrumentation workflow:
+1. Add Sentry.logger calls
+2. Implement custom metrics
+3. Add error boundaries
+4. Set up distributed tracing
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: apps/web-socket/*.ts, apps/web/app/api/*/route.ts, apps/web/lib/metrics.ts
+
+---
+id: chess-battle-turbo-workflow-game-page-enhancement
+trigger: "when doing game page enhancement"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Game Page Enhancement
+
+## Action
+
+Follow the game-page-enhancement workflow:
+1. Modify game page layout
+2. Update game components
+3. Enhance player info display
+4. Test game flow
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~6x per month
+- Files: apps/web/app/game/[gameId]/page.tsx, apps/web/app/game/[gameId]/GameActionButtons.tsx, apps/web/app/game/[gameId]/PlayerInfoCard.tsx
+
+---
+id: chess-battle-turbo-workflow-api-route-creation
+trigger: "when doing api route creation"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Api Route Creation
+
+## Action
+
+Follow the api-route-creation workflow:
+1. Create route.ts file
+2. Add API logic with error handling
+3. Add Sentry logging
+4. Update middleware if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: apps/web/app/api/*/route.ts, apps/web/middleware.ts, apps/web/lib/services/*.ts
+
+---
+id: chess-battle-turbo-workflow-seo-metadata-setup
+trigger: "when doing seo metadata setup"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Seo Metadata Setup
+
+## Action
+
+Follow the seo-metadata-setup workflow:
+1. Create layout.tsx with metadata
+2. Add structured data
+3. Update sitemap
+4. Add breadcrumbs if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: apps/web/app/*/layout.tsx, apps/web/lib/seo.ts, apps/web/app/sitemap.ts
+
+---
+id: chess-battle-turbo-workflow-feature-with-tests
+trigger: "when doing feature with tests"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Feature With Tests
+
+## Action
+
+Follow the feature-with-tests workflow:
+1. Implement feature logic
+2. Create E2E test spec
+3. Add test fixtures/helpers
+4. Update CI if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: apps/web/e2e/specs/*.spec.ts, apps/web/e2e/fixtures/*.ts, apps/web/app/components/*.tsx
+
+---
+id: chess-battle-turbo-workflow-websocket-game-logic
+trigger: "when doing websocket game logic"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Workflow Websocket Game Logic
+
+## Action
+
+Follow the websocket-game-logic workflow:
+1. Update GameManager or GameSession
+2. Modify socket event handlers
+3. Add logging/tracing
+4. Update type definitions
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: apps/web-socket/GameManager.ts, apps/web-socket/GameSession.ts, apps/web-socket/index.ts
+
+---
+id: chess-battle-turbo-camel-case-files
+trigger: "When creating new files"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Camel Case Files
+
+## Action
+
+Use camelCase naming for file names
+
+## Evidence
+
+- Pattern in config files: next.config.js, tailwind.config.ts
+- Consistent across apps/web and apps/web-socket
+
+---
+id: chess-battle-turbo-pascal-case-components
+trigger: "When creating React components or classes"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Pascal Case Components
+
+## Action
+
+Use PascalCase naming
+
+## Evidence
+
+- GameManager.ts, GameSession.ts, ClockManager.ts
+- PlayerInfoCard.tsx, GameActionButtons.tsx, ChessBoard.tsx
+
+---
+id: chess-battle-turbo-screaming-snake-constants
+trigger: "When defining constants"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Screaming Snake Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant variables
+
+## Evidence
+
+- Detected naming convention pattern
+- Standard in TypeScript projects
+
+---
+id: chess-battle-turbo-named-exports
+trigger: "When exporting from modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Named Exports
+
+## Action
+
+Prefer named exports over default exports
+
+## Evidence
+
+- Export style pattern detected as 'named'
+- Consistent with TypeScript best practices
+
+---
+id: chess-battle-turbo-playwright-e2e
+trigger: "When writing end-to-end tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Playwright E2e
+
+## Action
+
+Use Playwright framework with *.spec.ts file pattern
+
+## Evidence
+
+- playwright.config.ts in apps/web
+- E2E tests workflow in .github/workflows/e2e-tests.yml
+
+---
+id: chess-battle-turbo-try-catch-errors
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Try Catch Errors
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Error handling style detected as 'try-catch'
+- No custom error classes or global handlers found
+
+---
+id: chess-battle-turbo-feat-prefix-commits
+trigger: "When committing new features"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Feat Prefix Commits
+
+## Action
+
+Start commit message with 'feat' prefix
+
+## Evidence
+
+- feat(web-socket): implement WebSocket server
+- feat prefix found in commit examples
+
+---
+id: chess-battle-turbo-descriptive-commits
+trigger: "When writing commit messages"
+confidence: 0.75
+domain: git
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Descriptive Commits
+
+## Action
+
+Write descriptive messages around 33 characters average length
+
+## Evidence
+
+- Average commit length: 33 characters
+- Examples show detailed descriptions
+
+---
+id: chess-battle-turbo-ui-bug-fix-workflow
+trigger: "When fixing UI/UX issues or mobile responsiveness"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Ui Bug Fix Workflow
+
+## Action
+
+Modify component styling, test across breakpoints, then commit fix
+
+## Evidence
+
+- 8 UI bug fixes per month
+- Center mobile game action buttons commit
+- Fix analysis page board frame commit
+
+---
+id: chess-battle-turbo-sentry-instrumentation
+trigger: "When adding observability to features or debugging production"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Sentry Instrumentation
+
+## Action
+
+Add Sentry.logger calls, implement custom metrics, and set up tracing
+
+## Evidence
+
+- add Sentry error tracking commit
+- single trace id, across spans commit
+- sentry.*.config.ts files
+
+---
+id: chess-battle-turbo-game-page-enhancement
+trigger: "When improving chess game interface or fixing game bugs"
+confidence: 0.88
+domain: workflow
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Game Page Enhancement
+
+## Action
+
+Modify game page layout, update components, enhance player info display
+
+## Evidence
+
+- 6 game enhancements per month
+- GameActionButtons.tsx, PlayerInfoCard.tsx files
+- added modal for play with friend commit
+
+---
+id: chess-battle-turbo-api-route-creation
+trigger: "When adding new backend functionality or data endpoints"
+confidence: 0.82
+domain: workflow
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Api Route Creation
+
+## Action
+
+Create route.ts file with error handling and Sentry logging
+
+## Evidence
+
+- apps/web/app/api/*/route.ts pattern
+- create-ai-game, create-game, matchmaking routes
+- 5 API routes per month
+
+---
+id: chess-battle-turbo-websocket-updates
+trigger: "When modifying multiplayer game logic or WebSocket events"
+confidence: 0.87
+domain: workflow
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Websocket Updates
+
+## Action
+
+Update GameManager/GameSession, modify socket handlers, add logging
+
+## Evidence
+
+- GameManager.ts, GameSession.ts files
+- WebSocket server implementation commits
+- 4 WebSocket updates per month
+
+---
+id: chess-battle-turbo-turborepo-structure
+trigger: "When organizing project files"
+confidence: 0.9
+domain: architecture
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Turborepo Structure
+
+## Action
+
+Use turborepo structure with apps/ and packages/ folders
+
+## Evidence
+
+- apps/web, apps/web-socket folders
+- packages/eslint-config, packages/ui structure
+- turborepo detected
+
+---
+id: chess-battle-turbo-feature-with-tests
+trigger: "When building major new functionality"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: sasuke007/chess-battle-turbo
+---
+
+# Chess Battle Turbo Feature With Tests
+
+## Action
+
+Implement feature logic, create E2E test spec, add fixtures
+
+## Evidence
+
+- Tournament system with E2E parallel test isolation commit
+- apps/web/e2e/specs/*.spec.ts pattern
+- 3 tested features per month
+
