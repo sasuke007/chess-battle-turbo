@@ -41,6 +41,34 @@ jobs:
           E2E_USER_A_PASSWORD: ${{ secrets.E2E_USER_A_PASSWORD }}
           E2E_USER_B_EMAIL: ${{ secrets.E2E_USER_B_EMAIL }}
           E2E_USER_B_PASSWORD: ${{ secrets.E2E_USER_B_PASSWORD }}
+          E2E_USER_C_EMAIL: ${{ secrets.E2E_USER_C_EMAIL }}
+          E2E_USER_C_PASSWORD: ${{ secrets.E2E_USER_C_PASSWORD }}
+          E2E_USER_D_EMAIL: ${{ secrets.E2E_USER_D_EMAIL }}
+          E2E_USER_D_PASSWORD: ${{ secrets.E2E_USER_D_PASSWORD }}
+          E2E_USER_E_EMAIL: ${{ secrets.E2E_USER_E_EMAIL }}
+          E2E_USER_E_PASSWORD: ${{ secrets.E2E_USER_E_PASSWORD }}
+          E2E_USER_F_EMAIL: ${{ secrets.E2E_USER_F_EMAIL }}
+          E2E_USER_F_PASSWORD: ${{ secrets.E2E_USER_F_PASSWORD }}
+          E2E_USER_G_EMAIL: ${{ secrets.E2E_USER_G_EMAIL }}
+          E2E_USER_G_PASSWORD: ${{ secrets.E2E_USER_G_PASSWORD }}
+          E2E_USER_H_EMAIL: ${{ secrets.E2E_USER_H_EMAIL }}
+          E2E_USER_H_PASSWORD: ${{ secrets.E2E_USER_H_PASSWORD }}
+          E2E_USER_I_EMAIL: ${{ secrets.E2E_USER_I_EMAIL }}
+          E2E_USER_I_PASSWORD: ${{ secrets.E2E_USER_I_PASSWORD }}
+          E2E_USER_J_EMAIL: ${{ secrets.E2E_USER_J_EMAIL }}
+          E2E_USER_J_PASSWORD: ${{ secrets.E2E_USER_J_PASSWORD }}
+          E2E_USER_K_EMAIL: ${{ secrets.E2E_USER_K_EMAIL }}
+          E2E_USER_K_PASSWORD: ${{ secrets.E2E_USER_K_PASSWORD }}
+          E2E_USER_L_EMAIL: ${{ secrets.E2E_USER_L_EMAIL }}
+          E2E_USER_L_PASSWORD: ${{ secrets.E2E_USER_L_PASSWORD }}
+          E2E_USER_M_EMAIL: ${{ secrets.E2E_USER_M_EMAIL }}
+          E2E_USER_M_PASSWORD: ${{ secrets.E2E_USER_M_PASSWORD }}
+          E2E_USER_N_EMAIL: ${{ secrets.E2E_USER_N_EMAIL }}
+          E2E_USER_N_PASSWORD: ${{ secrets.E2E_USER_N_PASSWORD }}
+          E2E_USER_O_EMAIL: ${{ secrets.E2E_USER_O_EMAIL }}
+          E2E_USER_O_PASSWORD: ${{ secrets.E2E_USER_O_PASSWORD }}
+          E2E_USER_P_EMAIL: ${{ secrets.E2E_USER_P_EMAIL }}
+          E2E_USER_P_PASSWORD: ${{ secrets.E2E_USER_P_PASSWORD }}
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
