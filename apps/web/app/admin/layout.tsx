@@ -1,4 +1,6 @@
 import { createMetadata } from "@/lib/seo";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth/get-session-user";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = createMetadata({
@@ -8,6 +10,12 @@ export const metadata: Metadata = createMetadata({
   noIndex: true,
 });
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const user = await getSessionUser();
+
+  if (!user || user.role !== "ADMIN") {
+    redirect("/");
+  }
+
   return children;
 }

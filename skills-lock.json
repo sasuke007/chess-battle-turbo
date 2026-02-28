@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "skills": {
+    "billing-sdk": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "38ba24500996f9bbc33e61a757a583f57cc2f7af3b8dfe57bc684b1ec7b9fbb5"
+    },
+    "checkout-integration": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "8cf6940ab614a7d1ea3b400edc43c910f7bec9d8cba207facad2d75e2ab9de40"
+    },
+    "dodo-best-practices": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "ddee4d91bf5f04b60b2ecf6b32a5b535d93868f5cc24b856ba11199b69b243f9"
+    },
+    "license-keys": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "99481ad83e2827b715189d189adff615e9b65ddc38da74373509b72c1823a169"
+    },
+    "subscription-integration": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "0a829f6c4f4b2c8828a505a34fe2f6332e5c218ae806d3de681afaf87af2b68d"
+    },
+    "usage-based-billing": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "c18dad693599fc1b2003f3d1ab458f341f5a02cfe11cc2296830b472b114d743"
+    },
+    "webhook-integration": {
+      "source": "dodopayments/skills",
+      "sourceType": "github",
+      "computedHash": "8bfb5a49da121cb659e71588434ec466f352fcdca3cbc28087db83708c1ea5ba"
+    }
+  }
+}

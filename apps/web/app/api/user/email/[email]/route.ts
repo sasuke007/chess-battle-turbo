@@ -65,6 +65,7 @@ export async function GET(
             dateOfBirth: user.dateOfBirth,
             isActive: user.isActive,
             createdAt: user.createdAt,
+            role: user.role,
           },
           wallet: user.wallet
             ? {

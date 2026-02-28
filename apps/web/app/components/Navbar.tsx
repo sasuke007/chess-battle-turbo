@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CreditCard, Receipt, User } from "lucide-react";
+import { ArrowRight, CreditCard, Receipt, Shield, User } from "lucide-react";
 import { usePWAInstall } from "@/lib/hooks";
 import { InstallAppPopover } from "./InstallAppPopover";
 
@@ -15,6 +15,7 @@ export const Navbar = () => {
   const router = useRouter();
   const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
   const [userReferenceId, setUserReferenceId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [subInfo, setSubInfo] = useState<{ customerId: string; plan: string } | null>(null);
 
   useEffect(() => {
@@ -26,6 +27,9 @@ export const Navbar = () => {
       .then((data) => {
         if (data.success && data.data?.user?.referenceId) {
           setUserReferenceId(data.data.user.referenceId);
+          if (data.data.user.role === "ADMIN") {
+            setIsAdmin(true);
+          }
         }
       })
       .catch(() => {});
@@ -134,6 +138,26 @@ export const Navbar = () => {
         </SignedOut>
 
         <SignedIn>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "group relative overflow-hidden",
+                "bg-white text-black",
+                "h-9 px-3 sm:px-5",
+                "text-sm font-medium tracking-wide",
+                "transition-all duration-300",
+                "flex items-center"
+              )}
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            >
+              <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+              <span className="relative flex items-center gap-1.5 text-black group-hover:text-white transition-colors duration-300">
+                <Shield className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Admin</span>
+              </span>
+            </Link>
+          )}
           {userReferenceId && (
             <Link
               href={`/profile/${userReferenceId}`}

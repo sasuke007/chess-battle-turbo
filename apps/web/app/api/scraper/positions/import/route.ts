@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma";
 import { validateScraperApiKey } from "@/lib/auth/api-key";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { logger } from "@/lib/logger";
 
 // Schema for player/legend data embedded in the request
@@ -97,10 +98,12 @@ async function findOrCreateLegend(
 }
 
 export async function POST(request: NextRequest) {
-  // Step 1: Validate API key
+  // Step 1: Validate API key or admin session
   const authResult = validateScraperApiKey(request);
   if (!authResult.valid) {
-    return authResult.error;
+    // Fall back to admin session check
+    const { error } = await requireAdmin();
+    if (error) return error;
   }
 
   try {
