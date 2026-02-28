@@ -124,10 +124,13 @@ function PricingContent() {
           metadata: { clerkUserId: user.id },
         }),
       })
+      if (!res.ok) throw new Error(res.statusText)
       const data = await res.json()
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl
       }
+    } catch {
+      // checkout failed — button re-enables via finally
     } finally {
       setCheckoutLoading(false)
     }

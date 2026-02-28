@@ -17,15 +17,23 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const session = await dodo.checkoutSessions.create({
-    product_cart: [{ product_id: productId, quantity: 1 }],
-    customer: { email, name },
-    metadata,
-    return_url: process.env.DODO_PAYMENTS_RETURN_URL,
-  })
+  try {
+    const session = await dodo.checkoutSessions.create({
+      product_cart: [{ product_id: productId, quantity: 1 }],
+      customer: { email, name },
+      metadata,
+      return_url: process.env.DODO_PAYMENTS_RETURN_URL,
+    })
 
-  return NextResponse.json({
-    checkoutUrl: session.checkout_url,
-    sessionId: session.session_id,
-  })
+    return NextResponse.json({
+      checkoutUrl: session.checkout_url,
+      sessionId: session.session_id,
+    })
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[checkout] Dodo API error:', err)
+    }
+    const message = err instanceof Error ? err.message : "Failed to create checkout session"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
