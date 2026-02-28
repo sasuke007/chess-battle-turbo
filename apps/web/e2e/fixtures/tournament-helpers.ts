@@ -78,7 +78,9 @@ export async function createTempUsersAndJoin(
   for (let i = 0; i < count; i++) {
     const timestamp = Date.now();
     const email = `e2e-temp-${timestamp}-${i}@chessbattle.dev`;
-    const password = crypto.randomBytes(12).toString("base64url") + "!Aa1";
+    // Suffix ensures Clerk password complexity (uppercase, lowercase, digit, special)
+    const complexitySuffix = String.fromCharCode(33, 65, 97, 49); // !Aa1
+    const password = crypto.randomBytes(12).toString("base64url") + complexitySuffix;
 
     // Create user via Clerk REST API
     const createRes = await fetch("https://api.clerk.com/v1/users", {
