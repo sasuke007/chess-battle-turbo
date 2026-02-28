@@ -31,6 +31,8 @@ model User {
   stats                UserStats?
   wallet               Wallet?
   matchmakingRequests  MatchmakingQueue[]
+  tournamentsCreated          Tournament[]              @relation("TournamentCreator")
+  tournamentParticipations    TournamentParticipant[]
 
   @@index([googleId])
   @@index([email])
@@ -102,10 +104,12 @@ model Game {
   completedAt           DateTime?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+  tournamentId          BigInt?
   creator               User          @relation("CreatorGames", fields: [creatorId], references: [id], onDelete: Cascade)
   opponent              User?         @relation("OpponentGames", fields: [opponentId], references: [id], onDelete: Cascade)
   winner                User?         @relation("WinnerGames", fields: [winnerId], references: [id])
   transactions          Transaction[]
+  tournament            Tournament?   @relation("TournamentGames", fields: [tournamentId], references: [id], onDelete: SetNull)
 
   @@index([creatorId])
   @@index([opponentId])
@@ -114,6 +118,7 @@ model Game {
   @@index([expiresAt])
   @@index([referenceId])
   @@index([chessPositionId])
+  @@index([tournamentId])
   @@map("games")
 }
 
@@ -229,6 +234,7 @@ model ChessPosition {
   // Relations
   whiteLegend Legend? @relation("WhiteLegendGames", fields: [whitePlayerId], references: [id], onDelete: SetNull)
   blackLegend Legend? @relation("BlackLegendGames", fields: [blackPlayerId], references: [id], onDelete: SetNull)
+  tournaments Tournament[]
 
   @@index([referenceId])
   @@index([sourceType])
@@ -277,6 +283,7 @@ model Legend {
   // Relations - Games where this legend played
   gamesAsWhite ChessPosition[] @relation("WhiteLegendGames")
   gamesAsBlack ChessPosition[] @relation("BlackLegendGames")
+  tournaments  Tournament[]
 
   @@index([name])
   @@index([isActive])
@@ -294,9 +301,10 @@ model Opening {
   sideToMove String   // "white" or "black" — whose turn after PGN
   moveCount  Int      // Number of half-moves (plies)
 
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tournaments Tournament[]
 
   @@index([eco])
   @@index([name])
@@ -377,4 +385,77 @@ model MatchmakingQueue {
   @@index([status, timeControlSeconds, incrementSeconds, rating])
   @@index([expiresAt])
   @@map("matchmaking_queue")
+}
+
+// ===== TOURNAMENT SYSTEM =====
+
+enum TournamentStatus {
+  LOBBY
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TournamentMode {
+  OPENING
+  LEGEND
+  ENDGAME
+  FREE
+}
+
+model Tournament {
+  id                  BigInt            @id @default(autoincrement())
+  referenceId         String            @unique @default(cuid())
+  name                String
+  mode                TournamentMode
+  status              TournamentStatus  @default(LOBBY)
+  maxParticipants     Int?
+  initialTimeSeconds  Int
+  incrementSeconds    Int
+  durationMinutes     Int
+  openingId           BigInt?
+  legendId            BigInt?
+  chessPositionId     BigInt?
+  createdByUserId     BigInt
+  startedAt           DateTime?
+  endsAt              DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  createdBy       User                    @relation("TournamentCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  opening         Opening?                @relation(fields: [openingId], references: [id], onDelete: SetNull)
+  legend          Legend?                  @relation(fields: [legendId], references: [id], onDelete: SetNull)
+  chessPosition   ChessPosition?          @relation(fields: [chessPositionId], references: [id], onDelete: SetNull)
+  participants    TournamentParticipant[]
+  games           Game[]                  @relation("TournamentGames")
+
+  @@index([referenceId])
+  @@index([status])
+  @@index([createdByUserId])
+  @@map("tournaments")
+}
+
+model TournamentParticipant {
+  id             BigInt    @id @default(autoincrement())
+  referenceId    String    @unique @default(cuid())
+  tournamentId   BigInt
+  userId         BigInt
+  points         Decimal   @default(0) @db.Decimal(5, 1)
+  wins           Int       @default(0)
+  losses         Int       @default(0)
+  draws          Int       @default(0)
+  gamesPlayed    Int       @default(0)
+  isSearching    Boolean   @default(false)
+  searchingSince DateTime?
+  joinedAt       DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId, points(sort: Desc)])
+  @@index([userId])
+  @@map("tournament_participants")
 }

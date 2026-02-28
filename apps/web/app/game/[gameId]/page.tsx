@@ -97,6 +97,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   // Game end overlay state
   const [showGameEndOverlay, setShowGameEndOverlay] = useState(false);
+  const [tournamentRef, setTournamentRef] = useState<string | null>(null);
 
   const onThinkingStart = useCallback(() => setIsBotThinking(true), []);
   const onThinkingEnd = useCallback(() => setIsBotThinking(false), []);
@@ -461,6 +462,17 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
 
+      // Check if this is a tournament game for "Back to Tournament" button
+      fetch(`/api/chess/game-by-ref/${gameId}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const gd = data?.data?.gameData;
+          if (gd?.gameMode === "tournament" && gd?.tournamentReferenceId) {
+            setTournamentRef(gd.tournamentReferenceId);
+          }
+        })
+        .catch(() => {});
+
       // Play game end sound
       playSound('game-end');
     });
@@ -612,7 +624,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
         onBackClick={() => {
           setShowGameEndOverlay(false);
-          router.push("/play");
+          if (tournamentRef) {
+            router.push(`/tournament/${tournamentRef}`);
+          } else {
+            router.push("/play");
+          }
         }}
         onDismiss={() => setShowGameEndOverlay(false)}
         analysisLabel={positionInfo?.openingName ? "Review" : "Compare"}

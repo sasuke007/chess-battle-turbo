@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Navbar } from "@/app/components/Navbar";
-import { Crown, ArrowRight } from "lucide-react";
+import { Crown, ArrowRight, Trophy } from "lucide-react";
 import { motion } from "motion/react";
 
 // Chess piece icon component for positions card
@@ -32,6 +32,7 @@ function ChessPieceIcon({ className }: { className?: string }) {
 interface Stats {
   legends: number;
   positions: number;
+  tournaments: number;
 }
 
 interface FeatureCardProps {
@@ -126,23 +127,26 @@ function FeatureCard({
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({ legends: 0, positions: 0 });
+  const [stats, setStats] = useState<Stats>({ legends: 0, positions: 0, tournaments: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [legendsRes, positionsRes] = await Promise.all([
+        const [legendsRes, positionsRes, tournamentsRes] = await Promise.all([
           fetch("/api/legends"),
           fetch("/api/chess-positions"),
+          fetch("/api/tournament?count=true"),
         ]);
 
         const legendsData = await legendsRes.json();
         const positionsData = await positionsRes.json();
+        const tournamentsData = await tournamentsRes.json();
 
         setStats({
           legends: legendsData.data?.legends?.length || 0,
           positions: positionsData.data?.positions?.length || 0,
+          tournaments: tournamentsData.data?.count || 0,
         });
       } catch (error) {
         logger.error("Failed to fetch stats:", error);
@@ -198,7 +202,7 @@ export default function AdminDashboard() {
           <div className="border-t border-white/10 mb-8" />
 
           {/* Feature Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Legends Card */}
             <FeatureCard
               href="/admin/legends"
@@ -218,6 +222,17 @@ export default function AdminDashboard() {
               description="Add and manage chess positions for battles"
               count={stats.positions}
               countLabel="positions"
+              isLoading={isLoading}
+            />
+
+            {/* Tournaments Card */}
+            <FeatureCard
+              href="/admin/tournaments"
+              icon={<Trophy className="w-6 h-6 text-white/60" strokeWidth={1.5} />}
+              title="Tournaments"
+              description="Create and manage time-boxed tournaments"
+              count={stats.tournaments}
+              countLabel="tournaments"
               isLoading={isLoading}
             />
           </div>

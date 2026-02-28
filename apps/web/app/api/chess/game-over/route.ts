@@ -6,6 +6,7 @@ import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "../../../../lib/prisma";
 import { logger } from "@/lib/sentry/logger";
 import { trackUserAction } from "@/lib/metrics";
+import { updateTournamentStandings } from "@/lib/services/tournament/tournament.service";
 
 type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -243,6 +244,17 @@ export async function POST(request: NextRequest) {
         stakeAmount,
         winnings
       );
+
+      // If this is a tournament game, update standings
+      if (game.tournamentId && game.opponentId) {
+        await updateTournamentStandings(
+          tx,
+          game.tournamentId,
+          game.creatorId,
+          game.opponentId,
+          validatedData.result
+        );
+      }
 
       return { game: updatedGame };
     }, {

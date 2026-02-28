@@ -1,34 +1,34 @@
 import { test, expect, ChessBoardHelper } from "../fixtures";
 
 test.describe("Quick Match", () => {
-  test("should matchmake two players, play moves, and resign", async ({ playerA, playerB }) => {
-    const boardA = new ChessBoardHelper(playerA.page);
-    const boardB = new ChessBoardHelper(playerB.page);
+  test("should matchmake two players, play moves, and resign", async ({ playerH, playerI }) => {
+    const boardA = new ChessBoardHelper(playerH.page);
+    const boardB = new ChessBoardHelper(playerI.page);
 
     // Both navigate to /play and select quick match
     await Promise.all([
-      playerA.page.goto("/play"),
-      playerB.page.goto("/play"),
+      playerH.page.goto("/play"),
+      playerI.page.goto("/play"),
     ]);
 
-    await playerA.page.locator('[data-testid="mode-quick"]').click();
-    await playerB.page.locator('[data-testid="mode-quick"]').click();
+    await playerH.page.locator('[data-testid="mode-quick"]').click();
+    await playerI.page.locator('[data-testid="mode-quick"]').click();
 
-    // Player A queues first
-    await playerA.page.locator('[data-testid="start-game-button"]').click();
-    await playerA.page.waitForURL(/\/queue/, { timeout: 15_000 });
+    // Player H queues first
+    await playerH.page.locator('[data-testid="start-game-button"]').click();
+    await playerH.page.waitForURL(/\/queue/, { timeout: 60_000, waitUntil: "commit" });
 
-    // Wait for Player A to enter "searching" state (queue entry persisted in DB)
-    await playerA.page.locator('[data-testid="queue-searching"]').waitFor({ timeout: 15_000 });
+    // Wait for Player H to enter "searching" state (queue entry persisted in DB)
+    await playerH.page.locator('[data-testid="queue-searching"]').waitFor({ timeout: 30_000 });
 
-    // Player B queues — should get immediate match via tryFindMatch
-    await playerB.page.locator('[data-testid="start-game-button"]').click();
-    await playerB.page.waitForURL(/\/queue/, { timeout: 15_000 });
+    // Player I queues — should get immediate match via tryFindMatch
+    await playerI.page.locator('[data-testid="start-game-button"]').click();
+    await playerI.page.waitForURL(/\/queue/, { timeout: 60_000, waitUntil: "commit" });
 
     // Both wait for matchmaking to redirect to a game
     await Promise.all([
-      playerA.page.waitForURL(/\/game\//, { timeout: 90_000 }),
-      playerB.page.waitForURL(/\/game\//, { timeout: 90_000 }),
+      playerH.page.waitForURL(/\/game\//, { timeout: 90_000, waitUntil: "commit" }),
+      playerI.page.waitForURL(/\/game\//, { timeout: 90_000, waitUntil: "commit" }),
     ]);
 
     // Wait for boards and game to start

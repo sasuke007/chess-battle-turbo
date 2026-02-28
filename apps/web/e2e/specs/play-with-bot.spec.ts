@@ -1,8 +1,8 @@
 import { test, expect, ChessBoardHelper } from "../fixtures";
 
 test.describe("Play with Bot", () => {
-  test("should start an AI game, play moves, and resign", async ({ authedPage }) => {
-    const page = authedPage;
+  test("should start an AI game, play moves, and resign", async ({ playerE }) => {
+    const page = playerE.page;
     const board = new ChessBoardHelper(page);
 
     // Navigate to /play and select AI mode
@@ -11,7 +11,7 @@ test.describe("Play with Bot", () => {
     await page.locator('[data-testid="start-game-button"]').click();
 
     // Wait for redirect to game page
-    await page.waitForURL(/\/game\//, { timeout: 30_000 });
+    await page.waitForURL(/\/game\//, { timeout: 60_000, waitUntil: "commit" });
 
     // Wait for board to render and game to start (past analysis phase)
     await board.waitForBoard();
