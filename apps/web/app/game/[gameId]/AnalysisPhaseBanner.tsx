@@ -6,12 +6,14 @@ interface AnalysisPhaseBannerProps {
   analysisTimeRemaining: number;
   totalAnalysisTime: number;
   currentTurn: "w" | "b";
+  myColor: "w" | "b" | null;
 }
 
 export function AnalysisPhaseBannerMobile({
   isAnalysisPhase,
   analysisTimeRemaining,
   currentTurn,
+  myColor,
 }: AnalysisPhaseBannerProps) {
   return (
     <AnimatePresence>
@@ -63,6 +65,14 @@ export function AnalysisPhaseBannerMobile({
                       {currentTurn === "w" ? "White" : "Black"} to move
                     </p>
                   </div>
+                  {myColor && (
+                    <p
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                      className="text-white/60 text-[8px] tracking-[0.1em] mt-0.5"
+                    >
+                      {myColor === currentTurn ? "You move first" : "Opponent moves first"}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -78,6 +88,7 @@ export function AnalysisPhaseBannerDesktop({
   analysisTimeRemaining,
   totalAnalysisTime,
   currentTurn,
+  myColor,
 }: AnalysisPhaseBannerProps) {
   return (
     <AnimatePresence>
@@ -104,7 +115,7 @@ export function AnalysisPhaseBannerDesktop({
                 style={{ fontFamily: "'Geist', sans-serif" }}
                 className="text-white/40 text-[9px] uppercase tracking-wider"
               >
-                {currentTurn === "w" ? "White" : "Black"}
+                {currentTurn === "w" ? "White" : "Black"}&apos;s Move
               </span>
             </div>
           </div>
@@ -148,6 +159,14 @@ export function AnalysisPhaseBannerDesktop({
           >
             Study the position before playing
           </p>
+          {myColor && (
+            <p
+              style={{ fontFamily: "'Geist', sans-serif" }}
+              className="text-white/50 text-[10px] text-center mt-1.5 tracking-wide"
+            >
+              {myColor === currentTurn ? "You move first" : "Opponent moves first"}
+            </p>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

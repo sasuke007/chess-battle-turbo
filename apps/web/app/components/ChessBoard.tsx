@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { Chess, Color, PieceSymbol, Square } from "chess.js";
 import Image from "next/image";
-import { DefeatOverlay, DrawOverlay } from "./GameEndEffects";
+import { DefeatOverlay, DrawOverlay, GameResultBanner } from "./GameEndEffects";
 
 type PieceInfo = {
   square: Square;
@@ -120,6 +120,7 @@ const ChessBoard = ({
           {/* Game end overlays */}
           <DefeatOverlay isActive={gameEndState === "defeat"} />
           <DrawOverlay isActive={gameEndState === "draw"} />
+          <GameResultBanner gameEndState={gameEndState} />
           {/* The board itself */}
           {displayBoard.map((row, rowIndex) => (
             <div key={rowIndex} className={cn("flex", isResponsive && "w-full")}>

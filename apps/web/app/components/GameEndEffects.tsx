@@ -7,92 +7,107 @@ interface ConfettiPiece {
   id: number;
   x: number;
   delay: number;
-  duration: number;
   size: number;
   rotation: number;
   opacity: number;
   shape: "square" | "line" | "dot";
+  peakY: number;
+  sway: number;
 }
 
 interface VictoryConfettiProps {
   isActive: boolean;
 }
 
+const CONFETTI_COLORS = [
+  "rgba(255, 215, 0, 0.9)",   // gold
+  "rgba(255, 255, 255, 0.85)", // white
+  "rgba(255, 180, 50, 0.8)",   // amber
+  "rgba(200, 200, 200, 0.7)",  // silver
+  "rgba(255, 240, 180, 0.8)",  // cream
+];
+
 export const VictoryConfetti = ({ isActive }: VictoryConfettiProps) => {
-  const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
+  const pieces = useMemo(() => {
+    if (!isActive) return [];
 
-  useEffect(() => {
-    if (!isActive) {
-      setPieces([]);
-      return;
-    }
-
-    // Generate elegant, sparse confetti pieces
     const newPieces: ConfettiPiece[] = [];
-    const pieceCount = 40; // Sparse, not overwhelming
+    const pieceCount = 50;
+    const shapes: ("square" | "line" | "dot")[] = ["square", "line", "dot"];
 
     for (let i = 0; i < pieceCount; i++) {
-      const shapes: ("square" | "line" | "dot")[] = ["square", "line", "dot"];
       newPieces.push({
         id: i,
-        x: Math.random() * 100, // percentage across screen
-        delay: Math.random() * 1.5,
-        duration: 3 + Math.random() * 2,
+        x: 30 + Math.random() * 40, // cluster toward center (30–70vw)
+        delay: Math.random() * 0.4,
         size: 4 + Math.random() * 8,
         rotation: Math.random() * 360,
-        opacity: 0.3 + Math.random() * 0.5,
+        opacity: 0.4 + Math.random() * 0.5,
         shape: shapes[Math.floor(Math.random() * shapes.length)]!,
+        peakY: -(window.innerHeight * (0.4 + Math.random() * 0.5)), // fly 40–90% of viewport height upward
+        sway: (Math.random() - 0.5) * 120, // horizontal drift during fall
       });
     }
 
-    setPieces(newPieces);
+    return newPieces;
   }, [isActive]);
 
   if (!isActive || pieces.length === 0) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {pieces.map((piece) => (
-        <motion.div
-          key={piece.id}
-          initial={{
-            x: `${piece.x}vw`,
-            y: -20,
-            rotate: piece.rotation,
-            opacity: 0,
-          }}
-          animate={{
-            y: "110vh",
-            rotate: piece.rotation + 360,
-            opacity: [0, piece.opacity, piece.opacity, 0],
-          }}
-          transition={{
-            duration: piece.duration,
-            delay: piece.delay,
-            ease: "linear",
-          }}
-          className="absolute"
-          style={{
-            width: piece.shape === "line" ? 2 : piece.size,
-            height: piece.shape === "dot" ? piece.size : piece.shape === "line" ? piece.size * 2 : piece.size,
-            backgroundColor: piece.shape === "dot" ? "transparent" : "white",
-            borderRadius: piece.shape === "dot" ? "50%" : piece.shape === "line" ? 1 : 0,
-            border: piece.shape === "dot" ? "1px solid rgba(255,255,255,0.6)" : "none",
-            boxShadow: "0 0 10px rgba(255,255,255,0.3)",
-          }}
-        />
-      ))}
+      {pieces.map((piece) => {
+        const color = CONFETTI_COLORS[piece.id % CONFETTI_COLORS.length]!;
+        const totalDuration = 2.5 + Math.random() * 1;
+        // Time split: ~30% going up, ~70% falling down
+        const upRatio = 0.25 + Math.random() * 0.1;
 
-      {/* Subtle glow pulse at the center */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: [0, 0.15, 0], scale: [0.8, 1.5, 2] }}
-        transition={{ duration: 2, ease: "easeOut" }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)",
-        }}
-      />
+        return (
+          <motion.div
+            key={piece.id}
+            initial={{
+              bottom: 0,
+              left: `${piece.x}vw`,
+              y: 0,
+              x: 0,
+              rotate: piece.rotation,
+              opacity: 0,
+            }}
+            animate={{
+              y: [0, piece.peakY, window.innerHeight * 0.2],
+              x: [0, piece.sway * 0.3, piece.sway],
+              rotate: piece.rotation + 360 + Math.random() * 180,
+              opacity: [0, piece.opacity, piece.opacity, 0],
+            }}
+            transition={{
+              duration: totalDuration,
+              delay: piece.delay,
+              y: {
+                duration: totalDuration,
+                times: [0, upRatio, 1],
+                ease: ["easeOut", "easeIn"],
+              },
+              x: {
+                duration: totalDuration,
+                ease: "easeOut",
+              },
+              opacity: {
+                duration: totalDuration,
+                times: [0, 0.15, 0.7, 1],
+              },
+            }}
+            className="absolute"
+            style={{
+              width: piece.shape === "line" ? 2 : piece.size,
+              height: piece.shape === "dot" ? piece.size : piece.shape === "line" ? piece.size * 2 : piece.size,
+              backgroundColor: piece.shape === "dot" ? "transparent" : color,
+              borderRadius: piece.shape === "dot" ? "50%" : piece.shape === "line" ? 1 : 0,
+              border: piece.shape === "dot" ? `1px solid ${color}` : "none",
+              boxShadow: `0 0 8px ${color}`,
+            }}
+          />
+        );
+      })}
     </div>
   );
 };
@@ -251,6 +266,66 @@ export const DrawOverlay = ({ isActive }: DrawOverlayProps) => {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-[1px] bg-white/20"
           />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Result banner that appears centered on the chess board
+interface GameResultBannerProps {
+  gameEndState: "victory" | "defeat" | "draw" | null;
+}
+
+const BANNER_CONFIG = {
+  victory: { text: "You Won!", color: "text-amber-200", bg: "rgba(180, 130, 30, 0.35)" },
+  defeat: { text: "You Lost", color: "text-white/60", bg: "rgba(40, 40, 40, 0.45)" },
+  draw: { text: "Draw", color: "text-white/90", bg: "rgba(100, 100, 100, 0.35)" },
+} as const;
+
+export const GameResultBanner = ({ gameEndState }: GameResultBannerProps) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!gameEndState) {
+      setVisible(false);
+      return;
+    }
+
+    // Appear 1s after game ends
+    const showTimer = setTimeout(() => setVisible(true), 1000);
+    // Auto-dismiss after 4s total (1s delay + 3s display)
+    const hideTimer = setTimeout(() => setVisible(false), 4000);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [gameEndState]);
+
+  const config = gameEndState ? BANNER_CONFIG[gameEndState] : null;
+
+  return (
+    <AnimatePresence>
+      {visible && config && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.8, ease: [0.4, 0, 1, 1] } }}
+          transition={{ duration: 0.9, ease: [0, 0, 0.2, 1] }}
+          className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center"
+        >
+          <div
+            className="px-8 py-4 backdrop-blur-sm"
+            style={{ backgroundColor: config.bg }}
+          >
+            <h2
+              className={`text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] uppercase ${config.color}`}
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              {config.text}
+            </h2>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

@@ -685,6 +685,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         analysisTimeRemaining={analysisTimeRemaining}
         totalAnalysisTime={totalAnalysisTime}
         currentTurn={currentTurn}
+        myColor={myColor}
       />
 
       {/* Subtle grid background */}
@@ -730,6 +731,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 analysisTimeRemaining={analysisTimeRemaining}
                 totalAnalysisTime={totalAnalysisTime}
                 currentTurn={currentTurn}
+                myColor={myColor}
               />
 
               {/* Current Turn */}
