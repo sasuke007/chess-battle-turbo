@@ -1,0 +1,26 @@
+{
+  "name": "video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ReplayChessTrailer out/trailer.mp4",
+    "render-still": "remotion still src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.301",
+    "@remotion/fonts": "4.0.301",
+    "@remotion/google-fonts": "4.0.301",
+    "@remotion/tailwind": "4.0.301",
+    "@remotion/transitions": "4.0.301",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.301",
+    "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
