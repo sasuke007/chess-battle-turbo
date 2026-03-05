@@ -41,7 +41,7 @@ This is a **pnpm monorepo** with Turborepo:
 
 ## Pull Requests
 
-- Keep PRs focused — one feature or fix per PR
+- Use [GitHub Issues](https://github.com/sasuke007/chess-battle-turbo/issues) to report bugs or request features
 - Write a clear description of what changed and why
 - Ensure all checks pass (types, lint, build)
 - Link related issues in the PR description
