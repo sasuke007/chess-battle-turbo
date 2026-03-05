@@ -7,6 +7,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { UserSync } from "./components/UserSync";
+import { GoogleAnalytics } from "./components/GoogleAnalytics";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -701,6 +702,7 @@ export default function RootLayout({
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link rel="dns-prefetch" href="https://img.clerk.com" />
+          <link rel="preconnect" href="https://www.googletagmanager.com" />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
@@ -729,6 +731,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} bg-black`}
         >
+          <GoogleAnalytics />
           <UserSync />
           <Toaster
             theme="dark"
