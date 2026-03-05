@@ -49,5 +49,9 @@ yarn-error.log*
 .cursor
 .vscode
 
+# WebReel
+scripts/webreel/steps/auth.json
+scripts/webreel/videos/
+
 
 

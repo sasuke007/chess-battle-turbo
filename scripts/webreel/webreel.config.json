@@ -1,0 +1,128 @@
+{
+  "$schema": "https://webreel.dev/schema/v1.json",
+  "baseUrl": "https://playchess.tech",
+  "outDir": "./videos",
+  "viewport": { "width": 1920, "height": 1080 },
+  "defaultDelay": 500,
+  "sfx": { "click": 1 },
+  "theme": {
+    "cursor": { "size": 28, "hotspot": "center" },
+    "hud": { "background": "#0a0a0a", "color": "#10b981", "fontSize": 14, "position": "bottom" }
+  },
+  "videos": {
+    "landing-page": {
+      "url": "/",
+      "zoom": 1.5,
+      "steps": [
+        { "action": "pause", "ms": 3000 },
+        { "action": "screenshot", "output": "hero.png" },
+        { "action": "scroll", "y": 800 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": 800 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": 800 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": -2400 },
+        { "action": "pause", "ms": 1000 },
+        { "action": "click", "text": "Start Playing", "delay": 1500 },
+        { "action": "pause", "ms": 2000 }
+      ]
+    },
+    "legends-browse": {
+      "url": "/legends",
+      "zoom": 1.5,
+      "steps": [
+        { "action": "wait", "text": "Magnus Carlsen", "timeout": 15000 },
+        { "action": "pause", "ms": 3000 },
+        { "action": "scroll", "y": 600 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": 600 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": -1200 },
+        { "action": "pause", "ms": 1000 },
+        { "action": "click", "text": "Magnus Carlsen", "delay": 5000 },
+        { "action": "wait", "text": "Play as", "timeout": 20000 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": 400 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "click", "text": "Play as", "delay": 2000 },
+        { "action": "pause", "ms": 2000 }
+      ]
+    },
+    "openings-browse": {
+      "url": "/openings",
+      "zoom": 1.5,
+      "steps": [
+        { "action": "wait", "text": "Openings", "timeout": 10000 },
+        { "action": "pause", "ms": 3000 },
+        { "action": "scroll", "y": 400 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": -400 },
+        { "action": "click", "selector": "input[placeholder*='Search by name']", "delay": 1000 },
+        { "action": "type", "text": "Sicilian", "charDelay": 80 },
+        { "action": "pause", "ms": 3000 },
+        { "action": "screenshot", "output": "openings-search.png" },
+        { "action": "navigate", "url": "https://playchess.tech/openings/cmlddh7cx00w2itniwb3gtpai" },
+        { "action": "wait", "text": "Play from this position", "timeout": 10000 },
+        { "action": "pause", "ms": 3000 },
+        { "action": "scroll", "y": 300 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "click", "text": "Play from this position", "delay": 2000 },
+        { "action": "pause", "ms": 2000 }
+      ]
+    },
+    "sign-in-flow": {
+      "url": "/sign-in",
+      "zoom": 1.5,
+      "steps": [
+        { "action": "pause", "ms": 3000 },
+        { "action": "screenshot", "output": "sign-in.png" },
+        { "action": "pause", "ms": 2000 },
+        { "action": "wait", "selector": "input[name='identifier']", "timeout": 10000 },
+        { "action": "click", "selector": "input[name='identifier']", "delay": 500 },
+        { "action": "type", "text": "grandmaster@playchess.tech", "charDelay": 50 },
+        { "action": "pause", "ms": 3000 },
+        { "action": "screenshot", "output": "sign-in-filled.png" }
+      ]
+    },
+    "pricing-page": {
+      "url": "/pricing",
+      "zoom": 1.5,
+      "steps": [
+        { "action": "wait", "text": "Pricing", "timeout": 10000 },
+        { "action": "pause", "ms": 3000 },
+        { "action": "scroll", "y": 500 },
+        { "action": "pause", "ms": 2500 },
+        { "action": "scroll", "y": 500 },
+        { "action": "pause", "ms": 2500 },
+        { "action": "scroll", "y": 500 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "click", "text": "Do you offer refunds?", "delay": 1500 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "click", "text": "What payment methods do you accept?", "delay": 1500 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": -1500 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "screenshot", "output": "pricing.png" },
+        { "action": "pause", "ms": 1500 }
+      ]
+    },
+    "mobile-demo": {
+      "url": "/",
+      "viewport": { "width": 430, "height": 932 },
+      "output": "mobile-demo.mp4",
+      "steps": [
+        { "action": "pause", "ms": 3000 },
+        { "action": "screenshot", "output": "mobile-hero.png" },
+        { "action": "scroll", "y": 400 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": 400 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "scroll", "y": -800 },
+        { "action": "pause", "ms": 2000 },
+        { "action": "screenshot", "output": "mobile-landing.png" },
+        { "action": "pause", "ms": 2000 }
+      ]
+    }
+  }
+}
