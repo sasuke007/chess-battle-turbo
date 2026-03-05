@@ -104,7 +104,3 @@ jobs:
           name: playwright-traces
           path: apps/web/test-results/
           retention-days: 7
-
-      - name: Trigger Vercel deployment
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: curl -sf -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
