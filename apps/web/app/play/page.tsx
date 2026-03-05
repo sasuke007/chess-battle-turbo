@@ -65,7 +65,7 @@ function PlayContent() {
     increment: 5,
   });
   const [isCreatingGame, setIsCreatingGame] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<"quick" | "friend" | "ai">("quick");
+  const [selectedMode, setSelectedMode] = useState<"quick" | "friend" | "ai">("ai");
   const [playAsLegend, setPlayAsLegend] = useState(false);
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [hoveredMode, setHoveredMode] = useState<string | null>(null);
