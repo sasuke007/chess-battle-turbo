@@ -286,7 +286,7 @@ test.describe("Tournament", () => {
       const leaderboard = playerJ.page.locator('[data-testid="leaderboard"]');
       await expect(leaderboard).toBeVisible({ timeout: 15_000 });
 
-      const rows = leaderboard.locator('[data-testid="leaderboard-row"]');
+      const rows = leaderboard.locator('[data-testid="leaderboard-row"]').filter({ visible: true });
       await expect(rows).toHaveCount(4, { timeout: 15_000 });
     } finally {
       // ── PHASE 8: CLEANUP — delete tournament and all associated games ──
