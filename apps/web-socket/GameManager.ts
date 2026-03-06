@@ -35,16 +35,19 @@ export class GameManager {
       // Get or create game session
       let gameSession = this.games.get(gameReferenceId);
       let isReconnection = false;
+      let gameData: GameData;
 
       if (!gameSession) {
         // Fetch game data from API
-        const gameData : GameData = await fetchGameByRef(gameReferenceId);
+        gameData = await fetchGameByRef(gameReferenceId);
 
         // Re-check after async fetch — safe because Node.js is single-threaded;
         // the only yield point is the await above, so no synchronous interleaving
         gameSession = this.games.get(gameReferenceId);
         if (gameSession) {
           isReconnection = gameSession.isPlayerInGame(userReferenceId);
+          // Update session with our fresh data (covers concurrent join)
+          await gameSession.setGameData(gameData);
           logger.info(`Session created by concurrent join, isReconnection: ${isReconnection}`, { game: gameReferenceId, user: userReferenceId });
         } else {
           // Extract and store trace context for distributed tracing
@@ -74,14 +77,12 @@ export class GameManager {
           logger.info(`Created new game session`, { game: gameReferenceId });
         }
       } else {
-        // Check if this player is already in the game (reconnection)
+        // Session exists — fetch fresh data (opponent may have been set since creation)
         isReconnection = gameSession.isPlayerInGame(userReferenceId);
+        gameData = await fetchGameByRef(gameReferenceId);
+        await gameSession.setGameData(gameData);
         logger.info(`Is reconnection: ${isReconnection}`, { game: gameReferenceId, user: userReferenceId });
       }
-
-      //TODO: do we need to validate game status again here, check what can go wrong if we don't.
-      const game: GameData = await fetchGameByRef(gameReferenceId);
-      await gameSession.setGameData(game);
 
       // Track socket to game mapping BEFORE adding player
       if (!this.socketToGames.has(socket.id)) {
@@ -100,7 +101,7 @@ export class GameManager {
 
         // If game is waiting for opponent, emit waiting status
         if (
-          game.status === "WAITING_FOR_OPPONENT" &&
+          gameData.status === "WAITING_FOR_OPPONENT" &&
           !gameSession.hasBothPlayers()
         ) {
           socket.emit("waiting_for_opponent", { gameReferenceId });
