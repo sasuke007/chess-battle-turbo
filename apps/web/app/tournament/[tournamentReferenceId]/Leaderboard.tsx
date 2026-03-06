@@ -14,6 +14,26 @@ interface LeaderboardProps {
   isCompleted: boolean;
 }
 
+function RankBadge({ rank }: { rank: number }) {
+  return (
+    <span
+      style={geistFont}
+      className={cn(
+        "text-sm",
+        rank === 1
+          ? "text-amber-400 font-medium"
+          : rank === 2
+            ? "text-gray-300"
+            : rank === 3
+              ? "text-amber-700"
+              : "text-white/30"
+      )}
+    >
+      {rank}
+    </span>
+  );
+}
+
 export default function Leaderboard({ participants, isCompleted }: LeaderboardProps) {
   return (
     <div data-testid="leaderboard" className="border border-white/10">
@@ -23,18 +43,6 @@ export default function Leaderboard({ participants, isCompleted }: LeaderboardPr
         </h2>
       </div>
 
-      {/* Table header */}
-      <div className="grid grid-cols-[2.5rem_1fr_4rem_3rem_3rem_3rem_3rem] gap-2 px-4 py-2 border-b border-white/5 text-[10px] text-white/30 tracking-wider uppercase" style={geistFont}>
-        <span>#</span>
-        <span>Player</span>
-        <span className="text-right">Points</span>
-        <span className="text-right">W</span>
-        <span className="text-right">D</span>
-        <span className="text-right">L</span>
-        <span className="text-right">GP</span>
-      </div>
-
-      {/* Rows */}
       {participants.length === 0 ? (
         <div className="px-4 py-8 text-center">
           <p style={geistFont} className="text-white/30 text-sm">
@@ -42,73 +50,121 @@ export default function Leaderboard({ participants, isCompleted }: LeaderboardPr
           </p>
         </div>
       ) : (
-        participants.map((p, index) => {
-          const rank = index + 1;
-          const isWinner = isCompleted && rank === 1;
-          return (
-            <div
-              key={p.referenceId}
-              data-testid="leaderboard-row"
-              className={cn(
-                "grid grid-cols-[2.5rem_1fr_4rem_3rem_3rem_3rem_3rem] gap-2 px-4 py-2.5 items-center border-b border-white/5 last:border-b-0",
-                isWinner && "bg-amber-400/5"
-              )}
-            >
-              <span
-                style={geistFont}
-                className={cn(
-                  "text-sm",
-                  rank === 1
-                    ? "text-amber-400 font-medium"
-                    : rank === 2
-                      ? "text-gray-300"
-                      : rank === 3
-                        ? "text-amber-700"
-                        : "text-white/30"
-                )}
-              >
-                {rank}
-              </span>
-              <div className="flex items-center gap-2 min-w-0">
-                {p.user.profilePictureUrl ? (
-                  <Image
-                    src={p.user.profilePictureUrl}
-                    alt={p.user.name}
-                    width={24}
-                    height={24}
-                    className="w-6 h-6 rounded-full shrink-0"
-                  />
-                ) : (
-                  <div className="w-6 h-6 bg-white/10 rounded-full shrink-0" />
-                )}
-                <span
-                  style={geistFont}
+        <>
+          {/* Desktop: full table */}
+          <div className="hidden sm:block">
+            <div className="grid grid-cols-[2rem_1fr_4rem_3rem_3rem_3rem_3rem] gap-2 px-4 py-2 border-b border-white/5 text-[10px] text-white/30 tracking-wider uppercase" style={geistFont}>
+              <span>#</span>
+              <span>Player</span>
+              <span className="text-right">Points</span>
+              <span className="text-right">W</span>
+              <span className="text-right">D</span>
+              <span className="text-right">L</span>
+              <span className="text-right">GP</span>
+            </div>
+            {participants.map((p, index) => {
+              const rank = index + 1;
+              const isWinner = isCompleted && rank === 1;
+              return (
+                <div
+                  key={p.referenceId}
+                  data-testid="leaderboard-row"
                   className={cn(
-                    "text-sm truncate",
-                    isWinner ? "text-amber-400 font-medium" : "text-white"
+                    "grid grid-cols-[2rem_1fr_4rem_3rem_3rem_3rem_3rem] gap-2 px-4 py-2.5 items-center border-b border-white/5 last:border-b-0",
+                    isWinner && "bg-amber-400/5"
                   )}
                 >
-                  {p.user.name}
-                </span>
-              </div>
-              <span style={geistFont} className="text-sm text-white font-medium text-right tabular-nums">
-                {p.points}
-              </span>
-              <span style={geistFont} className="text-sm text-emerald-400/70 text-right tabular-nums">
-                {p.wins}
-              </span>
-              <span style={geistFont} className="text-sm text-white/40 text-right tabular-nums">
-                {p.draws}
-              </span>
-              <span style={geistFont} className="text-sm text-red-400/70 text-right tabular-nums">
-                {p.losses}
-              </span>
-              <span style={geistFont} className="text-sm text-white/30 text-right tabular-nums">
-                {p.gamesPlayed}
-              </span>
-            </div>
-          );
-        })
+                  <RankBadge rank={rank} />
+                  <div className="flex items-center gap-2 min-w-0">
+                    {p.user.profilePictureUrl ? (
+                      <Image
+                        src={p.user.profilePictureUrl}
+                        alt={p.user.name}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 rounded-full shrink-0"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-white/10 rounded-full shrink-0" />
+                    )}
+                    <span
+                      style={geistFont}
+                      className={cn(
+                        "text-sm truncate",
+                        isWinner ? "text-amber-400 font-medium" : "text-white"
+                      )}
+                    >
+                      {p.user.name}
+                    </span>
+                  </div>
+                  <span style={geistFont} className="text-sm text-white font-medium text-right tabular-nums">
+                    {p.points}
+                  </span>
+                  <span style={geistFont} className="text-sm text-emerald-400/70 text-right tabular-nums">
+                    {p.wins}
+                  </span>
+                  <span style={geistFont} className="text-sm text-white/40 text-right tabular-nums">
+                    {p.draws}
+                  </span>
+                  <span style={geistFont} className="text-sm text-red-400/70 text-right tabular-nums">
+                    {p.losses}
+                  </span>
+                  <span style={geistFont} className="text-sm text-white/30 text-right tabular-nums">
+                    {p.gamesPlayed}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile: card layout */}
+          <div className="sm:hidden divide-y divide-white/5">
+            {participants.map((p, index) => {
+              const rank = index + 1;
+              const isWinner = isCompleted && rank === 1;
+              return (
+                <div
+                  key={p.referenceId}
+                  data-testid="leaderboard-row"
+                  className={cn("px-4 py-3", isWinner && "bg-amber-400/5")}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <RankBadge rank={rank} />
+                    {p.user.profilePictureUrl ? (
+                      <Image
+                        src={p.user.profilePictureUrl}
+                        alt={p.user.name}
+                        width={28}
+                        height={28}
+                        className="w-7 h-7 rounded-full shrink-0"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 bg-white/10 rounded-full shrink-0" />
+                    )}
+                    <span
+                      style={geistFont}
+                      className={cn(
+                        "text-sm truncate",
+                        isWinner ? "text-amber-400 font-medium" : "text-white"
+                      )}
+                    >
+                      {p.user.name}
+                    </span>
+                    <span style={geistFont} className="ml-auto text-sm text-white font-medium tabular-nums">
+                      {p.points} pts
+                    </span>
+                  </div>
+                  <div className="flex gap-4 pl-9 text-xs tabular-nums" style={geistFont}>
+                    <span className="text-emerald-400/70">{p.wins}W</span>
+                    <span className="text-white/40">{p.draws}D</span>
+                    <span className="text-red-400/70">{p.losses}L</span>
+                    <span className="text-white/30">{p.gamesPlayed} played</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
