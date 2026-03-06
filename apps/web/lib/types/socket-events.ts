@@ -17,7 +17,7 @@ export interface Player {
 
 export interface GameStartedPayload {
   gameReferenceId: string;
-  yourColor: Color;
+  yourColor?: Color;
   fen: string;
   whiteTime: number;
   blackTime: number;
@@ -96,7 +96,7 @@ export interface MakeMovePayload {
 export interface AnalysisPhaseStartedPayload {
   gameReferenceId: string;
   analysisTimeSeconds: number;
-  yourColor: Color;
+  yourColor?: Color;
   fen: string;
   whiteTime: number;
   blackTime: number;
@@ -118,4 +118,31 @@ export interface AnalysisPhaseStartedPayload {
 export interface AnalysisTickPayload {
   remainingSeconds: number;
   totalSeconds: number;
+}
+
+// ============================================
+// SPECTATOR TYPES
+// ============================================
+
+export interface SpectatorStatePayload {
+  gameReferenceId: string;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+  whitePlayer: Player;
+  blackPlayer: Player;
+  moveHistory: Array<{ from: string; to: string; san: string; promotion?: string }>;
+  startingFen: string;
+  gameStarted: boolean;
+  isAnalysisPhase: boolean;
+  analysisRemainingSeconds?: number;
+  analysisTotalSeconds?: number;
+  spectatorCount: number;
+  positionInfo?: any;
+  gameOver?: boolean;
+  gameOverPayload?: GameOverPayload;
+}
+
+export interface SpectatorCountPayload {
+  count: number;
 }

@@ -14,6 +14,7 @@ import {
   OfferDrawPayload,
   AcceptDrawPayload,
   DeclineDrawPayload,
+  SpectateGamePayload,
 } from "./types";
 import { withGameTrace } from "./utils/traceContext";
 import { logger } from "./utils/logger";
@@ -75,6 +76,35 @@ io.on("connection", (socket) => {
           logger.error("Error in join_game handler", error, { game: gameReferenceId });
           socket.emit("error", {
             message: error instanceof Error ? error.message : "Failed to join game",
+          });
+        }
+      }
+    );
+  });
+
+  // Handle spectator joining a game
+  socket.on("spectate_game", async (payload: SpectateGamePayload) => {
+    trackSocketEvent("spectate_game");
+    const { gameReferenceId } = payload;
+
+    await withGameTrace(
+      gameReferenceId,
+      {
+        name: "websocket.spectate_game",
+        op: "websocket.event",
+        attributes: { "game.referenceId": gameReferenceId },
+      },
+      async () => {
+        try {
+          Sentry.setTag("game.referenceId", gameReferenceId);
+          logger.info("spectate_game event", { game: gameReferenceId });
+
+          await gameManager.handleSpectateGame(socket, gameReferenceId);
+        } catch (error) {
+          Sentry.captureException(error);
+          logger.error("Error in spectate_game handler", error, { game: gameReferenceId });
+          socket.emit("error", {
+            message: error instanceof Error ? error.message : "Failed to spectate game",
           });
         }
       }

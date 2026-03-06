@@ -209,6 +209,38 @@ export class GameManager {
   }
 
   /**
+   * Handle a spectator joining a game
+   */
+  public async handleSpectateGame(
+    socket: Socket,
+    gameReferenceId: string
+  ): Promise<void> {
+    try {
+      logger.info(`Spectator attempting to watch game`, { game: gameReferenceId, socket: socket.id });
+
+      const gameSession = this.games.get(gameReferenceId);
+
+      if (!gameSession) {
+        socket.emit("error", { message: "Game session not available for spectating" });
+        return;
+      }
+
+      // Track socket to game mapping
+      if (!this.socketToGames.has(socket.id)) {
+        this.socketToGames.set(socket.id, new Set());
+      }
+      this.socketToGames.get(socket.id)!.add(gameReferenceId);
+
+      gameSession.addSpectator(socket);
+    } catch (error) {
+      logger.error("Error handling spectate game", error, { game: gameReferenceId });
+      socket.emit("error", {
+        message: error instanceof Error ? error.message : "Failed to spectate game",
+      });
+    }
+  }
+
+  /**
    * Handle socket disconnection
    */
   public handleDisconnect(socket: Socket): void {
@@ -224,6 +256,7 @@ export class GameManager {
     gameIds.forEach((gameReferenceId) => {
       const gameSession = this.games.get(gameReferenceId);
       if (gameSession) {
+        // isSpectator check happens inside handleDisconnect
         gameSession.handleDisconnect(socket);
       }
     });

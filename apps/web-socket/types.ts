@@ -247,3 +247,34 @@ export interface AnalysisTickPayload {
   remainingSeconds: number;
   totalSeconds: number;
 }
+
+// ============================================
+// SPECTATOR TYPES
+// ============================================
+
+export interface SpectateGamePayload {
+  gameReferenceId: string;
+}
+
+export interface SpectatorStatePayload {
+  gameReferenceId: string;
+  fen: string;
+  whiteTime: number;
+  blackTime: number;
+  whitePlayer: PlayerInfo;
+  blackPlayer: PlayerInfo;
+  moveHistory: Array<{ from: string; to: string; san: string; promotion?: string }>;
+  startingFen: string;
+  gameStarted: boolean;
+  isAnalysisPhase: boolean;
+  analysisRemainingSeconds?: number;
+  analysisTotalSeconds?: number;
+  spectatorCount: number;
+  positionInfo?: any;
+  gameOver?: boolean;
+  gameOverPayload?: GameOverPayload;
+}
+
+export interface SpectatorCountPayload {
+  count: number;
+}
