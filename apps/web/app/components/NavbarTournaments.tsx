@@ -31,21 +31,21 @@ export function NavbarTournaments() {
       href="/tournaments"
       className={cn(
         "group relative overflow-hidden",
-        "h-9 px-3 sm:px-5 flex items-center",
-        "border border-white/20 hover:border-white/40",
-        "bg-white/5 backdrop-blur-sm",
+        "bg-white text-black",
+        "h-9 px-3 sm:px-5",
         "text-sm font-medium tracking-wide",
-        "transition-all duration-300"
+        "transition-all duration-300",
+        "flex items-center"
       )}
       style={{ fontFamily: "'Geist', sans-serif" }}
     >
-      <span className="absolute inset-0 bg-white origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
-      <span className="relative flex items-center gap-1.5 text-white/70 group-hover:text-black transition-colors duration-300">
+      <span className="absolute inset-0 bg-black origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+      <span className="relative flex items-center gap-1.5 text-black group-hover:text-white transition-colors duration-300">
         <Trophy className="w-3.5 h-3.5" strokeWidth={1.5} />
         <span className="hidden sm:inline">Tournaments</span>
       </span>
       {hasActive && (
-        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-white/70 rounded-full" />
+        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-black/40 group-hover:bg-white/70 rounded-full transition-colors duration-300" />
       )}
     </Link>
   );

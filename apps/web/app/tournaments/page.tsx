@@ -156,7 +156,7 @@ export default function TournamentsPage() {
             </div>
           ) : tournaments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 border border-white/10">
-              <span className="text-4xl mb-4 select-none" role="img" aria-label="trophy">&#127942;</span>
+              <Trophy className="w-10 h-10 text-white/20 mb-4" strokeWidth={1} />
               <p style={geistFont} className="text-white/40 text-sm">
                 No tournaments found
               </p>
