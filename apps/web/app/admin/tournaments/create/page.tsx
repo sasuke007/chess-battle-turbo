@@ -9,6 +9,7 @@ import { Navbar } from "@/app/components/Navbar";
 import TimeControlSelector, { type TimeControlValue } from "@/app/components/TimeControlSelector";
 import SearchableDropdown from "@/app/components/SearchableDropdown";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { TournamentShareModal } from "./TournamentShareModal";
 
 const geistFont = { fontFamily: "'Geist', sans-serif" } as const;
 const serifFont = { fontFamily: "'Instrument Serif', serif" } as const;
@@ -59,6 +60,8 @@ export default function CreateTournamentPage() {
   });
 
   // Mode-specific selections
+  const [scheduledStartAt, setScheduledStartAt] = useState("");
+  const [createdRef, setCreatedRef] = useState<string | null>(null);
   const [selectedOpening, setSelectedOpening] = useState<string | null>(null);
   const [selectedLegend, setSelectedLegend] = useState<string | null>(null);
 
@@ -109,6 +112,8 @@ export default function CreateTournamentPage() {
         body.legendReferenceId = selectedLegend;
       }
 
+      body.scheduledStartAt = new Date(scheduledStartAt).toISOString();
+
       const res = await fetch("/api/tournament/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,7 +122,7 @@ export default function CreateTournamentPage() {
 
       const data = await res.json();
       if (data.success) {
-        router.push(`/tournament/${data.data.referenceId}`);
+        setCreatedRef(data.data.referenceId);
       } else {
         logger.error("Failed to create tournament:", data.error);
       }
@@ -300,6 +305,21 @@ export default function CreateTournamentPage() {
               <TimeControlSelector value={timeControl} onChange={setTimeControl} />
             </div>
 
+            {/* Scheduled Start Time */}
+            <div>
+              <label style={geistFont} className="block text-white/60 text-xs tracking-wider uppercase mb-2">
+                Scheduled Start Time
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledStartAt}
+                onChange={(e) => setScheduledStartAt(e.target.value)}
+                required
+                style={geistFont}
+                className="w-full bg-transparent border border-white/10 text-white text-sm px-4 py-3 outline-none focus:border-white/30 transition-colors [color-scheme:dark]"
+              />
+            </div>
+
             {/* Max Participants */}
             <div>
               <label style={geistFont} className="block text-white/60 text-xs tracking-wider uppercase mb-2">
@@ -320,10 +340,10 @@ export default function CreateTournamentPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isSubmitting || !name.trim() || !scheduledStartAt}
               className={cn(
                 "w-full py-3 text-sm font-medium tracking-wide transition-all duration-300",
-                isSubmitting || !name.trim()
+                isSubmitting || !name.trim() || !scheduledStartAt
                   ? "bg-white/10 text-white/30 cursor-not-allowed"
                   : "bg-white text-black hover:bg-white/90"
               )}
@@ -341,6 +361,14 @@ export default function CreateTournamentPage() {
           </form>
         </div>
       </div>
+
+      <TournamentShareModal
+        isOpen={!!createdRef}
+        referenceId={createdRef ?? ""}
+        onGoToTournament={() => {
+          if (createdRef) router.push(`/tournament/${createdRef}`);
+        }}
+      />
     </>
   );
 }

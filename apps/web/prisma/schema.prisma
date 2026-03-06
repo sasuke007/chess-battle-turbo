@@ -423,6 +423,7 @@ model Tournament {
   legendId            BigInt?
   chessPositionId     BigInt?
   createdByUserId     BigInt
+  scheduledStartAt    DateTime @default(now())
   startedAt           DateTime?
   endsAt              DateTime?
   completedAt         DateTime?

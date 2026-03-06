@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
     }
 
-    if (tournament.status !== "LOBBY" && tournament.status !== "ACTIVE") {
+    if (tournament.status !== "LOBBY") {
       return NextResponse.json(
-        { error: "Tournament is not accepting participants" },
+        { error: "Registration is closed — tournament has already started" },
         { status: 400 }
       );
     }

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CreditCard, Receipt, Shield, User } from "lucide-react";
 import { usePWAInstall } from "@/lib/hooks";
 import { InstallAppPopover } from "./InstallAppPopover";
+import { NavbarTournaments } from "./NavbarTournaments";
 
 export const Navbar = () => {
   const { isSignedIn, user } = useUser();
@@ -138,6 +139,7 @@ export const Navbar = () => {
         </SignedOut>
 
         <SignedIn>
+          <NavbarTournaments />
           {isAdmin && (
             <Link
               href="/admin"

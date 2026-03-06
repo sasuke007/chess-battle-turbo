@@ -285,6 +285,7 @@ export function serializeTournament(tournament: NonNullable<Awaited<ReturnType<t
     initialTimeSeconds: tournament.initialTimeSeconds,
     incrementSeconds: tournament.incrementSeconds,
     durationMinutes: tournament.durationMinutes,
+    scheduledStartAt: tournament.scheduledStartAt.toISOString(),
     startedAt: tournament.startedAt?.toISOString() ?? null,
     endsAt: tournament.endsAt?.toISOString() ?? null,
     completedAt: tournament.completedAt?.toISOString() ?? null,

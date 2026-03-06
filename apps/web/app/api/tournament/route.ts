@@ -6,9 +6,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") as TournamentStatus | null;
+    const statuses = searchParams.get("statuses");
     const countOnly = searchParams.get("count") === "true";
 
-    const where = status ? { status } : {};
+    let where: Record<string, unknown> = {};
+    if (status) {
+      where = { status };
+    } else if (statuses) {
+      where = { status: { in: statuses.split(",") } };
+    }
 
     if (countOnly) {
       const count = await prisma.tournament.count({ where });
@@ -39,6 +45,7 @@ export async function GET(request: NextRequest) {
           initialTimeSeconds: t.initialTimeSeconds,
           incrementSeconds: t.incrementSeconds,
           durationMinutes: t.durationMinutes,
+          scheduledStartAt: t.scheduledStartAt.toISOString(),
           startedAt: t.startedAt?.toISOString() ?? null,
           endsAt: t.endsAt?.toISOString() ?? null,
           completedAt: t.completedAt?.toISOString() ?? null,

@@ -33,6 +33,7 @@ export interface TournamentData {
   initialTimeSeconds: number;
   incrementSeconds: number;
   durationMinutes: number;
+  scheduledStartAt: string;
   startedAt: string | null;
   endsAt: string | null;
   completedAt: string | null;

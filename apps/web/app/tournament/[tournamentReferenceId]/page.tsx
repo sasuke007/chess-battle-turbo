@@ -119,7 +119,7 @@ export default function TournamentPage({
   }
 
   function handleCopyLink() {
-    const url = `${window.location.origin}/tournament/${tournamentReferenceId}`;
+    const url = `${window.location.origin}/join-tournament/${tournamentReferenceId}`;
     navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -150,7 +150,7 @@ export default function TournamentPage({
           />
 
           {/* Share link (LOBBY or ACTIVE) */}
-          {(tournament.status === "LOBBY" || tournament.status === "ACTIVE") && (
+          {tournament.status === "LOBBY" && (
             <div className="border border-white/10 p-4">
               <label style={geistFont} className="block text-white/40 text-xs tracking-wider uppercase mb-2">
                 Share Link
@@ -158,7 +158,7 @@ export default function TournamentPage({
               <div className="flex gap-2">
                 <input
                   readOnly
-                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/tournament/${tournamentReferenceId}`}
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/join-tournament/${tournamentReferenceId}`}
                   className="flex-1 bg-transparent border border-white/10 text-white/60 text-sm px-3 py-2 outline-none"
                   style={geistFont}
                 />
@@ -184,7 +184,7 @@ export default function TournamentPage({
 
           {/* Join button (non-participants) */}
           {!isParticipant &&
-            (tournament.status === "LOBBY" || tournament.status === "ACTIVE") && (
+            tournament.status === "LOBBY" && (
               <button
                 data-testid="join-tournament-button"
                 onClick={handleJoin}

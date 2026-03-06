@@ -113,6 +113,14 @@ export default function TournamentHeader({
         <span>{tournament.durationMinutes} min duration</span>
       </div>
 
+      {/* Scheduled start countdown */}
+      {tournament.status === "LOBBY" && tournament.scheduledStartAt && (
+        <div className="flex items-center gap-2 mb-4" style={geistFont}>
+          <span className="text-white/40 text-sm">Starts in:</span>
+          <CountdownTimer endsAt={tournament.scheduledStartAt} />
+        </div>
+      )}
+
       {/* Active countdown */}
       {tournament.status === "ACTIVE" && tournament.endsAt && (
         <div className="flex items-center gap-2 mb-4" style={geistFont}>

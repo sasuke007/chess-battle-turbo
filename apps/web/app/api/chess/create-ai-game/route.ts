@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
         resolvedPlayerColor = "black";
       }
     } else {
-      resolvedPlayerColor = Math.random() < 0.5 ? "white" : "black";
+      resolvedPlayerColor = chessPosition?.sideToMove ?? "white";
     }
 
     logger.debug(`[AI Game] Settings: timeFormat=${timeFormat}, userRating=${userRating}, difficulty=${difficulty}, playerColor=${resolvedPlayerColor}`);

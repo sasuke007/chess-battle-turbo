@@ -227,7 +227,7 @@ export default function PracticeMoveList({
           className={cn(
             "px-4 py-3 border-t border-white/10",
             gameResult === "win" && "bg-amber-500/10 border-t-amber-500/30",
-            gameResult === "loss" && "bg-red-500/10 border-t-red-500/30",
+            gameResult === "loss" && "bg-white/5 border-t-white/20",
             gameResult === "draw" && "bg-white/5 border-t-white/20"
           )}
         >
@@ -236,7 +236,7 @@ export default function PracticeMoveList({
             className={cn(
               "text-base text-center",
               gameResult === "win" && "text-amber-400",
-              gameResult === "loss" && "text-red-400",
+              gameResult === "loss" && "text-white/50",
               gameResult === "draw" && "text-white/60"
             )}
           >
@@ -247,7 +247,7 @@ export default function PracticeMoveList({
             className={cn(
               "text-xs text-center mt-1",
               gameResult === "win" && "text-amber-400/60",
-              gameResult === "loss" && "text-red-400/60",
+              gameResult === "loss" && "text-white/40",
               gameResult === "draw" && "text-white/40"
             )}
           >

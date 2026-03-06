@@ -3,6 +3,7 @@ import {
   expect,
   ChessBoardHelper,
   createTournamentViaApi,
+  deleteTournamentViaApi,
 } from "../fixtures";
 import type { Page } from "@playwright/test";
 
@@ -214,7 +215,7 @@ test.describe("Tournament", () => {
     playerL,
     playerM,
   }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(720_000);
 
     // ── PHASE 1: CREATE TOURNAMENT ──
     const tournamentRefId = await createTournamentViaApi(
@@ -222,68 +223,80 @@ test.describe("Tournament", () => {
       `E2E Test Tournament ${Date.now()}`,
     );
 
-    // ── PHASE 2: JOIN - K, L, M join (J is auto-joined as creator) ──
-    for (const player of [playerK, playerL, playerM]) {
-      await player.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
-      const joinBtn = player.page.locator('[data-testid="join-tournament-button"]');
-      await joinBtn.waitFor({ timeout: 30_000 });
-      await joinBtn.click();
-      await joinBtn.waitFor({ state: "hidden", timeout: 30_000 });
+    try {
+      // ── PHASE 2: JOIN - K, L, M join via /join-tournament/ page (J is auto-joined as creator) ──
+      for (const player of [playerK, playerL, playerM]) {
+        await player.page.goto(`/join-tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
+        const joinBtn = player.page.locator('[data-testid="join-tournament-button"]');
+        await joinBtn.waitFor({ timeout: 30_000 });
+        await joinBtn.click();
+        // Wait for redirect to tournament page
+        await player.page.waitForURL(`**/tournament/${tournamentRefId}`, { timeout: 30_000 });
+      }
+
+      // ── PHASE 3: VERIFY LOBBY STATE ──
+      await playerJ.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
+      await expect(playerJ.page.getByText("4 players")).toBeVisible({ timeout: 15_000 });
+
+      // ── PHASE 4: START TOURNAMENT ──
+      await playerJ.page.evaluate(async (refId: string) => {
+        const res = await fetch("/api/tournament/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tournamentReferenceId: refId }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || `Start tournament failed: ${res.status}`);
+        }
+      }, tournamentRefId);
+      await playerJ.page.reload({ waitUntil: "domcontentloaded" });
+      await expect(playerJ.page.locator('[data-testid="tournament-status"]')).toContainText(
+        "ACTIVE",
+        { timeout: 15_000 },
+      );
+
+      // ── PHASE 5: PLAY 10 GAMES ──
+      // All 4 players search with stagger, server pairs them via FIFO matchmaking,
+      // they play, then search again. ~2 games per round → ~5 rounds for 10 games.
+      const allPlayers = [playerJ.page, playerK.page, playerL.page, playerM.page];
+      await playTournamentGames(allPlayers, tournamentRefId, 10);
+
+      // ── PHASE 6: END TOURNAMENT ──
+      // Navigate to tournament page first (players are still on the last game page)
+      await playerJ.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
+      await playerJ.page.evaluate(async (refId: string) => {
+        const res = await fetch("/api/tournament/end", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tournamentReferenceId: refId }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || `End tournament failed: ${res.status}`);
+        }
+      }, tournamentRefId);
+      await playerJ.page.reload({ waitUntil: "domcontentloaded" });
+      await expect(playerJ.page.locator('[data-testid="tournament-status"]')).toContainText(
+        "COMPLETED",
+        { timeout: 15_000 },
+      );
+
+      // ── PHASE 7: VERIFY LEADERBOARD ──
+      const leaderboard = playerJ.page.locator('[data-testid="leaderboard"]');
+      await expect(leaderboard).toBeVisible({ timeout: 15_000 });
+
+      const rows = leaderboard.locator('[data-testid="leaderboard-row"]');
+      await expect(rows).toHaveCount(4, { timeout: 15_000 });
+    } finally {
+      // ── PHASE 8: CLEANUP — delete tournament and all associated games ──
+      console.log(`\n── Cleaning up tournament ${tournamentRefId} ──`);
+      try {
+        await deleteTournamentViaApi(tournamentRefId);
+        console.log(`── Tournament ${tournamentRefId} and games deleted ──`);
+      } catch (cleanupError) {
+        console.error("Tournament cleanup failed (non-fatal):", cleanupError);
+      }
     }
-
-    // ── PHASE 3: VERIFY LOBBY STATE ──
-    await playerJ.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
-    await expect(playerJ.page.getByText("4 players")).toBeVisible({ timeout: 15_000 });
-
-    // ── PHASE 4: START TOURNAMENT ──
-    await playerJ.page.evaluate(async (refId: string) => {
-      const res = await fetch("/api/tournament/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentReferenceId: refId }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || `Start tournament failed: ${res.status}`);
-      }
-    }, tournamentRefId);
-    await playerJ.page.reload({ waitUntil: "domcontentloaded" });
-    await expect(playerJ.page.locator('[data-testid="tournament-status"]')).toContainText(
-      "ACTIVE",
-      { timeout: 15_000 },
-    );
-
-    // ── PHASE 5: PLAY 10 GAMES ──
-    // All 4 players search with stagger, server pairs them via FIFO matchmaking,
-    // they play, then search again. ~2 games per round → ~5 rounds for 10 games.
-    const allPlayers = [playerJ.page, playerK.page, playerL.page, playerM.page];
-    await playTournamentGames(allPlayers, tournamentRefId, 10);
-
-    // ── PHASE 6: END TOURNAMENT ──
-    // Navigate to tournament page first (players are still on the last game page)
-    await playerJ.page.goto(`/tournament/${tournamentRefId}`, { waitUntil: "domcontentloaded" });
-    await playerJ.page.evaluate(async (refId: string) => {
-      const res = await fetch("/api/tournament/end", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentReferenceId: refId }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || `End tournament failed: ${res.status}`);
-      }
-    }, tournamentRefId);
-    await playerJ.page.reload({ waitUntil: "domcontentloaded" });
-    await expect(playerJ.page.locator('[data-testid="tournament-status"]')).toContainText(
-      "COMPLETED",
-      { timeout: 15_000 },
-    );
-
-    // ── PHASE 7: VERIFY LEADERBOARD ──
-    const leaderboard = playerJ.page.locator('[data-testid="leaderboard"]');
-    await expect(leaderboard).toBeVisible({ timeout: 15_000 });
-
-    const rows = leaderboard.locator('[data-testid="leaderboard-row"]');
-    await expect(rows).toHaveCount(4, { timeout: 15_000 });
   });
 });

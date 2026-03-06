@@ -678,11 +678,11 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                         className={cn(
                           "text-xs",
                           practiceGame.gameResult === "win" && "text-amber-400",
-                          practiceGame.gameResult === "loss" && "text-red-400",
+                          practiceGame.gameResult === "loss" && "text-white/50",
                           practiceGame.gameResult === "draw" && "text-white/60"
                         )}
                       >
-                        {practiceGame.gameOverReason} — {practiceGame.gameResult === "win" ? "You win!" : practiceGame.gameResult === "loss" ? "You lost" : "Draw"}
+                        {practiceGame.gameOverReason}{practiceGame.gameResult === "win" ? " — You win!" : practiceGame.gameResult === "draw" ? " — Draw" : ""}
                       </span>
                     ) : (
                       <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-amber-400/60 text-xs">
@@ -823,7 +823,7 @@ const AnalysisPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                         className={cn(
                           "text-sm",
                           practiceGame.gameResult === "win" && "text-amber-400",
-                          practiceGame.gameResult === "loss" && "text-red-400",
+                          practiceGame.gameResult === "loss" && "text-white/50",
                           practiceGame.gameResult === "draw" && "text-white/60"
                         )}
                       >

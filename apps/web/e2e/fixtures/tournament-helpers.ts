@@ -20,6 +20,7 @@ export async function createTournamentViaApi(
         durationMinutes: 30,
         initialTimeSeconds: 300,
         incrementSeconds: 5,
+        scheduledStartAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       }),
     });
     if (!res.ok) {
@@ -117,7 +118,7 @@ export async function createTempUsersAndJoin(
       // before navigating away. This avoids the onboarding redirect race.
       await ensureUserSyncedAndOnboarded(page);
 
-      await page.goto(`/tournament/${tournamentRefId}`, {
+      await page.goto(`/join-tournament/${tournamentRefId}`, {
         timeout: 60_000,
         waitUntil: "domcontentloaded",
       });
@@ -126,14 +127,39 @@ export async function createTempUsersAndJoin(
       const joinBtn = page.locator('[data-testid="join-tournament-button"]');
       await joinBtn.waitFor({ timeout: 30_000 });
       await joinBtn.click();
-      // Wait for join to complete (button disappears)
-      await joinBtn.waitFor({ state: "hidden", timeout: 30_000 });
+      // Wait for redirect to tournament page
+      await page.waitForURL(`**/tournament/${tournamentRefId}`, { timeout: 30_000 });
     } finally {
       await context.close();
     }
   }
 
   return clerkUserIds;
+}
+
+/**
+ * Delete a tournament and all its associated games/transactions via the
+ * cleanup API. Authenticated with E2E_CLEANUP_SECRET (no browser context needed).
+ */
+export async function deleteTournamentViaApi(
+  tournamentRefId: string,
+): Promise<void> {
+  const secret = process.env.E2E_CLEANUP_SECRET;
+  if (!secret) {
+    throw new Error("E2E_CLEANUP_SECRET is required for tournament cleanup");
+  }
+
+  const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/tournament/${tournamentRefId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${secret}` },
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to delete tournament: ${res.status} ${text}`);
+  }
 }
 
 /**

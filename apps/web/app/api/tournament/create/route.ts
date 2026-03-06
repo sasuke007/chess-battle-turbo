@@ -14,6 +14,7 @@ const createTournamentSchema = z.object({
   openingReferenceId: z.string().nullable().optional(),
   legendReferenceId: z.string().nullable().optional(),
   chessPositionReferenceId: z.string().nullable().optional(),
+  scheduledStartAt: z.string().datetime(),
 });
 
 export async function POST(request: NextRequest) {
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
         legendId,
         chessPositionId,
         createdByUserId: dbUser.id,
+        scheduledStartAt: new Date(data.scheduledStartAt),
       },
     });
 
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
           name: tournament.name,
           mode: tournament.mode,
           status: tournament.status,
+          scheduledStartAt: tournament.scheduledStartAt.toISOString(),
         },
       },
       { status: 201 }
