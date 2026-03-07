@@ -51,11 +51,15 @@ export interface TournamentData {
   activeGames: ActiveGame[];
 }
 
+const DEBOUNCE_MS = 2000;
+
 export function useTournamentLobby(tournamentReferenceId: string) {
   const [tournament, setTournament] = useState<TournamentData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFetching = useRef(false);
 
   const fetchTournament = useCallback(async () => {
     try {
@@ -71,13 +75,36 @@ export function useTournamentLobby(tournamentReferenceId: string) {
       setError("Failed to load tournament");
     } finally {
       setIsLoading(false);
+      isFetching.current = false;
     }
   }, [tournamentReferenceId]);
 
-  // Initial fetch
+  // Debounced fetch: coalesces rapid-fire WebSocket events into a single API call
+  const debouncedFetch = useCallback(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = setTimeout(() => {
+      if (!isFetching.current) {
+        isFetching.current = true;
+        fetchTournament();
+      }
+    }, DEBOUNCE_MS);
+  }, [fetchTournament]);
+
+  // Initial fetch (immediate, no debounce)
   useEffect(() => {
     fetchTournament();
   }, [fetchTournament]);
+
+  // Cleanup debounce timer
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
 
   // Socket connection for real-time updates
   useEffect(() => {
@@ -96,33 +123,19 @@ export function useTournamentLobby(tournamentReferenceId: string) {
       socket.emit("join_tournament_lobby", { tournamentReferenceId });
     });
 
-    // Listen for real-time events and refetch tournament data
-    socket.on("tournament_player_joined", () => {
-      fetchTournament();
-    });
-
-    socket.on("tournament_started", () => {
-      fetchTournament();
-    });
-
-    socket.on("tournament_game_started", () => {
-      fetchTournament();
-    });
-
-    socket.on("tournament_game_ended", () => {
-      fetchTournament();
-    });
-
-    socket.on("tournament_ended", () => {
-      fetchTournament();
-    });
+    // All events go through debounced fetch — coalesces rapid events
+    socket.on("tournament_player_joined", debouncedFetch);
+    socket.on("tournament_started", fetchTournament); // Immediate — rare, important
+    socket.on("tournament_game_started", debouncedFetch);
+    socket.on("tournament_game_ended", debouncedFetch);
+    socket.on("tournament_ended", fetchTournament); // Immediate — rare, important
 
     return () => {
       socket.emit("leave_tournament_lobby", { tournamentReferenceId });
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [tournamentReferenceId, fetchTournament]);
+  }, [tournamentReferenceId, fetchTournament, debouncedFetch]);
 
   return {
     tournament,
