@@ -22,6 +22,7 @@ interface PlayerInfoCardProps {
     openingName?: string | null;
     openingEco?: string | null;
   } | null;
+  isSpectator?: boolean;
 }
 
 export function PlayerInfoCard({
@@ -35,6 +36,7 @@ export function PlayerInfoCard({
   isAIGame,
   botColor,
   positionInfo,
+  isSpectator,
 }: PlayerInfoCardProps) {
   // Opponent: show the other side. Player: show our side.
   const pieceColor = isOpponent
@@ -91,7 +93,7 @@ export function PlayerInfoCard({
             {isOpponent && isAIGame && botColor && myColor !== botColor && (
               <span className="text-white/40"> (Bot)</span>
             )}
-            {!isOpponent && <span className="text-white/40"> (You)</span>}
+            {!isOpponent && !isSpectator && <span className="text-white/40"> (You)</span>}
           </p>
         </div>
       </div>

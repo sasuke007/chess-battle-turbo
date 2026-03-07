@@ -29,6 +29,8 @@ import type {
   ErrorPayload,
   AnalysisPhaseStartedPayload,
   AnalysisTickPayload,
+  SpectatorStatePayload,
+  SpectatorCountPayload,
 } from "@/lib/types/socket-events";
 
 const DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -94,6 +96,12 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const [isAnalysisPhase, setIsAnalysisPhase] = useState(false);
   const [analysisTimeRemaining, setAnalysisTimeRemaining] = useState(0);
   const [totalAnalysisTime, setTotalAnalysisTime] = useState(0);
+
+  // Spectator state
+  const [isSpectator, setIsSpectator] = useState(false);
+  const isSpectatorRef = useRef(false);
+  const [spectatorCount, setSpectatorCount] = useState(0);
+  const [boardOrientation, setBoardOrientation] = useState<Color>("w");
 
   // Game end overlay state
   const [showGameEndOverlay, setShowGameEndOverlay] = useState(false);
@@ -177,7 +185,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
   const handleSquareClick = useCallback(
     (square: Square) => {
-      // Block moves during analysis phase
+      // Block moves for spectators and during analysis phase
+      if (isSpectator) return;
       if (isAnalysisPhase) return;
 
       if (gameOver || !gameStarted) return;
@@ -239,7 +248,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setSelectedSquare(null);
       setLegalMoves([]);
     },
-    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex, isAnalysisPhase, playSoundForMove]
+    [selectedSquare, game, currentTurn, myColor, gameId, gameStarted, gameOver, getLegalMovesForSquare, isPromotionMove, viewingMoveIndex, isAnalysisPhase, isSpectator, playSoundForMove]
   );
 
   // Game action handlers
@@ -316,8 +325,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setAnalysisTimeRemaining(payload.analysisTimeSeconds);
       setTotalAnalysisTime(payload.analysisTimeSeconds);
 
-      setMyColor(payload.yourColor);
-      myColorRef.current = payload.yourColor;
+      if (payload.yourColor) {
+        setMyColor(payload.yourColor);
+        myColorRef.current = payload.yourColor;
+      }
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
       setWhitePlayer(payload.whitePlayer);
@@ -356,8 +367,10 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setAnalysisTimeRemaining(0);
       setGameStarted(true);
       gameStartedRef.current = true;
-      setMyColor(payload.yourColor);
-      myColorRef.current = payload.yourColor;
+      if (payload.yourColor) {
+        setMyColor(payload.yourColor);
+        myColorRef.current = payload.yourColor;
+      }
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
       setWhitePlayer(payload.whitePlayer);
@@ -437,27 +450,36 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
 
-      // Check for ten second warning on my clock
-      const myTime = myColorRef.current === 'w' ? payload.whiteTime : payload.blackTime;
-      if (myColorRef.current) {
+      // Check for ten second warning on my clock (not for spectators)
+      if (!isSpectatorRef.current && myColorRef.current) {
+        const myTime = myColorRef.current === 'w' ? payload.whiteTime : payload.blackTime;
         checkTenSecondWarning(myTime);
       }
     });
 
     socketRef.current.on("game_over", (payload: GameOverPayload) => {
-      // If game ended during analysis phase, go straight back to /play
-      if (!gameStartedRef.current) {
+      // If game ended during analysis phase, go straight back to /play (not for spectators)
+      if (!gameStartedRef.current && !isSpectatorRef.current) {
         router.push("/play");
         return;
       }
 
       setGameOver(true);
       setIsAnalysisPhase(false);
-      const resultText = payload.result === "DRAW"
-        ? "Draw"
-        : payload.winner === myColorRef.current
-        ? "Victory"
-        : "Defeat";
+      let resultText: string;
+      if (isSpectatorRef.current) {
+        resultText = payload.result === "DRAW"
+          ? "Draw"
+          : payload.winner === "w"
+          ? "White Wins"
+          : "Black Wins";
+      } else {
+        resultText = payload.result === "DRAW"
+          ? "Draw"
+          : payload.winner === myColorRef.current
+          ? "Victory"
+          : "Defeat";
+      }
       setGameResult(`${resultText} — ${payload.method}`);
       setWhiteTime(payload.whiteTime);
       setBlackTime(payload.blackTime);
@@ -478,32 +500,91 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     });
 
     socketRef.current.on("opponent_disconnected", () => {
+      if (isSpectatorRef.current) return;
       playSound('notify');
       toast.warning("Opponent disconnected. They have 30 seconds to reconnect.", { duration: 8000 });
     });
 
     socketRef.current.on("opponent_reconnected", () => {
+      if (isSpectatorRef.current) return;
       playSound('notify');
       toast.success("Opponent reconnected!", { duration: 3000 });
     });
 
     socketRef.current.on("draw_offered", () => {
+      if (isSpectatorRef.current) return;
       setPendingDrawOffer(true);
       playSound('notify');
     });
 
     socketRef.current.on("draw_declined", () => {
+      if (isSpectatorRef.current) return;
       setDrawOffered(false);
       playSound('notify');
     });
 
     socketRef.current.on("error", (payload: ErrorPayload) => {
       if (payload.message && payload.message.includes("not part of")) {
-        toast.error("You are not part of this game. Redirecting...");
-        router.push(`/join/${gameId}`);
+        setIsSpectator(true);
+        isSpectatorRef.current = true;
+        socketRef.current?.emit("spectate_game", { gameReferenceId: gameId });
         return;
       }
       toast.error(payload.message || "An error occurred");
+    });
+
+    // Spectator event listeners
+    socketRef.current.on("spectator_state", (payload: SpectatorStatePayload) => {
+      // Initialize all game state from snapshot
+      const newGame = new Chess(payload.fen);
+      setGame(newGame);
+      setCurrentTurn(newGame.turn());
+      setStartingFen(payload.startingFen);
+      setWhiteTime(payload.whiteTime);
+      setBlackTime(payload.blackTime);
+      setWhitePlayer(payload.whitePlayer);
+      setBlackPlayer(payload.blackPlayer);
+      setBoardOrientation("w");
+      setSpectatorCount(payload.spectatorCount);
+
+      if (payload.positionInfo) {
+        setPositionInfo(payload.positionInfo);
+      }
+
+      // Rebuild move history
+      if (payload.moveHistory.length > 0) {
+        setMoveHistory(payload.moveHistory.map((m) => ({
+          from: m.from, to: m.to, san: m.san, promotion: m.promotion,
+        } as Move)));
+      }
+
+      if (payload.isAnalysisPhase) {
+        setIsAnalysisPhase(true);
+        setAnalysisTimeRemaining(payload.analysisRemainingSeconds || 0);
+        setTotalAnalysisTime(payload.analysisTotalSeconds || 0);
+      }
+
+      if (payload.gameStarted) {
+        setGameStarted(true);
+        gameStartedRef.current = true;
+      }
+
+      if (payload.gameOver && payload.gameOverPayload) {
+        setGameOver(true);
+        setGameStarted(true);
+        gameStartedRef.current = true;
+        const gop = payload.gameOverPayload;
+        const resultText = gop.result === "DRAW"
+          ? "Draw"
+          : gop.winner === "w"
+          ? "White Wins"
+          : "Black Wins";
+        setGameResult(`${resultText} — ${gop.method}`);
+      }
+    });
+
+    socketRef.current.on("spectator_count", (payload: SpectatorCountPayload) => {
+      setSpectatorCount(payload.count);
     });
 
     return () => {
@@ -594,8 +675,8 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     );
   }
 
-  // Determine if this is a victory for confetti
-  const isVictory = gameOver && gameResult?.includes("Victory");
+  // Determine if this is a victory for confetti (not for spectators)
+  const isVictory = !isSpectator && gameOver && gameResult?.includes("Victory");
 
   return (
     <div
@@ -612,7 +693,9 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       <GameEndOverlay
         isActive={showGameEndOverlay}
         result={
-          gameResult?.includes("Victory")
+          isSpectator
+            ? "draw"
+            : gameResult?.includes("Victory")
             ? "victory"
             : gameResult?.includes("Draw")
             ? "draw"
@@ -634,15 +717,17 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         analysisLabel={positionInfo?.openingName ? "Review" : "Compare"}
       />
 
-      {/* Promotion popup */}
-      <PromotionPopup
-        isOpen={pendingPromotion !== null}
-        color={myColor || "w"}
-        onSelect={handlePromotionSelect}
-      />
+      {/* Promotion popup — hidden for spectators */}
+      {!isSpectator && (
+        <PromotionPopup
+          isOpen={pendingPromotion !== null}
+          color={myColor || "w"}
+          onSelect={handlePromotionSelect}
+        />
+      )}
 
-      {/* Resign Confirmation Modal */}
-      {showResignConfirm && (
+      {/* Resign Confirmation Modal — hidden for spectators */}
+      {showResignConfirm && !isSpectator && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -695,7 +780,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
       />
 
       <div className="relative max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 pb-0 lg:pb-4 pt-4 lg:py-4 h-[100dvh] lg:min-h-screen flex flex-col lg:flex lg:flex-col lg:justify-center">
-        {!gameStarted && !isAnalysisPhase ? (
+        {!gameStarted && !isAnalysisPhase && !isSpectator ? (
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex flex-col items-center">
               {/* Minimal chess piece spinner */}
@@ -749,7 +834,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   )} />
                   <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white font-medium">
                     {currentTurn === "w" ? "White" : "Black"}
-                    {currentTurn === myColor && " (You)"}
+                    {!isSpectator && currentTurn === myColor && " (You)"}
                     {isAIGame && currentTurn === botColor && " (Bot)"}
                   </span>
                 </div>
@@ -758,6 +843,13 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                     <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
                     <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs">
                       Bot thinking...
+                    </span>
+                  </div>
+                )}
+                {!isSpectator && spectatorCount > 0 && (
+                  <div className="mt-3 flex items-center gap-2 text-white/40">
+                    <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-xs">
+                      {spectatorCount} spectator{spectatorCount !== 1 ? "s" : ""} watching
                     </span>
                   </div>
                 )}
@@ -863,6 +955,25 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
             {/* Center - Chess Board */}
             <div className="lg:col-span-6 order-1 lg:order-2 flex-1 flex flex-col justify-center lg:block max-w-none sm:max-w-2xl mx-auto w-full">
+              {/* Spectating badge - mobile */}
+              {isSpectator && (
+                <div className="flex items-center justify-center gap-2 mb-1 lg:hidden">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/50 text-xs tracking-wider uppercase">
+                    Spectating {spectatorCount > 0 && `· ${spectatorCount} watching`}
+                  </span>
+                </div>
+              )}
+
+              {/* Spectator count for players */}
+              {!isSpectator && spectatorCount > 0 && (
+                <div className="flex items-center justify-center gap-1.5 mb-1 lg:hidden">
+                  <span className="text-white/30 text-xs" style={{ fontFamily: "'Geist', sans-serif" }}>
+                    {spectatorCount} spectator{spectatorCount !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+
               {/* Opening / Tournament Name Banner - compact */}
               {(positionInfo?.openingName || positionInfo?.tournamentName) && (
                 <motion.div
@@ -904,7 +1015,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               {/* Opponent Clock & Info */}
               <PlayerInfoCard
                 isOpponent={true}
-                myColor={myColor}
+                myColor={isSpectator ? boardOrientation : myColor}
                 whitePlayer={whitePlayer}
                 blackPlayer={blackPlayer}
                 whiteTime={whiteTime}
@@ -913,10 +1024,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 isAIGame={isAIGame}
                 botColor={botColor}
                 positionInfo={positionInfo}
+                isSpectator={isSpectator}
               />
 
-              {/* Incoming Draw Offer Banner - compact on mobile */}
-              {pendingDrawOffer && !gameOver && (
+              {/* Incoming Draw Offer Banner - compact on mobile, hidden for spectators */}
+              {pendingDrawOffer && !gameOver && !isSpectator && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -951,15 +1063,17 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 <ChessBoard
                   board={displayPosition.board()}
                   squareSize="responsive-lg"
-                  selectedSquare={isViewingHistory ? null : selectedSquare}
-                  legalMoves={isViewingHistory ? [] : legalMoves}
-                  onSquareClick={handleSquareClick}
-                  playerColor={myColor}
+                  selectedSquare={isViewingHistory || isSpectator ? null : selectedSquare}
+                  legalMoves={isViewingHistory || isSpectator ? [] : legalMoves}
+                  onSquareClick={isSpectator ? undefined : handleSquareClick}
+                  playerColor={isSpectator ? boardOrientation : myColor}
                   showCoordinates={true}
                   lastMove={lastMoveForDisplay}
                   gameEndState={
                     gameOver
-                      ? gameResult?.includes("Victory")
+                      ? isSpectator
+                        ? ("draw" as const)
+                        : gameResult?.includes("Victory")
                         ? ("victory" as const)
                         : gameResult?.includes("Draw")
                         ? ("draw" as const)
@@ -980,7 +1094,15 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                   enableKeyboard={false}
                 />
                 <div className="flex items-center gap-1">
-                  {!gameOver ? (
+                  {isSpectator ? (
+                    <button
+                      onClick={() => setBoardOrientation((o) => (o === "w" ? "b" : "w"))}
+                      className="h-9 sm:h-11 px-3 text-xs border border-white/20 text-white bg-white/5 hover:bg-white/15 active:bg-white/20 transition-colors"
+                      style={{ fontFamily: "'Geist', sans-serif" }}
+                    >
+                      Flip
+                    </button>
+                  ) : !gameOver ? (
                     <>
                       <button
                         onClick={handleOfferDraw}
@@ -1030,7 +1152,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
               {/* Player Clock & Info */}
               <PlayerInfoCard
                 isOpponent={false}
-                myColor={myColor}
+                myColor={isSpectator ? boardOrientation : myColor}
                 whitePlayer={whitePlayer}
                 blackPlayer={blackPlayer}
                 whiteTime={whiteTime}
@@ -1039,6 +1161,7 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 isAIGame={isAIGame}
                 botColor={botColor}
                 positionInfo={positionInfo}
+                isSpectator={isSpectator}
               />
             </div>
 
@@ -1084,14 +1207,40 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
                 </button>
               </div>
 
-              {/* Game Actions - Desktop */}
-              {!gameOver && (
+              {/* Game Actions - Desktop (hidden for spectators) */}
+              {!gameOver && !isSpectator && (
                 <GameActionButtons
                   variant="desktop"
                   drawOffered={drawOffered}
                   onOfferDraw={handleOfferDraw}
                   onResign={handleResign}
                 />
+              )}
+
+              {/* Spectator Controls - Desktop */}
+              {isSpectator && (
+                <div className="border border-white/10 p-5 space-y-3">
+                  <p
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                    className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3"
+                  >
+                    Spectating
+                  </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span style={{ fontFamily: "'Geist', sans-serif" }} className="text-white/60 text-sm">
+                      Live {spectatorCount > 0 && `· ${spectatorCount} watching`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setBoardOrientation((o) => (o === "w" ? "b" : "w"))}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-white/20 text-white hover:border-white/40 transition-colors"
+                    style={{ fontFamily: "'Geist', sans-serif" }}
+                  >
+                    <span className="text-lg">↕</span>
+                    <span className="text-sm">Flip Board</span>
+                  </button>
+                </div>
               )}
 
               {/* Decorative element */}

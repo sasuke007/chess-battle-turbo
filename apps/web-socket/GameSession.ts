@@ -12,6 +12,8 @@ import {
   GameEndMethod,
   ClockUpdatePayload,
   AnalysisPhaseStartedPayload,
+  SpectatorStatePayload,
+  SpectatorCountPayload,
 } from "./types";
 import { persistMove, completeGame } from "./utils/apiClient";
 import { logger } from "./utils/logger";
@@ -45,6 +47,10 @@ export class GameSession {
   // Disconnect handling
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly DISCONNECT_GRACE_PERIOD = 30000; // 30 seconds
+
+  // Spectators
+  private spectators: Set<Socket> = new Set();
+  private lastGameOverPayload: GameOverPayload | null = null;
 
   // Analysis phase
   private isAnalysisPhase: boolean = false;
@@ -227,6 +233,10 @@ export class GameSession {
     this.whitePlayer.socket.emit("analysis_phase_started", whitePayload);
     this.blackPlayer.socket.emit("analysis_phase_started", blackPayload);
 
+    // Broadcast to spectators without yourColor
+    const { yourColor: _, ...spectatorPayload } = whitePayload;
+    this.broadcastToSpectators("analysis_phase_started", spectatorPayload);
+
     // Start server-authoritative countdown
     this.startAnalysisTimer();
 
@@ -308,6 +318,10 @@ export class GameSession {
     };
 
     socket.emit("analysis_phase_started", payload);
+
+    // Broadcast to spectators without yourColor
+    const { yourColor: _, ...spectatorPayload } = payload;
+    this.broadcastToSpectators("analysis_phase_started", spectatorPayload);
 
     // Start server-authoritative countdown
     this.startAnalysisTimer();
@@ -409,6 +423,7 @@ export class GameSession {
     } else {
       this.broadcast("move_made", moveMadePayload);
     }
+    this.broadcastToSpectators("move_made", moveMadePayload);
 
     // Check for game end conditions
     if (this.chess.isGameOver()) {
@@ -501,6 +516,12 @@ export class GameSession {
    * Handle player disconnection
    */
   public handleDisconnect(socket: Socket): void {
+    // Check if this is a spectator first
+    if (this.isSpectator(socket)) {
+      this.removeSpectator(socket);
+      return;
+    }
+
     const player = this.getPlayerBySocket(socket);
     if (!player) {
       return;
@@ -659,6 +680,7 @@ export class GameSession {
     this.clockManager.destroy();
     this.disconnectTimers.forEach((timer) => clearTimeout(timer));
     this.disconnectTimers.clear();
+    this.spectators.clear();
     logger.info("GameSession destroyed", { game: this.gameData.referenceId });
   }
 
@@ -685,6 +707,67 @@ export class GameSession {
    */
   public getGameReferenceId(): string {
     return this.gameData.referenceId;
+  }
+
+  // ============================================
+  // SPECTATOR METHODS
+  // ============================================
+
+  public addSpectator(socket: Socket): void {
+    this.spectators.add(socket);
+
+    // Build and emit current state snapshot
+    const moveHistory = this.chess.history({ verbose: true }).map((m) => ({
+      from: m.from,
+      to: m.to,
+      san: m.san,
+      promotion: m.promotion || undefined,
+    }));
+
+    const payload: SpectatorStatePayload = {
+      gameReferenceId: this.gameData.referenceId,
+      fen: this.chess.fen(),
+      whiteTime: this.clockManager.getTimeInSeconds("w"),
+      blackTime: this.clockManager.getTimeInSeconds("b"),
+      whitePlayer: this.whitePlayer?.playerInfo || this.gameData.creator,
+      blackPlayer: this.blackPlayer?.playerInfo || this.gameData.opponent || this.gameData.creator,
+      moveHistory,
+      startingFen: this.gameData.startingFen,
+      gameStarted: this.gameStarted,
+      isAnalysisPhase: this.isAnalysisPhase,
+      analysisRemainingSeconds: this.isAnalysisPhase ? this.analysisRemainingSeconds : undefined,
+      analysisTotalSeconds: this.isAnalysisPhase ? this.analysisTotalSeconds : undefined,
+      spectatorCount: this.spectators.size,
+      positionInfo: this.gameData.gameData?.positionInfo || undefined,
+      gameOver: this.gameEnded,
+      gameOverPayload: this.lastGameOverPayload || undefined,
+    };
+
+    socket.emit("spectator_state", payload);
+    this.broadcastSpectatorCount();
+    logger.info(`Spectator added (total: ${this.spectators.size})`, { game: this.gameData.referenceId });
+  }
+
+  public removeSpectator(socket: Socket): void {
+    this.spectators.delete(socket);
+    this.broadcastSpectatorCount();
+    logger.info(`Spectator removed (total: ${this.spectators.size})`, { game: this.gameData.referenceId });
+  }
+
+  public isSpectator(socket: Socket): boolean {
+    return this.spectators.has(socket);
+  }
+
+  private broadcastToSpectators(event: string, payload: any): void {
+    this.spectators.forEach((socket) => {
+      socket.emit(event, payload);
+    });
+  }
+
+  private broadcastSpectatorCount(): void {
+    const payload: SpectatorCountPayload = { count: this.spectators.size };
+    this.broadcast("spectator_count", payload);
+    this.broadcastToSpectators("spectator_count", payload);
   }
 
   // ============================================
@@ -734,6 +817,7 @@ export class GameSession {
   private broadcastClockUpdate(whiteTime: number, blackTime: number): void {
     const payload: ClockUpdatePayload = { whiteTime, blackTime };
     this.broadcast("clock_update", payload);
+    this.broadcastToSpectators("clock_update", payload);
   }
 
   /**
@@ -801,6 +885,7 @@ export class GameSession {
     } else {
       this.broadcast("analysis_tick", payload);
     }
+    this.broadcastToSpectators("analysis_tick", payload);
   }
 
   private clearAnalysisTimers(): void {
@@ -843,6 +928,10 @@ export class GameSession {
     this.whitePlayer!.socket.emit("game_started", whitePayload);
     this.blackPlayer!.socket.emit("game_started", { ...whitePayload, yourColor: "b" as const });
 
+    // Broadcast to spectators without yourColor
+    const { yourColor: _, ...spectatorPayload } = whitePayload;
+    this.broadcastToSpectators("game_started", spectatorPayload);
+
     logger.info(`Analysis phase ended, game started - clock started for ${currentTurn === "w" ? "white" : "black"}`, { game: this.gameData.referenceId });
   }
 
@@ -881,6 +970,11 @@ export class GameSession {
     };
 
     humanPlayer.socket.emit("game_started", payload);
+
+    // Broadcast to spectators without yourColor
+    const { yourColor: _, ...spectatorPayload } = payload;
+    this.broadcastToSpectators("game_started", spectatorPayload);
+
     logger.info(`AI game analysis phase ended - clock started for ${currentTurn === "w" ? "white" : "black"}`, { game: this.gameData.referenceId });
   }
 
@@ -949,7 +1043,9 @@ export class GameSession {
       blackTime: this.clockManager.getTimeInSeconds("b"),
     };
 
+    this.lastGameOverPayload = gameOverPayload;
     this.broadcast("game_over", gameOverPayload);
+    this.broadcastToSpectators("game_over", gameOverPayload);
 
     logger.info(`Game ended: ${result} by ${method}`, { game: this.gameData.referenceId });
 
