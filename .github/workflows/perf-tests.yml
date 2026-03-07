@@ -1,0 +1,171 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D68
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Install dependencies
+        run: cd perf/k6 && pnpm install --frozen-lockfile
+
+      - name: Generate user manifest
+        run: |
+          echo "PERF_DATABASE_URL='${{ secrets.PERF_DATABASE_URL }}'" > perf/.env
+          cd perf/k6 && npx tsx setup/generate-db-users.ts 20000
+
+      - name: Build k6 scenarios
+        run: cd perf/k6 && pnpm run build
+
+      - name: Run play-with-friend perf test
+        id: ws_games
+        run: |
+          cd perf/k6
+          k6 run dist/ws-games.js -e WS_VUS=30 -e WS_ITERS=3 \
+            --summary-export=/tmp/ws-games-summary.json \
+            2>&1 | tee /tmp/ws-games.log
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Run quick-match perf test
+        id: quick_match
+        if: always()
+        run: |
+          cd perf/k6
+          k6 run dist/quick-match.js -e QM_VUS=100 -e QM_GAMES=1 -e QM_STAGGER=30 \
+            --summary-export=/tmp/quick-match-summary.json \
+            2>&1 | tee /tmp/quick-match.log
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Run tournament perf test
+        id: tournament
+        if: always()
+        run: |
+          cd perf/k6
+          k6 run dist/tournament.js -e T_VUS=100 -e T_DURATION=5 \
+            --summary-export=/tmp/tournament-summary.json \
+            2>&1 | tee /tmp/tournament.log
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Generate results report
+        if: always()
+        run: |
+          cat > /tmp/perf-results.md << 'HEADER'
+          # Performance Test Results
+
+          **Run:** ${{ github.run_id }} | **Commit:** ${{ github.sha }} | **Date:** $(date -u +"%Y-%m-%d %H:%M UTC")
+          **Branch:** ${{ github.ref_name }} | **Triggered by:** ${{ github.actor }}
+
+          ---
+          HEADER
+
+          for test in ws-games quick-match tournament; do
+            echo "" >> /tmp/perf-results.md
+            echo "## ${test}" >> /tmp/perf-results.md
+            echo "" >> /tmp/perf-results.md
+
+            if [ -f "/tmp/${test}-summary.json" ]; then
+              # Extract thresholds pass/fail
+              echo "### Thresholds" >> /tmp/perf-results.md
+              echo "" >> /tmp/perf-results.md
+              echo '```' >> /tmp/perf-results.md
+              grep -E "✓|✗|passing|failing|thresholds" /tmp/${test}.log | tail -10 >> /tmp/perf-results.md
+              echo '```' >> /tmp/perf-results.md
+              echo "" >> /tmp/perf-results.md
+
+              # Extract key metrics from summary JSON
+              echo "### Key Metrics" >> /tmp/perf-results.md
+              echo "" >> /tmp/perf-results.md
+              echo "| Metric | Value |" >> /tmp/perf-results.md
+              echo "|--------|-------|" >> /tmp/perf-results.md
+
+              if [ -f "/tmp/${test}-summary.json" ]; then
+                node -e "
+                  const s = require('/tmp/${test}-summary.json');
+                  const m = s.metrics || {};
+                  const fmt = (v) => typeof v === 'number' ? (v > 1 ? v.toFixed(2) : (v * 100).toFixed(1) + '%') : v;
+                  const rows = [];
+                  for (const [k, v] of Object.entries(m)) {
+                    if (v.values) {
+                      if (v.type === 'rate') rows.push([k, fmt(v.values.rate)]);
+                      else if (v.type === 'trend') rows.push([k, 'avg=' + (v.values.avg||0).toFixed(0) + 'ms p95=' + (v.values['p(95)']||0).toFixed(0) + 'ms']);
+                      else if (v.type === 'counter') rows.push([k, v.values.count]);
+                    }
+                  }
+                  rows.forEach(([k,v]) => console.log('| ' + k + ' | ' + v + ' |'));
+                " >> /tmp/perf-results.md 2>/dev/null
+              fi
+            else
+              echo "**Skipped or failed to produce results.**" >> /tmp/perf-results.md
+            fi
+
+            echo "" >> /tmp/perf-results.md
+
+            # Extract final summary lines from k6 log
+            echo "<details><summary>Full k6 output</summary>" >> /tmp/perf-results.md
+            echo "" >> /tmp/perf-results.md
+            echo '```' >> /tmp/perf-results.md
+            tail -60 /tmp/${test}.log >> /tmp/perf-results.md 2>/dev/null
+            echo '```' >> /tmp/perf-results.md
+            echo "</details>" >> /tmp/perf-results.md
+            echo "" >> /tmp/perf-results.md
+            echo "---" >> /tmp/perf-results.md
+          done
+
+          cat /tmp/perf-results.md
+
+      - name: Upload results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-results-${{ github.sha }}
+          path: |
+            /tmp/perf-results.md
+            /tmp/ws-games-summary.json
+            /tmp/quick-match-summary.json
+            /tmp/tournament-summary.json
+            /tmp/ws-games.log
+            /tmp/quick-match.log
+            /tmp/tournament.log
+          retention-days: 30
+
+      - name: Post results to job summary
+        if: always()
+        run: cat /tmp/perf-results.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Check thresholds
+        if: always()
+        run: |
+          failed=0
+          grep -q "thresholds on metrics.*failed" /tmp/ws-games.log 2>/dev/null && failed=1
+          grep -q "thresholds on metrics.*failed" /tmp/quick-match.log 2>/dev/null && failed=1
+          grep -q "thresholds on metrics.*failed" /tmp/tournament.log 2>/dev/null && failed=1
+          if [ "$failed" = "1" ]; then
+            echo "::error::One or more perf tests failed their thresholds"
+            exit 1
+          fi
+          echo "All perf thresholds passed!"

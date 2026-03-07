@@ -86,12 +86,21 @@ let hasJoined = false;
 let tournamentStarted = false;
 let tournamentEnded = false;
 
+// If T_EXISTING_TOURNAMENT is set, skip create — join an existing tournament instead.
+const existingTournamentId = __ENV.T_EXISTING_TOURNAMENT || '';
+
 /**
- * setup() — admin creates the tournament. That's it.
+ * setup() — admin creates the tournament (or uses an existing one).
  * Joining and starting happen concurrently in default().
  */
 export function setup(): SetupData {
   const admin = users[0] as TestUser;
+
+  if (existingTournamentId) {
+    console.log(`[setup] Using existing tournament: ${existingTournamentId}`);
+    return { tournamentRefId: existingTournamentId, adminRefId: admin.referenceId };
+  }
+
   console.log(`[setup] Creating ${tournamentDuration}min tournament for ${vuCount} players`);
   console.log(`[setup] Join window: ${joinWindowSeconds}s, match stagger: ${matchStaggerSeconds}s`);
 
