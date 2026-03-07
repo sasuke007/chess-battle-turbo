@@ -140,9 +140,12 @@ async function main() {
     const sql = buildBatchSql(batchUsers);
 
     try {
-      execSync(`psql "${dbUrl}" -c "${sql.replace(/"/g, '\\"')}" 2>&1`, {
+      // Pipe SQL via stdin to avoid E2BIG (ARG_MAX) on Linux
+      execSync(`psql "${dbUrl}"`, {
+        input: sql,
         encoding: 'utf-8',
         timeout: 60_000,
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
       inserted += batchUsers.length;
     } catch (err: any) {
