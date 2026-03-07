@@ -14,8 +14,10 @@ type DbUser = Awaited<ReturnType<typeof prisma.user.findUnique>>;
 export async function resolveUser(request: NextRequest): Promise<DbUser> {
   if (process.env.PERF_AUTH_BYPASS === "true") {
     const body = await request.clone().json();
-    if (!body.userReferenceId) return null;
-    return prisma.user.findUnique({ where: { referenceId: body.userReferenceId } });
+    if (body.userReferenceId) {
+      return prisma.user.findUnique({ where: { referenceId: body.userReferenceId } });
+    }
+    // No userReferenceId — fall through to Clerk auth
   }
 
   const { userId: clerkUserId } = await auth();
