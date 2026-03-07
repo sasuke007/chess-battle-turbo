@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { resolveUser } from "@/lib/auth/resolve-user";
 import {
   autoCompleteTournamentIfExpired,
   resolveStartingPosition,
@@ -15,21 +15,9 @@ const findMatchSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const client = await clerkClient();
-    const clerkUser = await client.users.getUser(clerkUserId);
-    const email = clerkUser.emailAddresses[0]?.emailAddress;
-    if (!email) {
-      return NextResponse.json({ error: "User email not found" }, { status: 400 });
-    }
-
-    const dbUser = await prisma.user.findUnique({ where: { email } });
+    const dbUser = await resolveUser(request);
     if (!dbUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();

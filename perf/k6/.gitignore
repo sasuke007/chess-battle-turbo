@@ -1,0 +1,4 @@
+node_modules/
+dist/
+results/
+setup/user-manifest.json

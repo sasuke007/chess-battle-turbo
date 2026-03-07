@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { resolveUser } from "@/lib/auth/resolve-user";
 
 const cancelSchema = z.object({
   tournamentReferenceId: z.string().min(1),
@@ -9,21 +9,9 @@ const cancelSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const client = await clerkClient();
-    const clerkUser = await client.users.getUser(clerkUserId);
-    const email = clerkUser.emailAddresses[0]?.emailAddress;
-    if (!email) {
-      return NextResponse.json({ error: "User email not found" }, { status: 400 });
-    }
-
-    const dbUser = await prisma.user.findUnique({ where: { email } });
+    const dbUser = await resolveUser(request);
     if (!dbUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
