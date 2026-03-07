@@ -105,11 +105,11 @@ export default function ParticipantList({
                 Search Results
               </p>
             )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="divide-y divide-white/5">
               {displayParticipants.map((p) => (
                 <div
                   key={p.referenceId}
-                  className="flex items-center gap-2 p-2 border border-white/5"
+                  className="flex items-center gap-3 px-2 py-2.5"
                 >
                   {p.user.profilePictureUrl ? (
                     <Image
