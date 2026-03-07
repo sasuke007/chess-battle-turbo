@@ -32,7 +32,7 @@ jobs:
         run: sudo apt-get install -y postgresql-client
 
       - name: Install dependencies
-        run: cd perf/k6 && pnpm install --frozen-lockfile
+        run: cd perf/k6 && pnpm install
 
       - name: Generate user manifest
         run: |
