@@ -36,6 +36,7 @@ export function playSolo(
   gameRefId: string,
   myReferenceId: string,
   tag: string = 'solo',
+  timeoutMs: number = 120_000,
 ): void {
   const gameStart = Date.now();
   const shortRef = gameRefId.substring(0, 8);
@@ -237,10 +238,10 @@ export function playSolo(
     log(`Unhandled event "${(msg as any).name}"`);
   });
 
-  // ─── Timeout: close after 120s ───
+  // ─── Timeout: close after timeoutMs ───
   timeoutId = setTimeout(function () {
     if (!gameOver) {
-      finish(`Timeout after 120s — started=${gameStarted}, color=${myColor}, moves=${moveCount}`);
+      finish(`Timeout after ${timeoutMs / 1000}s — started=${gameStarted}, color=${myColor}, moves=${moveCount}`);
     }
-  }, 120_000);
+  }, timeoutMs);
 }

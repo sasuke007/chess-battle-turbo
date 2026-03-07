@@ -85,6 +85,7 @@ interface SetupData {
 let hasJoined = false;
 let tournamentStarted = false;
 let tournamentEnded = false;
+let tournamentStartTime = 0; // epoch ms when tournament became ACTIVE
 
 // If T_EXISTING_TOURNAMENT is set, skip create — join an existing tournament instead.
 const existingTournamentId = __ENV.T_EXISTING_TOURNAMENT || '';
@@ -233,6 +234,7 @@ export default function (data: SetupData) {
       const startData = JSON.parse(startRes.body as string).data;
       console.log(`[${tag}] Tournament ACTIVE — ends at ${startData.endsAt}`);
       tournamentStarted = true;
+      tournamentStartTime = Date.now();
     } else {
       // ─── Non-admin VUs: wait for tournament to start ───
       // Instead of polling every 2s (which creates a thundering herd of 900+ VUs
@@ -247,6 +249,7 @@ export default function (data: SetupData) {
       // VU1 always starts the tournament after the join window.
       // Just assume it's started — find-match will tell us if it's not.
       tournamentStarted = true;
+      tournamentStartTime = Date.now();
       console.log(`[${tag}] Join window elapsed — proceeding to play`);
     }
 
@@ -260,6 +263,18 @@ export default function (data: SetupData) {
   // Phase 2: Find match → Play → Repeat
   // ═══════════════════════════════════════════
   if (!tournamentStarted || tournamentEnded) {
+    sleep(5);
+    return;
+  }
+
+  // Stop finding new matches if less than 60s remain — not enough time for a game
+  const elapsedMs = Date.now() - tournamentStartTime;
+  const remainingMs = (tournamentDuration * 60 * 1000) - elapsedMs;
+  if (remainingMs < 60_000) {
+    if (!tournamentEnded) {
+      console.log(`[${tag}] <60s remaining, stopping — played ${__ITER - 1} games`);
+      tournamentEnded = true;
+    }
     sleep(5);
     return;
   }
@@ -334,7 +349,9 @@ export default function (data: SetupData) {
   tournamentMatchRate.add(true);
 
   // ─── Play ───
-  playSolo(gameRefId, user.referenceId, tag);
+  // Use shorter timeout for tournament games: 30s or remaining time, whichever is less
+  const gameTimeout = Math.min(30_000, (tournamentDuration * 60 * 1000) - (Date.now() - tournamentStartTime));
+  playSolo(gameRefId, user.referenceId, tag, Math.max(gameTimeout, 10_000));
   tournamentGamesPlayed.add(1);
 
   // Brief cooldown before next match
