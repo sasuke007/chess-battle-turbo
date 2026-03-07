@@ -141,19 +141,31 @@ async function main() {
 
     try {
       // Pipe SQL via stdin to avoid E2BIG (ARG_MAX) on Linux
-      execSync(`psql "${dbUrl}"`, {
+      const result = execSync(`psql "${dbUrl}"`, {
         input: sql,
         encoding: 'utf-8',
-        timeout: 60_000,
+        timeout: 120_000,
         stdio: ['pipe', 'pipe', 'pipe'],
       });
-      inserted += batchUsers.length;
-    } catch (err: any) {
-      const output = err.stderr || err.stdout || err.message || 'unknown error';
-      if (output.includes('duplicate') || output.includes('already exists')) {
-        skipped += batchUsers.length;
+      // Check if the output confirms INSERT ran
+      if (result.includes('INSERT')) {
+        inserted += batchUsers.length;
       } else {
-        console.error(`  Batch ${batch + 1}/${totalBatches} FAILED: ${output.substring(0, 300)}`);
+        console.error(`  Batch ${batch + 1}/${totalBatches} unexpected output: ${result.substring(0, 200)}`);
+        failed += batchUsers.length;
+      }
+    } catch (err: any) {
+      const stdout = (err.stdout || '') as string;
+      const stderr = (err.stderr || '') as string;
+      const combined = stderr + stdout;
+
+      if (combined.includes('duplicate') || combined.includes('already exists')) {
+        skipped += batchUsers.length;
+      } else if (stdout.includes('INSERT 0')) {
+        // SQL ran successfully but psql exited non-zero (e.g. connection close timing)
+        inserted += batchUsers.length;
+      } else {
+        console.error(`  Batch ${batch + 1}/${totalBatches} FAILED (exit=${err.status}): ${(stderr || err.message || 'unknown').substring(0, 300)}`);
         failed += batchUsers.length;
       }
     }
@@ -189,28 +201,34 @@ function buildBatchSql(
     )
     .join(',\n    ');
 
-  const walletInserts = batch
-    .map(
-      (u) =>
-        `INSERT INTO wallets ("referenceId", "userId", balance, "lockedAmount", "updatedAt") SELECT '${esc(u.walletRefId)}', id, ${WALLET_BALANCE}, 0, NOW() FROM users WHERE "referenceId" = '${esc(u.referenceId)}' ON CONFLICT ("userId") DO NOTHING;`,
-    )
-    .join('\n  ');
+  // Batch wallet insert: single INSERT ... SELECT with VALUES join (3 statements instead of 1001)
+  const walletValues = batch
+    .map((u) => `('${esc(u.walletRefId)}', '${esc(u.referenceId)}')`)
+    .join(', ');
 
-  const statsInserts = batch
-    .map(
-      (u) =>
-        `INSERT INTO user_stats ("referenceId", "userId", "totalGamesPlayed", "gamesWon", "gamesLost", "gamesDrawn", "totalMoneyWon", "totalMoneyLost", "totalPlatformFeesPaid", "netProfit", "currentWinStreak", "longestWinStreak", "updatedAt") SELECT '${esc(u.statsRefId)}', id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NOW() FROM users WHERE "referenceId" = '${esc(u.referenceId)}' ON CONFLICT ("userId") DO NOTHING;`,
-    )
-    .join('\n  ');
+  const statsValues = batch
+    .map((u) => `('${esc(u.statsRefId)}', '${esc(u.referenceId)}')`)
+    .join(', ');
 
   return `BEGIN;
   INSERT INTO users ("email", "name", "code", "referenceId", "googleId", "isActive", "onboarded", "createdAt", "updatedAt")
   VALUES
     ${userValues}
   ON CONFLICT (email) DO UPDATE SET "referenceId" = EXCLUDED."referenceId", "googleId" = EXCLUDED."googleId", "updatedAt" = NOW();
-  ${walletInserts}
-  ${statsInserts}
-  COMMIT;`.replace(/\n/g, ' ');
+
+  INSERT INTO wallets ("referenceId", "userId", balance, "lockedAmount", "updatedAt")
+  SELECT v.wallet_ref, u.id, ${WALLET_BALANCE}, 0, NOW()
+  FROM (VALUES ${walletValues}) AS v(wallet_ref, user_ref)
+  JOIN users u ON u."referenceId" = v.user_ref
+  ON CONFLICT ("userId") DO NOTHING;
+
+  INSERT INTO user_stats ("referenceId", "userId", "totalGamesPlayed", "gamesWon", "gamesLost", "gamesDrawn", "totalMoneyWon", "totalMoneyLost", "totalPlatformFeesPaid", "netProfit", "currentWinStreak", "longestWinStreak", "updatedAt")
+  SELECT v.stats_ref, u.id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NOW()
+  FROM (VALUES ${statsValues}) AS v(stats_ref, user_ref)
+  JOIN users u ON u."referenceId" = v.user_ref
+  ON CONFLICT ("userId") DO NOTHING;
+
+  COMMIT;`;
 }
 
 main().catch((err) => {
