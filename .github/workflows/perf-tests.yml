@@ -22,7 +22,7 @@ jobs:
 
       - name: Install k6
         run: |
-          K6_VERSION="v0.54.0"
+          K6_VERSION="v1.0.0"
           curl -sL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" -o /tmp/k6.tar.gz
           tar -xzf /tmp/k6.tar.gz -C /tmp
           sudo mv /tmp/k6-${K6_VERSION}-linux-amd64/k6 /usr/local/bin/k6
