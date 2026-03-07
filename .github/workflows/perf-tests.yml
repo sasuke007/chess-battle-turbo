@@ -41,14 +41,25 @@ jobs:
             exit 1
           fi
 
-      - name: Generate user manifest
+      - name: Fetch user manifest from DB
         env:
           PERF_DATABASE_URL: ${{ secrets.PERF_DATABASE_URL }}
         run: |
-          echo "PERF_DATABASE_URL='${PERF_DATABASE_URL}'" > perf/.env
-          cd perf/k6 && npx tsx setup/generate-db-users.ts 20000 | tee /tmp/generate-users.log
-          if grep -q "Inserted: 0" /tmp/generate-users.log; then
-            echo "::error::User generation failed — 0 users inserted"
+          DB_URL="${PERF_DATABASE_URL/&channel_binding=require/}"
+          psql "$DB_URL" -t -A -c "
+            SELECT json_agg(row_to_json(t))
+            FROM (
+              SELECT \"googleId\" as \"clerkId\", email, \"referenceId\"
+              FROM users
+              WHERE email LIKE 'perfscale-%@chessbattle.dev'
+              ORDER BY email
+              LIMIT 20000
+            ) t;
+          " | jq '.' > perf/k6/setup/user-manifest.json
+          COUNT=$(jq length perf/k6/setup/user-manifest.json)
+          echo "Loaded $COUNT users from DB"
+          if [ "$COUNT" -lt 2 ]; then
+            echo "::error::Not enough perf users in DB. Run generate-db-users.ts first."
             exit 1
           fi
 
