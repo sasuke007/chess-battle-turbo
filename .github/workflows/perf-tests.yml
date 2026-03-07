@@ -34,9 +34,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --filter chess-battle-perf-k6
 
-      - name: Generate user manifest
+      - name: Verify secrets
         run: |
-          echo "PERF_DATABASE_URL='${{ secrets.PERF_DATABASE_URL }}'" > perf/.env
+          if [ -z "${{ secrets.PERF_DATABASE_URL }}" ]; then
+            echo "::error::PERF_DATABASE_URL secret is not set. Add it in Settings → Secrets → Actions."
+            exit 1
+          fi
+
+      - name: Generate user manifest
+        env:
+          PERF_DATABASE_URL: ${{ secrets.PERF_DATABASE_URL }}
+        run: |
+          echo "PERF_DATABASE_URL='${PERF_DATABASE_URL}'" > perf/.env
           cd perf/k6 && npx tsx setup/generate-db-users.ts 20000
 
       - name: Build k6 scenarios

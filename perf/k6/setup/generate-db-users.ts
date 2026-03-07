@@ -146,11 +146,11 @@ async function main() {
       });
       inserted += batchUsers.length;
     } catch (err: any) {
-      const stderr = err.stderr || err.stdout || '';
-      if (stderr.includes('duplicate') || stderr.includes('already exists')) {
+      const output = err.stderr || err.stdout || err.message || 'unknown error';
+      if (output.includes('duplicate') || output.includes('already exists')) {
         skipped += batchUsers.length;
       } else {
-        console.error(`  Batch ${batch + 1}/${totalBatches} FAILED: ${stderr.substring(0, 200)}`);
+        console.error(`  Batch ${batch + 1}/${totalBatches} FAILED: ${output.substring(0, 300)}`);
         failed += batchUsers.length;
       }
     }
