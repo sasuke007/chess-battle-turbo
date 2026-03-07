@@ -280,6 +280,18 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
+  perf/k6:
+    devDependencies:
+      chess.js:
+        specifier: ^1.4.0
+        version: 1.4.0
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.11
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
