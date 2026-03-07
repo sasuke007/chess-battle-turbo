@@ -217,7 +217,7 @@ export default function TournamentPage({
           )}
 
           {/* Active games */}
-          <ActiveGames games={tournament.activeGames} />
+          <ActiveGames games={tournament.activeGames} tournamentStatus={tournament.status} />
 
           {/* Leaderboard (ACTIVE or COMPLETED) */}
           {(tournament.status === "ACTIVE" || tournament.status === "COMPLETED") && (

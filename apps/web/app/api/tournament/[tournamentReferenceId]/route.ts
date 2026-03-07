@@ -4,6 +4,7 @@ import {
   autoCompleteTournamentIfExpired,
   serializeTournament,
 } from "@/lib/services/tournament/tournament.service";
+import { notifyTournamentEvent } from "@/lib/services/tournament/notify-websocket";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
@@ -24,15 +25,18 @@ export async function GET(
     }
 
     // Auto-complete if expired
-    await autoCompleteTournamentIfExpired(tournament);
+    const wasAutoCompleted = await autoCompleteTournamentIfExpired(tournament);
+    if (wasAutoCompleted) {
+      notifyTournamentEvent({
+        event: "tournament_ended",
+        tournamentReferenceId,
+      });
+    }
 
     // Re-fetch if status changed
-    const freshTournament =
-      tournament.status === "ACTIVE" &&
-      tournament.endsAt &&
-      tournament.endsAt < new Date()
-        ? await getTournamentByRef(tournamentReferenceId)
-        : tournament;
+    const freshTournament = wasAutoCompleted
+      ? await getTournamentByRef(tournamentReferenceId)
+      : tournament;
 
     if (!freshTournament) {
       return NextResponse.json(

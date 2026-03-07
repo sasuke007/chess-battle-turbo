@@ -23,10 +23,45 @@ import { trackSocketEvent, trackActiveConnections } from "./utils/sentry";
 let activeConnectionCount = 0;
 
 const app = express();
+app.use(express.json());
 
 // Add a health check endpoint
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "WebSocket server is running" });
+});
+
+// Internal API: tournament event notifications from the Next.js app
+app.post("/internal/tournament-event", (req, res) => {
+  const { event, tournamentReferenceId, data } = req.body;
+  if (!event || !tournamentReferenceId) {
+    res.status(400).json({ error: "Missing event or tournamentReferenceId" });
+    return;
+  }
+
+  logger.info(`Tournament event: ${event} for ${tournamentReferenceId}`);
+
+  switch (event) {
+    case "game_ended":
+      tournamentManager.emitGameEnded(tournamentReferenceId, data);
+      break;
+    case "game_started":
+      tournamentManager.emitGameStarted(tournamentReferenceId, data);
+      break;
+    case "tournament_started":
+      tournamentManager.emitTournamentStarted(tournamentReferenceId, data);
+      break;
+    case "tournament_ended":
+      tournamentManager.emitTournamentEnded(tournamentReferenceId);
+      break;
+    case "player_joined":
+      tournamentManager.emitPlayerJoined(tournamentReferenceId, data);
+      break;
+    default:
+      res.status(400).json({ error: `Unknown event: ${event}` });
+      return;
+  }
+
+  res.json({ success: true });
 });
 
 const server = createServer(app);

@@ -530,6 +530,11 @@ const GamePage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         socketRef.current?.emit("spectate_game", { gameReferenceId: gameId });
         return;
       }
+      if (payload.message && payload.message.includes("status: COMPLETED")) {
+        toast.info("This game has already ended.", { duration: 3000 });
+        router.back();
+        return;
+      }
       toast.error(payload.message || "An error occurred");
     });
 

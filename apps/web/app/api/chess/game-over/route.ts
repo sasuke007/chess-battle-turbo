@@ -7,6 +7,7 @@ import { prisma } from "../../../../lib/prisma";
 import { logger } from "@/lib/sentry/logger";
 import { trackUserAction } from "@/lib/metrics";
 import { updateTournamentStandings } from "@/lib/services/tournament/tournament.service";
+import { notifyTournamentEvent } from "@/lib/services/tournament/notify-websocket";
 
 type TransactionClient = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       include: {
         creator: { include: { wallet: true } },
         opponent: { include: { wallet: true } },
+        tournament: { select: { referenceId: true } },
       },
     });
 
@@ -262,7 +264,19 @@ export async function POST(request: NextRequest) {
       timeout: 15000, // Maximum time for transaction to complete (15 seconds)
     });
 
-    // 6. Return success (don't send full game object with BigInt fields)
+    // 6. Notify WebSocket server for tournament live updates (fire-and-forget)
+    if (game.tournament?.referenceId) {
+      notifyTournamentEvent({
+        event: "game_ended",
+        tournamentReferenceId: game.tournament.referenceId,
+        data: {
+          gameReferenceId: validatedData.gameReferenceId,
+          result: validatedData.result,
+        },
+      });
+    }
+
+    // 7. Return success (don't send full game object with BigInt fields)
     return NextResponse.json(
       {
         success: true,

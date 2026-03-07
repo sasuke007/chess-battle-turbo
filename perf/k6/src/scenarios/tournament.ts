@@ -1,21 +1,23 @@
 /**
- * Tournament Test — Full lifecycle: create → join → start → play → end.
+ * Tournament Test — Realistic concurrent join + continuous play.
  *
- * Uses k6's setup/default/teardown lifecycle:
- *   setup()    — 1 admin creates tournament, all players join, admin starts it
- *   default()  — each VU is 1 player: find-match → play → repeat
+ * Simulates real-world tournament behavior:
+ *   setup()    — admin creates tournament (1 request)
+ *   default()  — Phase 1: all VUs join concurrently (thundering herd, like sharing a link)
+ *                VU 1 waits for joins to settle, then starts the tournament
+ *                Phase 2: all VUs loop: find-match → play → find-match → play...
+ *                         until tournament clock expires
  *   teardown() — admin ends tournament, logs final standings
  *
- * Each VU acts as ONE independent player. The tournament's find-match
- * endpoint handles pairing via FOR UPDATE SKIP LOCKED (same as quick-match
- * but scoped to tournament participants).
+ * Each VU acts as ONE independent player. Uses `constant-vus` executor
+ * so VUs loop continuously for the full tournament duration.
  *
  * VU count must be EVEN (each game needs 2 players).
  *
  * Usage:
- *   k6 run dist/tournament.js                                             # 100 players, 3 games each
- *   k6 run dist/tournament.js -e T_VUS=200 -e T_GAMES=5                  # 200 players, 5 games each
- *   k6 run dist/tournament.js -e T_VUS=50 -e T_GAMES=10 -e T_STAGGER=30  # 50 players, slower ramp
+ *   k6 run dist/tournament.js                                       # 100 players, 15 min
+ *   k6 run dist/tournament.js -e T_VUS=1000 -e T_DURATION=15       # 1000 players, 15 min
+ *   k6 run dist/tournament.js -e T_VUS=1000 -e T_JOIN_WINDOW=120   # 2 min join window
  */
 
 import { check, sleep } from 'k6';
@@ -43,20 +45,26 @@ const users = new SharedArray('users', function () {
 });
 
 const vuCount = parseInt(__ENV.T_VUS || '100', 10);
-const gamesPerVU = parseInt(__ENV.T_GAMES || '3', 10);
-const staggerSeconds = parseInt(__ENV.T_STAGGER || '60', 10);
-const tournamentDuration = parseInt(__ENV.T_DURATION || '30', 10);
-const joinBatchSize = parseInt(__ENV.T_JOIN_BATCH || '20', 10);
+const tournamentDuration = parseInt(__ENV.T_DURATION || '15', 10);
+// Join window: how long VUs have to join before VU1 starts the tournament.
+// All VUs spread their join across this window (random delay 0..joinWindow).
+// Must be long enough for all concurrent joins to complete.
+const joinWindowSeconds = parseInt(__ENV.T_JOIN_WINDOW || '90', 10);
+// Stagger for find-match: spread initial match-finding over this many seconds
+// to avoid 1000 VUs all calling find-match at the exact same moment.
+const matchStaggerSeconds = parseInt(__ENV.T_MATCH_STAGGER || '30', 10);
+
+// Duration: join window + tournament + 3 min buffer for last games
+const scenarioDuration = `${Math.ceil(joinWindowSeconds / 60) + tournamentDuration + 3}m`;
 
 const jsonHeaders = { headers: { 'Content-Type': 'application/json' } };
 
 export const options: Options = {
   scenarios: {
     tournament: {
-      executor: 'per-vu-iterations',
+      executor: 'constant-vus',
       vus: vuCount,
-      iterations: gamesPerVU,
-      maxDuration: '60m',
+      duration: scenarioDuration,
     },
   },
   thresholds: {
@@ -71,22 +79,27 @@ export const options: Options = {
 interface SetupData {
   tournamentRefId: string;
   adminRefId: string;
-  playerCount: number;
 }
 
+// Per-VU mutable state (each VU has its own JS runtime)
+let hasJoined = false;
+let tournamentStarted = false;
+let tournamentEnded = false;
+
 /**
- * setup() — runs once. Admin creates tournament, all players join, admin starts it.
+ * setup() — admin creates the tournament. That's it.
+ * Joining and starting happen concurrently in default().
  */
 export function setup(): SetupData {
   const admin = users[0] as TestUser;
-  console.log(`[setup] Admin: ${admin.referenceId.substring(0, 8)}, joining ${vuCount} players`);
+  console.log(`[setup] Creating ${tournamentDuration}min tournament for ${vuCount} players`);
+  console.log(`[setup] Join window: ${joinWindowSeconds}s, match stagger: ${matchStaggerSeconds}s`);
 
-  // ─── Create tournament ───
   const createRes = http.post(
     apiUrl('/api/tournament/create'),
     JSON.stringify({
       userReferenceId: admin.referenceId,
-      name: `PerfTest-${Date.now()}`,
+      name: `PerfTest-${tournamentDuration}m-${vuCount}p-${Date.now()}`,
       mode: 'FREE',
       durationMinutes: tournamentDuration,
       initialTimeSeconds: CONFIG.INITIAL_TIME_SECONDS,
@@ -99,96 +112,157 @@ export function setup(): SetupData {
 
   if (!check(createRes, { 'create 201': (r) => r.status === 201 })) {
     console.error(`[setup] CREATE FAILED — status=${createRes.status}, body=${createRes.body}`);
-    return { tournamentRefId: '', adminRefId: admin.referenceId, playerCount: 0 };
+    return { tournamentRefId: '', adminRefId: admin.referenceId };
   }
 
   const tournamentRefId = JSON.parse(createRes.body as string).data.referenceId;
-  console.log(`[setup] Tournament created: ${tournamentRefId}`);
+  console.log(`[setup] Tournament created: ${tournamentRefId} (LOBBY)`);
 
-  // ─── Join all players (admin already joined via create) ───
-  let joined = 1;
-  let joinErrors = 0;
-
-  for (let i = 1; i < vuCount; i++) {
-    const userIndex = i % users.length;
-    const user = users[userIndex] as TestUser;
-
-    const joinRes = http.post(
-      apiUrl('/api/tournament/join'),
-      JSON.stringify({
-        userReferenceId: user.referenceId,
-        tournamentReferenceId: tournamentRefId,
-      }),
-      { ...jsonHeaders, tags: { name: 'tournament-join' } },
-    );
-
-    tournamentJoinDuration.add(joinRes.timings.duration);
-
-    if (joinRes.status === 201 || joinRes.status === 200) {
-      joined++;
-    } else {
-      joinErrors++;
-      if (joinErrors <= 5) {
-        console.error(`[setup] JOIN failed for user ${userIndex}: status=${joinRes.status}, body=${(joinRes.body as string).substring(0, 200)}`);
-      }
-    }
-
-    // Stagger joins to avoid overwhelming Vercel
-    if (i % joinBatchSize === 0) {
-      sleep(0.5);
-      if (i % 100 === 0) {
-        console.log(`[setup] Joined ${joined}/${vuCount} players (${joinErrors} errors)`);
-      }
-    }
-  }
-
-  console.log(`[setup] Join complete: ${joined}/${vuCount} joined, ${joinErrors} errors`);
-
-  // ─── Start tournament ───
-  const startRes = http.post(
-    apiUrl('/api/tournament/start'),
-    JSON.stringify({
-      userReferenceId: admin.referenceId,
-      tournamentReferenceId: tournamentRefId,
-    }),
-    { ...jsonHeaders, tags: { name: 'tournament-start' } },
-  );
-
-  if (!check(startRes, { 'start 200': (r) => r.status === 200 })) {
-    console.error(`[setup] START FAILED — status=${startRes.status}, body=${startRes.body}`);
-  } else {
-    const startData = JSON.parse(startRes.body as string).data;
-    console.log(`[setup] Tournament ACTIVE — ends at ${startData.endsAt}`);
-  }
-
-  return { tournamentRefId, adminRefId: admin.referenceId, playerCount: joined };
+  return { tournamentRefId, adminRefId: admin.referenceId };
 }
 
 /**
- * default() — each VU is 1 tournament player. Find match → play → repeat.
+ * default() — two phases per VU:
+ *
+ * Phase 1 (first iteration): Join the tournament concurrently with all other VUs.
+ *   - Each VU waits a small random delay (0..joinWindow), then POSTs join.
+ *   - VU 1 is the "admin": after waiting the full join window, it starts the tournament.
+ *   - All other VUs poll until the tournament is ACTIVE.
+ *
+ * Phase 2 (all subsequent iterations): Find match → play → repeat.
  */
 export default function (data: SetupData) {
-  if (!data.tournamentRefId) {
-    console.error(`[VU${__VU}] No tournament — setup failed`);
+  if (!data.tournamentRefId || tournamentEnded) {
+    sleep(5);
     return;
   }
 
   const userIndex = (__VU - 1) % users.length;
   const user = users[userIndex] as TestUser;
-  const tag = `t-VU${__VU}-i${__ITER}`;
+  const tag = `t-VU${__VU}-g${__ITER}`;
+  const isAdmin = __VU === 1;
 
-  // Stagger first iteration
-  if (__ITER === 0) {
-    const delay = Math.random() * staggerSeconds;
-    sleep(delay);
+  // ═══════════════════════════════════════════
+  // Phase 1: Join (first iteration only)
+  // ═══════════════════════════════════════════
+  if (!hasJoined) {
+    // Spread joins across the join window (random delay simulates users clicking a link)
+    const joinDelay = Math.random() * joinWindowSeconds * 0.7; // Use 70% of window for joins
+    sleep(joinDelay);
+
+    // Retry join up to 3 times (Vercel may timeout under thundering herd)
+    let joined = false;
+    for (let attempt = 0; attempt < 3 && !joined; attempt++) {
+      if (attempt > 0) sleep(2 + Math.random() * 3);
+
+      const joinRes = http.post(
+        apiUrl('/api/tournament/join'),
+        JSON.stringify({
+          userReferenceId: user.referenceId,
+          tournamentReferenceId: data.tournamentRefId,
+        }),
+        { ...jsonHeaders, tags: { name: 'tournament-join' } },
+      );
+
+      tournamentJoinDuration.add(joinRes.timings.duration);
+
+      if (joinRes.status === 201 || joinRes.status === 200) {
+        joined = true;
+        httpErrorRate.add(0);
+      } else if (joinRes.status === 0) {
+        // Request timeout — Vercel overwhelmed, retry
+        console.log(`[${tag}] Join timeout (attempt ${attempt + 1}/3), retrying...`);
+        httpErrorRate.add(1);
+      } else if (joinRes.status === 400) {
+        // Tournament already ACTIVE — our timed-out request may have actually succeeded
+        // server-side. Proceed as if joined; find-match will tell us if we're not a participant.
+        const body = joinRes.body as string;
+        if (body.includes('already started') || body.includes('Registration is closed')) {
+          console.log(`[${tag}] Tournament already started, assuming join succeeded — proceeding to play`);
+          joined = true;
+        } else {
+          console.error(`[${tag}] JOIN FAILED: status=400, body=${body}`);
+          httpErrorRate.add(1);
+        }
+      } else {
+        console.error(`[${tag}] JOIN FAILED: status=${joinRes.status}`);
+        httpErrorRate.add(1);
+      }
+    }
+
+    if (!joined) {
+      console.error(`[${tag}] JOIN EXHAUSTED after 3 attempts — skipping this VU`);
+      sleep(5);
+      return;
+    }
+    hasJoined = true;
+
+    // ─── Admin (VU 1): wait for join window to close, then start tournament ───
+    if (isAdmin) {
+      // Wait until the join window is fully over
+      const remainingWait = joinWindowSeconds - joinDelay;
+      if (remainingWait > 0) {
+        console.log(`[${tag}] Admin waiting ${remainingWait.toFixed(0)}s for join window to close`);
+        sleep(remainingWait);
+      }
+
+      console.log(`[${tag}] Admin starting tournament...`);
+      const startRes = http.post(
+        apiUrl('/api/tournament/start'),
+        JSON.stringify({
+          userReferenceId: user.referenceId,
+          tournamentReferenceId: data.tournamentRefId,
+        }),
+        { ...jsonHeaders, tags: { name: 'tournament-start' } },
+      );
+
+      if (!check(startRes, { 'start 200': (r) => r.status === 200 })) {
+        console.error(`[${tag}] START FAILED — status=${startRes.status}, body=${startRes.body}`);
+        return;
+      }
+
+      const startData = JSON.parse(startRes.body as string).data;
+      console.log(`[${tag}] Tournament ACTIVE — ends at ${startData.endsAt}`);
+      tournamentStarted = true;
+    } else {
+      // ─── Non-admin VUs: wait for tournament to start ───
+      // Instead of polling every 2s (which creates a thundering herd of 900+ VUs
+      // hammering Vercel), just sleep until the join window is over.
+      // VU1 starts the tournament after joinWindowSeconds, so we wait:
+      //   joinWindowSeconds - joinDelay + 15s buffer
+      // This eliminates ~450 req/s of status polling entirely.
+      const remainingWait = joinWindowSeconds - joinDelay + 15;
+      if (remainingWait > 0) {
+        sleep(remainingWait);
+      }
+      // VU1 always starts the tournament after the join window.
+      // Just assume it's started — find-match will tell us if it's not.
+      tournamentStarted = true;
+      console.log(`[${tag}] Join window elapsed — proceeding to play`);
+    }
+
+    // Stagger initial find-match calls
+    const matchDelay = Math.random() * matchStaggerSeconds;
+    sleep(matchDelay);
+    return; // End this iteration — next iteration starts Phase 2
   }
 
-  // ─── Find match (poll until MATCHED) ───
+  // ═══════════════════════════════════════════
+  // Phase 2: Find match → Play → Repeat
+  // ═══════════════════════════════════════════
+  if (!tournamentStarted || tournamentEnded) {
+    sleep(5);
+    return;
+  }
+
+  // ─── Find match ───
   let gameRefId: string | null = null;
   let pollCount = 0;
-  const maxPolls = 30;
+  const maxPolls = 60;
 
   for (let i = 0; i < maxPolls; i++) {
+    if (tournamentEnded) return;
+
     const findRes = http.post(
       apiUrl('/api/tournament/find-match'),
       JSON.stringify({
@@ -202,18 +276,18 @@ export default function (data: SetupData) {
     pollCount++;
 
     if (findRes.status !== 200 && findRes.status !== 202) {
-      httpErrorRate.add(1);
       const body = findRes.body as string;
 
-      // Tournament ended or not active — stop gracefully
       if (body.includes('not active') || body.includes('not a participant')) {
-        console.log(`[${tag}] Tournament ended or not participant — stopping`);
-        tournamentMatchRate.add(false);
+        if (!tournamentEnded) {
+          console.log(`[${tag}] Tournament ended — played ${__ITER - 1} games`);
+          tournamentEnded = true;
+        }
         tournamentFindMatchPolls.add(pollCount);
         return;
       }
 
-      console.error(`[${tag}] find-match error: status=${findRes.status}`);
+      httpErrorRate.add(1);
       sleep(2);
       continue;
     }
@@ -224,13 +298,11 @@ export default function (data: SetupData) {
 
     if (status === 'MATCHED') {
       gameRefId = resBody.data.gameReferenceId;
-      console.log(`[${tag}] MATCHED after ${pollCount} polls — gameRef=${gameRefId!.substring(0, 8)}`);
       break;
     }
 
     if (status === 'IN_GAME') {
       gameRefId = resBody.data.gameReferenceId;
-      console.log(`[${tag}] IN_GAME (resuming) — gameRef=${gameRefId!.substring(0, 8)}`);
       break;
     }
 
@@ -239,7 +311,6 @@ export default function (data: SetupData) {
       continue;
     }
 
-    console.log(`[${tag}] Unexpected find-match status: ${status}`);
     sleep(2);
   }
 
@@ -247,28 +318,26 @@ export default function (data: SetupData) {
 
   if (!gameRefId) {
     tournamentMatchRate.add(false);
-    console.error(`[${tag}] NO MATCH after ${pollCount} polls`);
-    sleep(1);
+    sleep(2);
     return;
   }
 
   tournamentMatchRate.add(true);
 
-  // ─── Play the game (single WebSocket, my side only) ───
+  // ─── Play ───
   playSolo(gameRefId, user.referenceId, tag);
   tournamentGamesPlayed.add(1);
 
-  // Brief cooldown between games
+  // Brief cooldown before next match
   sleep(1 + Math.random() * 2);
 }
 
 /**
- * teardown() — runs once. Ends tournament and logs final standings.
+ * teardown() — ends tournament and logs final standings.
  */
 export function teardown(data: SetupData) {
   if (!data.tournamentRefId) return;
 
-  // ─── End tournament ───
   const endRes = http.post(
     apiUrl('/api/tournament/end'),
     JSON.stringify({
@@ -284,7 +353,6 @@ export function teardown(data: SetupData) {
     console.log(`[teardown] End status=${endRes.status} (may have auto-completed)`);
   }
 
-  // ─── Fetch final standings ───
   const detailRes = http.get(
     apiUrl(`/api/tournament/${data.tournamentRefId}`),
     { tags: { name: 'tournament-detail' } },

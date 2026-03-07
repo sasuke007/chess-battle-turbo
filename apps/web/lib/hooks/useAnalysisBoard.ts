@@ -178,21 +178,20 @@ export function useAnalysisBoard({
   // Navigation bounds depend on legend mode
   const minPly = isLegendMode && fullLegendMoves.length > 0 ? -gameStartPly : 0;
 
-  const userMaxPly = Math.max(userMoves.length, legendMoves.length);
   const maxPly = isLegendMode && fullLegendMoves.length > 0
     ? fullLegendMoves.length - gameStartPly
-    : userMaxPly;
+    : userMoves.length;
 
   // Clamp plyIndex when switching away from legend mode
   useEffect(() => {
     if (!isLegendMode) {
       if (plyIndex < 0) {
         setPlyIndex(0);
-      } else if (plyIndex > userMaxPly) {
-        setPlyIndex(userMaxPly);
+      } else if (plyIndex > userMoves.length) {
+        setPlyIndex(userMoves.length);
       }
     }
-  }, [isLegendMode, plyIndex, userMaxPly]);
+  }, [isLegendMode, plyIndex, userMoves.length]);
 
   // Compute divergences (memoized)
   const divergences = useMemo(() => {

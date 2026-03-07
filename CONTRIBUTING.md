@@ -35,13 +35,13 @@ This is a **pnpm monorepo** with Turborepo:
 
 ## Reporting Issues
 
-- Use [GitHub Issues](https://github.com/sasuke0007/chess-battle-turbo/issues) to report bugs or request features
+- Use [GitHub Issues](https://github.com/replay-chess/chess-battle-turbo/issues) to report bugs or request features
 - Include steps to reproduce for bugs
 - Check existing issues before opening a new one
 
 ## Pull Requests
 
-- Use [GitHub Issues](https://github.com/sasuke007/chess-battle-turbo/issues) to report bugs or request features
+- Use [GitHub Issues](https://github.com/replay-chess/chess-battle-turbo/issues) to report bugs or request features
 - Write a clear description of what changed and why
 - Ensure all checks pass (types, lint, build)
 - Link related issues in the PR description

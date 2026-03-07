@@ -1,4 +1,4 @@
-# Instincts generated from https://github.com/sasuke007/chess-battle-turbo
+# Instincts generated from https://github.com/replay-chess/chess-battle-turbo
 # Generated: 2026-02-28T01:40:21.110Z
 # Version: 2.0
 
@@ -8,7 +8,7 @@ trigger: "when writing a commit message"
 confidence: 0.6
 domain: git
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Commit Length
@@ -28,7 +28,7 @@ trigger: "when creating a new file"
 confidence: 0.8
 domain: code-style
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Naming Files
@@ -48,7 +48,7 @@ trigger: "when exporting from a module"
 confidence: 0.7
 domain: code-style
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Export Style
@@ -68,7 +68,7 @@ trigger: "when writing tests"
 confidence: 0.9
 domain: testing
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Test Framework
@@ -88,7 +88,7 @@ trigger: "when creating a test file"
 confidence: 0.85
 domain: testing
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Test Naming
@@ -108,7 +108,7 @@ trigger: "when planning tests for a feature"
 confidence: 0.7
 domain: testing
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Test Types
@@ -128,7 +128,7 @@ trigger: "when modifying the database schema or adding tables"
 confidence: 0.6
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Database Migration
@@ -152,7 +152,7 @@ trigger: "when implementing a new feature"
 confidence: 0.9
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Feature Development
@@ -176,7 +176,7 @@ trigger: "when doing bug fix single file"
 confidence: 0.9
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Bug Fix Single File
@@ -200,7 +200,7 @@ trigger: "when doing ci configuration update"
 confidence: 0.7
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Ci Configuration Update
@@ -224,7 +224,7 @@ trigger: "when doing mobile responsive fixes"
 confidence: 0.65
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Mobile Responsive Fixes
@@ -248,7 +248,7 @@ trigger: "when doing seo layout updates"
 confidence: 0.65
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Seo Layout Updates
@@ -272,7 +272,7 @@ trigger: "when doing game flow enhancement"
 confidence: 0.7
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Game Flow Enhancement
@@ -296,7 +296,7 @@ trigger: "when doing observability integration"
 confidence: 0.6
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Observability Integration
@@ -320,7 +320,7 @@ trigger: "when doing large feature development"
 confidence: 0.6
 domain: workflow
 source: repo-analysis
-source_repo: https://github.com/sasuke007/chess-battle-turbo
+source_repo: https://github.com/replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Workflow Large Feature Development
@@ -346,7 +346,7 @@ trigger: "When creating new file names"
 confidence: 0.9
 domain: code-style
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Camel Case Files
@@ -365,7 +365,7 @@ trigger: "When defining class names"
 confidence: 0.9
 domain: code-style
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Pascal Case Classes
@@ -384,7 +384,7 @@ trigger: "When defining constants"
 confidence: 0.8
 domain: code-style
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Screaming Snake Constants
@@ -403,7 +403,7 @@ trigger: "When exporting functions or classes"
 confidence: 0.85
 domain: code-style
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Named Exports
@@ -422,7 +422,7 @@ trigger: "When writing end-to-end tests"
 confidence: 0.95
 domain: testing
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Playwright E2e
@@ -443,7 +443,7 @@ trigger: "When handling errors"
 confidence: 0.8
 domain: code-style
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Try Catch Errors
@@ -462,7 +462,7 @@ trigger: "When committing new features"
 confidence: 0.7
 domain: git
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Feat Prefix Commits
@@ -482,7 +482,7 @@ trigger: "When writing commit messages"
 confidence: 0.8
 domain: git
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Descriptive Commits
@@ -502,7 +502,7 @@ trigger: "When fixing bugs or race conditions"
 confidence: 0.95
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Single File Bug Fix
@@ -522,7 +522,7 @@ trigger: "When CI fails or needs configuration changes"
 confidence: 0.9
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Ci Workflow Update
@@ -542,7 +542,7 @@ trigger: "When mobile UI issues are reported"
 confidence: 0.85
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Mobile Responsive Fix
@@ -562,7 +562,7 @@ trigger: "When pages need SEO optimization"
 confidence: 0.88
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Seo Metadata Addition
@@ -582,7 +582,7 @@ trigger: "When game functionality needs improvement"
 confidence: 0.87
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Game Enhancement
@@ -602,7 +602,7 @@ trigger: "When adding observability or error tracking"
 confidence: 0.82
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Monitoring Integration
@@ -622,7 +622,7 @@ trigger: "When implementing major features like tournaments or billing"
 confidence: 0.9
 domain: workflow
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Large Feature Development
@@ -642,7 +642,7 @@ trigger: "When organizing code in this project"
 confidence: 0.95
 domain: architecture
 source: repo-analysis
-source_repo: sasuke007/chess-battle-turbo
+source_repo: replay-chess/chess-battle-turbo
 ---
 
 # Chess Battle Turbo Turborepo Structure

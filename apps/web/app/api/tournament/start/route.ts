@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { resolveUser } from "@/lib/auth/resolve-user";
+import { notifyTournamentEvent } from "@/lib/services/tournament/notify-websocket";
 
 const startSchema = z.object({
   tournamentReferenceId: z.string().min(1),
@@ -53,6 +54,12 @@ export async function POST(request: NextRequest) {
     });
 
     logger.info(`Tournament ${tournament.referenceId} started, ends at ${endsAt.toISOString()}`);
+
+    notifyTournamentEvent({
+      event: "tournament_started",
+      tournamentReferenceId: tournament.referenceId,
+      data: { startedAt: now.toISOString(), endsAt: endsAt.toISOString() },
+    });
 
     return NextResponse.json({
       success: true,

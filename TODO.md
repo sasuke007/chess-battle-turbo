@@ -151,9 +151,11 @@ Create the socket connection in a Zustand store or module-level singleton — no
 Initialize it once (e.g., in a layout or provider that wraps your routes)
 Access it from any page via the store
 
+
 // stores/socket-store.ts
 import { io, Socket } from 'socket.io-client';
 import { create } from 'zustand';
+
 
 interface SocketStore {
   socket: Socket | null;
@@ -173,6 +175,8 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
     set({ socket: null });
   },
 }));
+
+
 Then in your queue page, you call connect(). When the user navigates to /game/[gameId] via router.push(), the socket stays alive and the game page reads from the same store.
 
 Key caveat
@@ -215,3 +219,24 @@ cmlr4eaqv0001vbyvgslfp63y this game is incorrect the postition is not valid why 
 
 http://localhost:3000/analysis/cmlr4eaqv0001vbyvgslfp63y maybe the board was rendered wrong look at this analysis board. and fix the issue.
 
+
+
+Add testimonials on the front page, Add the demo for the app on the front page.
+
+Integrate with Zustand for better performance and minimize the use of Clerk API calls we are making unnecessarily.
+
+Integrate the Chess Position Popularity feature.
+
+Figure out how to track an end-to-end flow of an entire graph using Sentry. Observability needs to be spot on before we ping agadmator.
+
+When a user is playing a tournament and their game ends, apart from Comparison and Go Back, they should also get a Find Another Game button in the same tournament.
+
+(very important)
+Just have a very good idea in your mind of what the state of the DB should be in case of the happy flows and the sad flows. What are the indicators you can look at in a row in a DB which will tell you that this is not a good game, or this is a good game? 
+
+That will help you in debugging scenarios a lot. Just keep this in mind: don't keep code in mind.
+
+
+If a user tries to spectate the game and the game is already completed, then the experience could be better.
+
+Add breadcrumbs on tournament pages and on the overall site. It seems cleaner for the user to navigate.

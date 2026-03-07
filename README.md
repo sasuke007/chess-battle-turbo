@@ -315,6 +315,6 @@ pnpm --filter web prisma:seed:openings   # Seed openings data
 
 **[playchess.tech](https://playchess.tech)**
 
-Built by [Rohit Pandit](https://github.com/sasuke0007)
+Built by [Rohit Pandit](https://github.com/sasuke0007) | [replay-chess](https://github.com/replay-chess)
 
 </div>

@@ -8,6 +8,7 @@ import {
   autoCompleteTournamentIfExpired,
   resolveStartingPosition,
 } from "@/lib/services/tournament/tournament.service";
+import { notifyTournamentEvent } from "@/lib/services/tournament/notify-websocket";
 
 const findMatchSchema = z.object({
   tournamentReferenceId: z.string().min(1),
@@ -185,6 +186,18 @@ export async function POST(request: NextRequest) {
       },
       { timeout: 15000 }
     );
+
+    if (result.status === "MATCHED") {
+      notifyTournamentEvent({
+        event: "game_started",
+        tournamentReferenceId: data.tournamentReferenceId,
+        data: {
+          gameReferenceId: result.gameReferenceId,
+          white: { name: "", referenceId: "" },
+          black: { name: "", referenceId: "" },
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {

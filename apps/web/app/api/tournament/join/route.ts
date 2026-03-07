@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { resolveUser } from "@/lib/auth/resolve-user";
+import { notifyTournamentEvent } from "@/lib/services/tournament/notify-websocket";
 
 const joinSchema = z.object({
   tournamentReferenceId: z.string().min(1),
@@ -69,6 +70,16 @@ export async function POST(request: NextRequest) {
     });
 
     logger.info(`User ${dbUser.referenceId} joined tournament ${tournament.referenceId}`);
+
+    notifyTournamentEvent({
+      event: "player_joined",
+      tournamentReferenceId: tournament.referenceId,
+      data: {
+        referenceId: dbUser.referenceId,
+        name: dbUser.name,
+        profilePictureUrl: dbUser.profilePictureUrl,
+      },
+    });
 
     return NextResponse.json(
       { success: true, message: "Joined tournament" },
