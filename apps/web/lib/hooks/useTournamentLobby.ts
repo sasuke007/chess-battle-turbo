@@ -48,6 +48,8 @@ export interface TournamentData {
   chessPosition: { referenceId: string; fen: string } | null;
   participants: TournamentParticipant[];
   participantCount: number;
+  isParticipant: boolean;
+  currentUserParticipant: (TournamentParticipant & { rank: number }) | null;
   activeGames: ActiveGame[];
 }
 

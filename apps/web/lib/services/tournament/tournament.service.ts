@@ -51,7 +51,9 @@ export async function getTournamentByRef(referenceId: string) {
           blackPlayerName: true,
         },
       },
+      _count: { select: { participants: true } },
       participants: {
+        take: 100,
         include: {
           user: {
             select: {
@@ -312,6 +314,114 @@ export function serializeTournament(tournament: NonNullable<Awaited<ReturnType<t
       joinedAt: p.joinedAt.toISOString(),
       user: p.user,
     })),
-    participantCount: tournament.participants.length,
+    participantCount: tournament._count.participants,
   };
+}
+
+/**
+ * Get current user's participant row with computed rank
+ */
+export async function getCurrentUserParticipant(
+  tournamentId: bigint,
+  userId: bigint
+) {
+  const participant = await prisma.tournamentParticipant.findUnique({
+    where: { tournamentId_userId: { tournamentId, userId } },
+    include: {
+      user: {
+        select: { referenceId: true, name: true, profilePictureUrl: true },
+      },
+    },
+  });
+
+  if (!participant) return null;
+
+  // Compute rank: count participants strictly ahead in the sort order
+  const aheadCount = await prisma.tournamentParticipant.count({
+    where: {
+      tournamentId,
+      OR: [
+        { points: { gt: participant.points } },
+        {
+          points: participant.points,
+          wins: { gt: participant.wins },
+        },
+        {
+          points: participant.points,
+          wins: participant.wins,
+          gamesPlayed: { lt: participant.gamesPlayed },
+        },
+        {
+          points: participant.points,
+          wins: participant.wins,
+          gamesPlayed: participant.gamesPlayed,
+          id: { lt: participant.id },
+        },
+      ],
+    },
+  });
+
+  return {
+    rank: aheadCount + 1,
+    referenceId: participant.referenceId,
+    points: participant.points.toString(),
+    wins: participant.wins,
+    losses: participant.losses,
+    draws: participant.draws,
+    gamesPlayed: participant.gamesPlayed,
+    isSearching: participant.isSearching,
+    joinedAt: participant.joinedAt.toISOString(),
+    user: participant.user,
+  };
+}
+
+/**
+ * Search tournament participants by name with computed ranks
+ */
+export async function searchTournamentParticipants(
+  tournamentId: bigint,
+  query: string
+) {
+  const results: Array<{
+    referenceId: string;
+    points: string;
+    wins: number;
+    losses: number;
+    draws: number;
+    gamesPlayed: number;
+    isSearching: boolean;
+    joinedAt: Date;
+    userReferenceId: string;
+    name: string;
+    profilePictureUrl: string | null;
+    rank: bigint;
+  }> = await prisma.$queryRaw`
+    WITH ranked AS (
+      SELECT tp."referenceId", tp.points, tp.wins, tp.losses, tp.draws,
+             tp."gamesPlayed", tp."isSearching", tp."joinedAt",
+             u."referenceId" AS "userReferenceId", u.name, u."profilePictureUrl",
+             ROW_NUMBER() OVER (ORDER BY tp.points DESC, tp.wins DESC, tp."gamesPlayed" ASC) AS rank
+      FROM tournament_participants tp
+      JOIN users u ON u.id = tp."userId"
+      WHERE tp."tournamentId" = ${tournamentId}
+    )
+    SELECT * FROM ranked WHERE name ILIKE ${'%' + query + '%'} LIMIT 20
+  `;
+
+  return results.map((r) => ({
+    rank: Number(r.rank),
+    referenceId: r.referenceId,
+    points: r.points.toString(),
+    wins: r.wins,
+    losses: r.losses,
+    draws: r.draws,
+    gamesPlayed: r.gamesPlayed,
+    isSearching: r.isSearching,
+    joinedAt: r.joinedAt instanceof Date ? r.joinedAt.toISOString() : String(r.joinedAt),
+    user: {
+      referenceId: r.userReferenceId,
+      name: r.name,
+      profilePictureUrl: r.profilePictureUrl,
+    },
+  }));
 }

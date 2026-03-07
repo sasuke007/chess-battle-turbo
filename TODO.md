@@ -133,7 +133,7 @@ and store it in local storage using zustand , that will make our pages incredibl
 
 Using the discussion below we can establish a web socket connection on homepage itself and use it when the user goes on to game page that way the game is already created and when user finally goes on game page he wont have to wait and see the loader again.
 
----
+
 
 WebSocket Connections Across Page Navigations
 Short answer: It depends on whether you're doing a full page navigation or a client-side navigation.
@@ -240,3 +240,8 @@ That will help you in debugging scenarios a lot. Just keep this in mind: don't k
 If a user tries to spectate the game and the game is already completed, then the experience could be better.
 
 Add breadcrumbs on tournament pages and on the overall site. It seems cleaner for the user to navigate.
+
+
+Lighten the tournament page we dont need to show 100000 players who joined the tournament page.
+
+

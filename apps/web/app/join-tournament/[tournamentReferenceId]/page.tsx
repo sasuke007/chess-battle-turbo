@@ -93,13 +93,8 @@ export default function JoinTournamentPage({
         setTournament(data.data);
 
         // Check if user already joined
-        if (userReferenceId && data.data.participants) {
-          const joined = data.data.participants.some(
-            (p: { user: { referenceId: string } }) => p.user.referenceId === userReferenceId
-          );
-          if (joined) {
-            setAlreadyJoined(true);
-          }
+        if (data.data.isParticipant) {
+          setAlreadyJoined(true);
         }
       } catch {
         setError("Failed to load tournament");

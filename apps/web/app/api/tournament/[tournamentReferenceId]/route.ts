@@ -3,10 +3,13 @@ import {
   getTournamentByRef,
   autoCompleteTournamentIfExpired,
   serializeTournament,
+  getCurrentUserParticipant,
+  searchTournamentParticipants,
 } from "@/lib/services/tournament/tournament.service";
 import { notifyTournamentEvent } from "@/lib/services/tournament/notify-websocket";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { auth } from "@clerk/nextjs/server";
 
 export async function GET(
   request: NextRequest,
@@ -22,6 +25,16 @@ export async function GET(
         { error: "Tournament not found" },
         { status: 404 }
       );
+    }
+
+    // Search mode — early return with just search results
+    const searchQuery = request.nextUrl.searchParams.get("search");
+    if (searchQuery && searchQuery.trim()) {
+      const results = await searchTournamentParticipants(
+        tournament.id,
+        searchQuery.trim()
+      );
+      return NextResponse.json({ success: true, searchResults: results });
     }
 
     // Auto-complete if expired
@@ -45,6 +58,24 @@ export async function GET(
       );
     }
 
+    // Resolve current user's participation + rank
+    let isParticipant = false;
+    let currentUserParticipant = null;
+    const { userId: clerkUserId } = await auth();
+    if (clerkUserId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { googleId: clerkUserId },
+        select: { id: true },
+      });
+      if (dbUser) {
+        currentUserParticipant = await getCurrentUserParticipant(
+          freshTournament.id,
+          dbUser.id
+        );
+        isParticipant = !!currentUserParticipant;
+      }
+    }
+
     // Get active games in this tournament
     const activeGames = await prisma.game.findMany({
       where: {
@@ -65,6 +96,8 @@ export async function GET(
       success: true,
       data: {
         ...serializeTournament(freshTournament),
+        isParticipant,
+        currentUserParticipant,
         activeGames: activeGames.map((g) => ({
           referenceId: g.referenceId,
           creator: g.creator,

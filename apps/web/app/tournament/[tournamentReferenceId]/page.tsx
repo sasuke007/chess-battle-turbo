@@ -57,9 +57,7 @@ export default function TournamentPage({
   }
 
   const isAdmin = tournament.createdBy.referenceId === userReferenceId;
-  const isParticipant = tournament.participants.some(
-    (p) => p.user.referenceId === userReferenceId
-  );
+  const isParticipant = tournament.isParticipant;
 
   async function handleJoin() {
     setIsJoining(true);
@@ -224,12 +222,19 @@ export default function TournamentPage({
             <Leaderboard
               participants={tournament.participants}
               isCompleted={tournament.status === "COMPLETED"}
+              currentUserParticipant={tournament.currentUserParticipant}
+              participantCount={tournament.participantCount}
+              tournamentReferenceId={tournamentReferenceId}
             />
           )}
 
           {/* Participant list (LOBBY) */}
           {tournament.status === "LOBBY" && (
-            <ParticipantList participants={tournament.participants} />
+            <ParticipantList
+              participants={tournament.participants}
+              participantCount={tournament.participantCount}
+              tournamentReferenceId={tournamentReferenceId}
+            />
           )}
         </div>
       </div>
