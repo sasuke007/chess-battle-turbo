@@ -281,6 +281,7 @@ export function serializeTournament(tournament: NonNullable<Awaited<ReturnType<t
   return {
     referenceId: tournament.referenceId,
     name: tournament.name,
+    description: tournament.description,
     mode: tournament.mode,
     status: tournament.status,
     maxParticipants: tournament.maxParticipants,

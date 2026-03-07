@@ -110,6 +110,7 @@ export function setup(): SetupData {
     JSON.stringify({
       userReferenceId: admin.referenceId,
       name: `PerfTest-${tournamentDuration}m-${vuCount}p-${Date.now()}`,
+      description: 'k6 performance test tournament',
       mode: 'FREE',
       durationMinutes: tournamentDuration,
       initialTimeSeconds: CONFIG.INITIAL_TIME_SECONDS,

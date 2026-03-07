@@ -413,6 +413,7 @@ model Tournament {
   id                  BigInt            @id @default(autoincrement())
   referenceId         String            @unique @default(cuid())
   name                String
+  description         String            @default("")
   mode                TournamentMode
   status              TournamentStatus  @default(LOBBY)
   maxParticipants     Int?

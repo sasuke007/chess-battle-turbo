@@ -15,6 +15,7 @@ const serifFont = { fontFamily: "'Instrument Serif', serif" } as const;
 interface TournamentDetails {
   referenceId: string;
   name: string;
+  description: string | null;
   mode: string;
   status: string;
   maxParticipants: number | null;
@@ -241,6 +242,11 @@ export default function JoinTournamentPage({
             <p style={geistFont} className="text-white/40 text-sm mt-2">
               Created by {tournament.createdBy.name}
             </p>
+            {tournament.description && (
+              <p style={geistFont} className="text-white/50 text-sm mt-2">
+                {tournament.description}
+              </p>
+            )}
           </motion.div>
 
           {/* Details Grid */}

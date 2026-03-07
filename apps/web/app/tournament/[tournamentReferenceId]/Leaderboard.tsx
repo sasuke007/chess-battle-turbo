@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
 import { Search, X } from "lucide-react";
 import type { TournamentData } from "@/lib/hooks/useTournamentLobby";
 
@@ -60,7 +61,7 @@ function ParticipantRow({
         data-testid="leaderboard-row"
       >
         <RankBadge rank={rank} />
-        <div className="flex items-center gap-2 min-w-0">
+        <Link href={`/profile/${p.user.referenceId}`} className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
           {p.user.profilePictureUrl ? (
             <Image
               src={p.user.profilePictureUrl}
@@ -81,7 +82,7 @@ function ParticipantRow({
           >
             {p.user.name}
           </span>
-        </div>
+        </Link>
         <span style={geistFont} className="text-sm text-white font-medium text-right tabular-nums">
           {p.points}
         </span>
@@ -106,26 +107,28 @@ function ParticipantRow({
       >
         <div className="flex items-center gap-3 mb-2">
           <RankBadge rank={rank} />
-          {p.user.profilePictureUrl ? (
-            <Image
-              src={p.user.profilePictureUrl}
-              alt={p.user.name}
-              width={28}
-              height={28}
-              className="w-7 h-7 rounded-full shrink-0"
-            />
-          ) : (
-            <div className="w-7 h-7 bg-white/10 rounded-full shrink-0" />
-          )}
-          <span
-            style={geistFont}
-            className={cn(
-              "text-sm truncate",
-              isWinner ? "text-amber-400 font-medium" : "text-white"
+          <Link href={`/profile/${p.user.referenceId}`} className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity">
+            {p.user.profilePictureUrl ? (
+              <Image
+                src={p.user.profilePictureUrl}
+                alt={p.user.name}
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-full shrink-0"
+              />
+            ) : (
+              <div className="w-7 h-7 bg-white/10 rounded-full shrink-0" />
             )}
-          >
-            {p.user.name}
-          </span>
+            <span
+              style={geistFont}
+              className={cn(
+                "text-sm truncate",
+                isWinner ? "text-amber-400 font-medium" : "text-white"
+              )}
+            >
+              {p.user.name}
+            </span>
+          </Link>
           <span style={geistFont} className="ml-auto text-sm text-white font-medium tabular-nums">
             {p.points} pts
           </span>

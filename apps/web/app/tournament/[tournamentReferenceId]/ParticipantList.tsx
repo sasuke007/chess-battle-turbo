@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Search, X } from "lucide-react";
 import type { TournamentData } from "@/lib/hooks/useTournamentLobby";
 
@@ -107,9 +108,10 @@ export default function ParticipantList({
             )}
             <div className="divide-y divide-white/5">
               {displayParticipants.map((p) => (
-                <div
+                <Link
                   key={p.referenceId}
-                  className="flex items-center gap-3 px-2 py-2.5"
+                  href={`/profile/${p.user.referenceId}`}
+                  className="flex items-center gap-3 px-2 py-2.5 hover:bg-white/5 transition-colors"
                 >
                   {p.user.profilePictureUrl ? (
                     <Image
@@ -125,7 +127,7 @@ export default function ParticipantList({
                   <span style={geistFont} className="text-sm text-white truncate">
                     {p.user.name}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </>

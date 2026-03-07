@@ -48,6 +48,7 @@ export default function CreateTournamentPage() {
 
   // Form state
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [mode, setMode] = useState<string>("FREE");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [customDuration, setCustomDuration] = useState("");
@@ -96,6 +97,7 @@ export default function CreateTournamentPage() {
     try {
       const body: Record<string, unknown> = {
         name: name.trim(),
+        description: description.trim(),
         mode,
         durationMinutes: effectiveDuration,
         initialTimeSeconds: timeControl.time,
@@ -179,6 +181,26 @@ export default function CreateTournamentPage() {
                 className="w-full bg-transparent border border-white/10 text-white text-sm px-4 py-3 outline-none focus:border-white/30 placeholder:text-white/20 transition-colors"
                 required
               />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label style={geistFont} className="block text-white/60 text-xs tracking-wider uppercase mb-2">
+                Description
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. Casual blitz for all skill levels"
+                maxLength={50}
+                style={geistFont}
+                className="w-full bg-transparent border border-white/10 text-white text-sm px-4 py-3 outline-none focus:border-white/30 placeholder:text-white/20 transition-colors"
+                required
+              />
+              <p style={geistFont} className="text-white/20 text-xs mt-1 text-right">
+                {description.length}/50
+              </p>
             </div>
 
             {/* Duration */}
@@ -340,10 +362,10 @@ export default function CreateTournamentPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={isSubmitting || !name.trim() || !scheduledStartAt}
+              disabled={isSubmitting || !name.trim() || !description.trim() || !scheduledStartAt}
               className={cn(
                 "w-full py-3 text-sm font-medium tracking-wide transition-all duration-300",
-                isSubmitting || !name.trim() || !scheduledStartAt
+                isSubmitting || !name.trim() || !description.trim() || !scheduledStartAt
                   ? "bg-white/10 text-white/30 cursor-not-allowed"
                   : "bg-white text-black hover:bg-white/90"
               )}

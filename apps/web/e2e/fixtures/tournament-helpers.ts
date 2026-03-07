@@ -16,6 +16,7 @@ export async function createTournamentViaApi(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: tournamentName,
+        description: "E2E test tournament",
         mode: "FREE",
         durationMinutes: 30,
         initialTimeSeconds: 300,

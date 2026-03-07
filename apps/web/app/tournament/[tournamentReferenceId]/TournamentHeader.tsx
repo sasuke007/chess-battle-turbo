@@ -80,6 +80,11 @@ export default function TournamentHeader({
           <p style={geistFont} className="text-white/40 text-sm">
             Created by {tournament.createdBy.name}
           </p>
+          {tournament.description && (
+            <p style={geistFont} className="text-white/50 text-sm mt-1">
+              {tournament.description}
+            </p>
+          )}
         </div>
         <span
           data-testid="tournament-status"

@@ -185,7 +185,7 @@ If the user refreshes the page or types a URL manually, the socket is gone and y
 ---
 
 
-
+When a user is in a tournament and resigns during the analysis phase, they are currently taken back to the play page. That should not be the case; they should be taken back to the tournament page.
 
 
 
@@ -245,3 +245,4 @@ Add breadcrumbs on tournament pages and on the overall site. It seems cleaner fo
 Lighten the tournament page we dont need to show 100000 players who joined the tournament page.
 
 
+when a user is in tournament page and resign in analysis phase he should be taken to tournament apge not play page.

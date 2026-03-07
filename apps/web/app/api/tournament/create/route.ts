@@ -6,6 +6,7 @@ import { resolveUser } from "@/lib/auth/resolve-user";
 
 const createTournamentSchema = z.object({
   name: z.string().min(1, "Tournament name is required").max(100),
+  description: z.string().min(1, "Description is required").max(50),
   mode: z.enum(["OPENING", "LEGEND", "ENDGAME", "FREE"]),
   durationMinutes: z.number().int().min(5).max(480),
   initialTimeSeconds: z.number().int().positive(),
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
     const tournament = await prisma.tournament.create({
       data: {
         name: data.name,
+        description: data.description,
         mode: data.mode,
         status: "LOBBY",
         durationMinutes: data.durationMinutes,

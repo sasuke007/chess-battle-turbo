@@ -27,6 +27,7 @@ interface ActiveGame {
 export interface TournamentData {
   referenceId: string;
   name: string;
+  description: string;
   mode: string;
   status: string;
   maxParticipants: number | null;
